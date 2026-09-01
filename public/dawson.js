@@ -28,6 +28,15 @@ function dawsonStage(round) {
   return `<section class="dawson-stage" aria-label="Richard Dawson era Family Feud stage"><div class="stage-round">${state.round === 4 ? 'SUDDEN DEATH' : `ROUND ${state.round + 1}`}</div><div class="dawson-oval"><div class="bank-display" aria-label="Round bank">${dotNumber(state.bank)}</div>${dawsonBoard(round)}<div class="score-wing wing-left" aria-label="${escapeHtml(state.families[0].name)} score">${dotNumber(state.scores[0])}</div><div class="score-wing wing-right" aria-label="${escapeHtml(state.families[1].name)} score">${dotNumber(state.scores[1])}</div></div>${dawsonTeam(0)}${dawsonTeam(1)}</section>`;
 }
 
+function dawsonFaceoff() {
+  const contestants = state.faceoff.players.map((id, side) => {
+    const p = state.players.find(p => p.id === id);
+    const family = state.families.find(f => f.playerIds.includes(id));
+    return `<article class="faceoff-contestant faceoff-side-${side} ${state.turnPlayerId === id ? 'active' : ''}"><img src="${p.photo}" alt="${escapeHtml(p.name)}"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(family.name)} FAMILY</span></article>`;
+  }).join('');
+  return `<section class="dawson-faceoff" aria-label="Richard Dawson faceoff podium"><div class="stage-round">${state.round === 4 ? 'SUDDEN DEATH' : `ROUND ${state.round + 1}`} · FACE-OFF</div>${contestants}<div class="faceoff-podium-label">${state.faceoff.buzzedBy ? 'SURVEY SAYS' : 'FAMILY FEUD'}</div></section>`;
+}
+
 function dawsonFastStage() {
   const reveal = ['fast_reveal', 'fast_reveal_done', 'fast_results'].includes(state.phase);
   const idx = state.fastRevealIndex ?? state.fastIndex ?? 0;

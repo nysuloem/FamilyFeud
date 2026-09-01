@@ -37,6 +37,10 @@ After four rounds, a game below 300 points proceeds to a one-answer Sudden Death
 
 The set uses the supplied Dawson-era stage reference with an interactive eight-slot flip board and dot-score displays. Fast Money uses the split black answer panels, contestant portrait, combined score, and lower timer from the TV reference. Questions are spoken, not shown during play; each response and score is revealed individually. Two hundred combined points wins $10,000, while a lower score wins $5 per point. Its questions are pre-generated once for both contestants to reduce speech-loading delays.
 
+The stage background now uses an AI-enhanced 1464 × 1075 reconstruction of the reference. Richard’s introduction portrait has the old background removed and replaced with a clean maroon backdrop (not true transparency). Image prompts and asset paths are recorded in `assets/IMAGE_EDIT_NOTES.md`; original assets are preserved.
+
+Faceoffs show the dedicated Dawson podium scene and live contestant photos. In TV host mode the display never shows a buzzer; the faceoff contestants buzz on their phones. Remote mode and solo tests show the scene and buzzer controls together. Successful answers briefly cut to the board for their reveal. If both initial contestants miss, the game advances to the next member of the first-buzzing family, then the next opposing member if needed. It continues down both family rosters (wrapping smaller families) without re-buzzing, retaining five-second limits and the full-question handoff. Question text stays out of visible status banners.
+
 The optional greeting souvenir requires explicit adult/self-photo consent at join time. The historical scene and selected selfie are sent to OpenAI for one image edit, held in room memory, and labelled as a fictional AI edit. No consent means no image request. It is skipped on error; generated images expire with the room.
 
 `npm test` runs real Socket.IO state-flow regression tests (including a real five-second timeout) and offline client/audio cancellation tests. Tests disable API calls; production image fidelity and real-device audio timing still require a live playthrough.

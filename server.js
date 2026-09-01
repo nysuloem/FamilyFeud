@@ -174,6 +174,7 @@ async function resolveAnswer(room, contestant, given, timedOut = false) {
   const showResult = () => {
     if (match.index >= 0) {
       const answer = board.answers[match.index];
+      if (room.controlFamily === null && room.faceoff) room.faceoff.showBoard = true;
       room.bank += answer.points * multiplier(room.round); revealSlot(room, match.index);
       runHostedCue(room, `${answer.text}! ${answer.points} people gave that answer.`, null, finish);
     } else {
@@ -389,7 +390,7 @@ function beginRound(room, index) {
   room.round = index; room.revealed = []; room.strikes = 0; room.bank = 0; room.controlFamily = null;
   const p0 = familyPlayers(room, 0)[index % familyPlayers(room, 0).length];
   const p1 = familyPlayers(room, 1)[index % familyPlayers(room, 1).length];
-  room.faceoff = { players: [p0.id, p1.id], buzzedBy: null, attempts: [], winnerFamily: null, canBuzz: false };
+  room.faceoff = { players: [p0.id, p1.id], buzzedBy: null, attempts: [], pairStart: 0, winnerFamily: null, canBuzz: false, showBoard: false };
   room.phase = 'faceoff'; room.turnPlayerId = null;
   const opening = index === 4 ? 'Sudden Death.' : `Round ${index + 1}.`;
   room.message = `${opening} The host is calling the faceoff players.`;
@@ -422,16 +423,24 @@ function handleAnswer(room, playerId, answerIndex) {
 
 function handleFaceoffAnswer(room, playerId, answerIndex) {
   room.faceoff.attempts.push({ playerId, answerIndex });
+  room.faceoff.showBoard = false;
+  const pairAttempts = room.faceoff.attempts.slice(room.faceoff.pairStart || 0);
   const other = room.faceoff.players.find(id => id !== playerId);
-  if (room.faceoff.attempts.length === 1 && answerIndex !== 0) {
+  if (pairAttempts.length === 1 && answerIndex !== 0) {
     return promptForAnswer(room, other, `Let me read ${player(room, other).name} the entire question before they answer. ${boardFor(room).question}`);
   }
-  const attempts = room.faceoff.attempts.filter(x => x.answerIndex >= 0).sort((a, b) => a.answerIndex - b.answerIndex);
-  if (!attempts.length && room.faceoff.attempts.length < 2) { room.turnPlayerId = other; return; }
+  const attempts = pairAttempts.filter(x => x.answerIndex >= 0).sort((a, b) => a.answerIndex - b.answerIndex);
   if (!attempts.length) {
-    room.faceoff.attempts = []; room.faceoff.buzzedBy = null; room.turnPlayerId = null; room.phase = 'faceoff';
-    room.faceoff.canBuzz = false;
-    return runHostedCue(room, 'Neither answer made the survey. Let us try again.', null, () => readFaceoffQuestion(room));
+    // Keep the original buzzer priority and walk down BOTH families. Never re-buzz.
+    const firstFamily = familyOf(room, room.faceoff.buzzedBy);
+    room.faceoff.players = [0, 1].map(fi => {
+      const members = familyPlayers(room, fi);
+      const current = members.findIndex(p => p.id === room.faceoff.players[fi]);
+      return members[(current + 1) % members.length].id;
+    });
+    room.faceoff.pairStart = room.faceoff.attempts.length; room.faceoff.canBuzz = false;
+    const next = room.faceoff.players[firstFamily];
+    return promptForAnswer(room, next, `We move to the next family members. ${player(room, next).name}, ${room.families[firstFamily].name} family, your answer.`);
   }
   const winner = attempts[0];
   room.faceoff.winnerFamily = familyOf(room, winner.playerId);
@@ -457,7 +466,9 @@ function advanceTurn(room) {
 }
 
 function promptForAnswer(room, playerId, text, sound) {
-  room.phase = 'host_wait'; room.turnPlayerId = playerId; room.message = text;
+  room.phase = 'host_wait'; room.turnPlayerId = playerId;
+  // The spoken full-question handoff must not leak into the visible status banner.
+  room.message = room.controlFamily === null && room.faceoff ? `${player(room, playerId).name}, listen to the host, then answer.` : text;
   runHostedCue(room, text, sound, () => {
     openAnswer(room, room.turnPlayerId);
   });

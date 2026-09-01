@@ -80,3 +80,20 @@ test('test controls follow the active sample contestant, remain absent for regul
   vm.runInContext("state.testPart='fast';state.phase='fast_play';state.fastQuestionIndex=0", b.context);
   assert.match(vm.runInContext('controls()', b.context), /fastForm/);
 });
+
+test('faceoff scene and buzzer coexist remotely, while the TV display never has a buzzer', () => {
+  const b = browser(async () => ({}));
+  vm.runInContext("state={mode:'remote',phase:'faceoff',round:0,controlFamily:null,players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'One',playerIds:['P']},{name:'Two',playerIds:['Q']}],faceoff:{players:['P','Q'],winnerFamily:null,buzzedBy:null,canBuzz:true,showBoard:false}}", b.context);
+  assert.equal(vm.runInContext('showFaceoffScene()', b.context), true);
+  assert.match(vm.runInContext('dawsonFaceoff()', b.context), /Richard Dawson faceoff podium/);
+  assert.match(vm.runInContext('controls()', b.context), /BUZZ!/);
+  vm.runInContext("state.mode='host';isDisplay=true", b.context);
+  assert.doesNotMatch(vm.runInContext('controls()', b.context), /<button/);
+  assert.equal(vm.runInContext('showFaceoffScene()', b.context), true);
+  vm.runInContext("isDisplay=false;state.mode='remote';state.testPart='intro';state.adminId='P'", b.context);
+  assert.equal((vm.runInContext('controls()', b.context).match(/data-test-buzz/g) || []).length, 2);
+  vm.runInContext("state.phase='answer';state.faceoff.buzzedBy='P'", b.context);
+  assert.equal(vm.runInContext('showFaceoffScene()', b.context), true);
+  vm.runInContext('state.faceoff.showBoard=true', b.context);
+  assert.equal(vm.runInContext('showFaceoffScene()', b.context), false, 'Successful answer reveals use the main board camera');
+});

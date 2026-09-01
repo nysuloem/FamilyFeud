@@ -1,6 +1,6 @@
 /* Reference-matched set: live display and scores over the supplied stage photograph. */
 .game-shell{background:linear-gradient(#6b3b13,#b57218 60%,#6c928c);padding:12px 12px 22px;gap:8px}
-.dawson-stage{position:relative;width:min(1180px,100%);aspect-ratio:805/591;margin:auto;background:#b67717 url('/assets/dawson-stage.png') center/100% 100% no-repeat;overflow:hidden;border:8px solid #3b2417;box-shadow:0 12px 36px #0008}
+.dawson-stage{position:relative;width:min(1180px,100%);aspect-ratio:805/591;margin:auto;background:#b67717 url('/assets/dawson-stage-enhanced.png') center/100% 100% no-repeat;overflow:hidden;border:8px solid #3b2417;box-shadow:0 12px 36px #0008}
 .stage-round{position:absolute;top:1%;left:2%;color:#fff2b6;font:bold 14px monospace;letter-spacing:2px;text-shadow:1px 2px #000}
 .dawson-oval{position:absolute;top:4%;left:21%;width:58%;height:53%;border:9px solid #332217;border-radius:50%;background:radial-gradient(circle,#d7e3cf 1.3px,transparent 2px) 0 0/14px 14px,#7394aa;box-shadow:inset 0 0 0 3px #b8b28b,0 0 0 3px #8c6027;display:flex;align-items:center;justify-content:center}
 .dawson-oval::before,.dawson-fast-shell::before{content:'';position:absolute;inset:7px;border:5px dotted #faf5c3;border-radius:inherit;pointer-events:none}
@@ -52,3 +52,20 @@
 @media(max-width:650px){.controls:has(#answerForm),.controls:has(#fastForm){position:fixed;bottom:max(8px,env(safe-area-inset-bottom));left:3%;right:3%;width:auto;margin:0;padding:10px;background:#493319f5;border:3px solid #ead796;z-index:30}.game-shell:has(#answerForm),.game-shell:has(#fastForm){padding-bottom:220px}.answer-clock{margin:0 0 5px}}
 .test-mode-card{grid-column:1/-1}.test-setup{max-width:800px;margin:auto}.test-setup>label{display:block;margin:20px 0}.test-setup details{margin:20px 0}.test-setup summary{cursor:pointer}.test-actions{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px}.test-actions>*{flex:1;min-width:220px}.test-toolbar{position:relative;z-index:110;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:#342719;color:#fff4c4;border-bottom:2px solid #c5a259;font-size:14px}.test-toolbar a{color:#fff4c4;text-decoration:underline}.test-toolbar span{flex:1}.test-toolbar~.intro-overlay{top:76px}.test-faceoff{gap:24px;flex-wrap:wrap;min-height:70vh}.test-faceoff>div{text-align:center}.test-faceoff .buzz{width:clamp(125px,30vw,270px);height:clamp(125px,30vw,270px);font-size:clamp(22px,4vw,48px)}
 .test-faceoff{display:flex;top:90px;justify-content:center;align-items:center;overflow:auto}
+
+/* The faceoff camera is separate from the answer-board camera. */
+.dawson-faceoff{position:relative;width:min(100%,calc(62svh * 585 / 445),1000px);aspect-ratio:585/445;margin:auto;overflow:hidden;background:#699cba url('/assets/dawson-faceoff.png') center/100% 100% no-repeat;border:6px solid #44301d;box-shadow:0 10px 30px #0006}
+.faceoff-contestant{position:absolute;top:25%;width:23%;text-align:center;background:#322319;border:3px ridge #e5d6a3;box-shadow:0 5px 12px #0006;color:#fff4cf}
+.faceoff-side-0{left:2%}.faceoff-side-1{right:2%}
+.faceoff-contestant img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;object-position:center top}
+.faceoff-contestant strong,.faceoff-contestant span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:3px;font:700 clamp(12px,2vw,23px) 'Oswald',sans-serif}
+.faceoff-contestant span{font:700 clamp(9px,1.2vw,14px) sans-serif;background:#dfc485;color:#332719}
+.faceoff-contestant.active{outline:4px solid #fff18a;box-shadow:0 0 20px #ffda65}
+.faceoff-podium-label{position:absolute;left:34%;width:32%;top:71%;text-align:center;color:#e5d7af;font:clamp(9px,1.5vw,20px) 'Oswald',sans-serif;letter-spacing:2px}
+.faceoff-layout .controls{width:min(760px,100%)}
+.remote-buzzers{display:flex;justify-content:center;gap:18px}
+.remote-buzzers .buzz{width:clamp(110px,20vw,190px);min-height:76px;height:auto;padding:12px 24px;font-size:clamp(22px,4vw,38px);border-width:5px;border-radius:28px}
+.remote-buzzers .buzz small{display:block;font:600 14px sans-serif;margin-bottom:4px}
+.host-card img.host-isolated{object-fit:contain;border:0;border-radius:0;box-shadow:none;max-height:65svh;width:auto;max-width:100%;mask-image:linear-gradient(to right,transparent,#000 8%,#000 92%,transparent)}
+.intro-overlay:has(.host-isolated){background:#4d0d08}
+@media(max-width:650px){.dawson-faceoff{width:min(100%,calc(53svh * 585 / 445));border-width:3px}.faceoff-layout .status-banner{font-size:14px;padding:8px}.faceoff-layout .controls{margin-top:6px}.faceoff-contestant{border-width:2px}.remote-buzzers .buzz{min-height:68px;padding:8px 20px}.host-card img.host-isolated{max-height:48svh}}

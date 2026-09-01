@@ -60,6 +60,7 @@ test('early buzz cancels speech; second contestant hears full question; answer s
   await finish(); assert.deepEqual(room.revealed, [1]); // Survey result now flips.
   await finish(); // Result -> complete question for the other player.
   assert.match(room.speechCues.get(room.pendingCue.cueId).text, /Let me read Bob the entire question before they answer/);
+  assert.ok(!publicRoom(room).message.includes(room.game.rounds[0].question), 'Spoken question must stay out of the visible banner');
   assert.equal(room.answerDeadline, null); assert.equal(room.inputLocked, true);
   await finish(); assert.equal(room.turnPlayerId, clients[1].id); assert.ok(room.answerDeadline > Date.now());
 });
@@ -242,4 +243,51 @@ test('a solo test owner can reconnect and still control sample contestants', asy
   }
   assert.equal(room.turnPlayerId, room.players[1].id);
   assert.equal((await client.emitWithAck('submitFastAnswer', { code: room.code, answer: 'pizza', questionIndex: 0, fastIndex: 0 })).ok, true);
+});
+
+test('two faceoff misses move down both families in original buzz order without reopening buzzers', async t => {
+  const { room, clients: [client], finish } = await rehearsal(t, 'intro');
+  client.emit('introComplete', { code: room.code }); await until(() => room.phase === 'faceoff');
+  await finish(); await finish();
+  const original = [...room.faceoff.players], firstBuzzer = original[1];
+  client.emit('buzz', { code: room.code, playerId: firstBuzzer }); await until(() => room.phase === 'answer');
+  const give = async text => {
+    assert.equal((await client.emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: text })).ok, true);
+    await until(() => room.pendingCue); await finish(); await finish();
+  };
+  await give('xyzzy'); await finish(); assert.equal(room.turnPlayerId, original[0]);
+  await give('xyzzy');
+  assert.equal(room.phase, 'host_wait'); assert.equal(room.faceoff.buzzedBy, firstBuzzer);
+  assert.equal(room.faceoff.canBuzz, false); assert.equal(room.faceoff.attempts.length, 2);
+  assert.deepEqual(room.faceoff.players, [room.players[1].id, room.players[3].id]);
+  assert.equal(room.turnPlayerId, room.players[3].id); assert.equal(room.answerDeadline, null);
+  client.emit('buzz', { code: room.code, playerId: room.players[1].id }); await pause(10);
+  assert.equal(room.turnPlayerId, room.players[3].id);
+  await finish(); assert.ok(room.answerDeadline > Date.now());
+  await give('phone');
+  assert.equal(room.turnPlayerId, room.players[1].id);
+  assert.match(room.speechCues.get(room.pendingCue.cueId).text, /Let me read Sam the entire question/);
+  await finish(); await give('keys'); await finish();
+  assert.equal(room.phase, 'decision'); assert.equal(room.faceoff.winnerFamily, 0);
+  assert.deepEqual(room.revealed, [1, 0]);
+});
+
+test('continued faceoff wraps uneven families and a number one answer immediately wins', async t => {
+  const { room, clients: [client], finish } = await rehearsal(t, 'intro');
+  room.families[1].playerIds = [room.players[2].id];
+  client.emit('introComplete', { code: room.code }); await until(() => room.phase === 'faceoff');
+  await finish(); await finish();
+  client.emit('buzz', { code: room.code, playerId: client.id }); await until(() => room.phase === 'answer');
+  for (let i = 0; i < 4; i++) {
+    assert.equal((await client.emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'xyzzy' })).ok, true);
+    await until(() => room.pendingCue); await finish(); await finish(); await finish();
+    assert.equal(room.faceoff.canBuzz, false);
+  }
+  assert.deepEqual(room.faceoff.players, [client.id, room.players[2].id]);
+  assert.equal(room.turnPlayerId, client.id); assert.equal(room.faceoff.attempts.length, 4);
+  assert.equal((await client.emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'keys' })).ok, true);
+  await until(() => room.pendingCue); await finish(); assert.equal(room.faceoff.showBoard, true);
+  await finish(); await finish();
+  assert.equal(room.phase, 'decision'); assert.equal(room.faceoff.winnerFamily, 0);
+  assert.equal(room.faceoff.attempts.length, 5, 'No extra opposing guess after number one');
 });

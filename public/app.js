@@ -107,7 +107,7 @@ function render() {
   }
   if (state.phase === 'lobby' || state.phase === 'generating') return renderLobby();
   if (state.phase === 'intro') return renderIntro();
-  if (state.phase === 'faceoff' && (state.faceoff?.players.includes(myPlayerId) || isTestController()) && !isDisplay) return renderFaceoffBuzzer();
+  if (state.phase === 'faceoff' && state.mode === 'host' && state.faceoff?.players.includes(myPlayerId) && !isDisplay) return renderFaceoffBuzzer();
   renderGame();
 }
 
@@ -124,11 +124,6 @@ function renderLobby() {
 
 function renderFaceoffBuzzer(){
   const enabled = state.faceoff.canBuzz && !state.faceoff.buzzedBy;
-  if (isTestController()) {
-    app.innerHTML = `${testToolbar()}<main class="faceoff-phone test-faceoff">${state.faceoff.players.map(id => `<div><p>${escapeHtml(state.players.find(p => p.id === id).name)}</p><button class="buzz" data-test-buzz="${escapeHtml(id)}" ${enabled ? '' : 'disabled'}>${enabled ? 'BUZZ!' : 'LISTEN'}</button></div>`).join('')}</main>`;
-    document.querySelectorAll('[data-test-buzz]').forEach(button => button.onclick = () => { if (enabled) { cancelCurrentHost(); socket.emit('buzz', { code: state.code, playerId: button.dataset.testBuzz }); } });
-    offerSoundUnlock(); return;
-  }
   app.innerHTML = `<main class="faceoff-phone"><button class="buzz" id="buzz" ${enabled ? '' : 'disabled'}>${enabled ? 'BUZZ!' : 'LISTEN'}</button></main>`;
   document.querySelector('#buzz').onclick=()=>{if(enabled){cancelCurrentHost();socket.emit('buzz',{code:state.code})}};
   offerSoundUnlock();
@@ -152,9 +147,9 @@ async function runIntro() {
     if (introContent) introContent.innerHTML = `<h1 class="intro-title">INTRODUCING<br>THE FAMILIES</h1><div class="family-columns">${state.families.map(f => familyPanel(f)).join('')}</div>`;
     await playFamilyAnnouncement();
     const kissed = state.players.find(p => p.id === state.kissPlayerId) || randomPlayer();
-    if (introContent) introContent.innerHTML = `<div class="host-card"><img src="/assets/richard-dawson.jpg" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1></div></div>`;
+    if (introContent) introContent.innerHTML = `<div class="host-card"><img class="host-isolated" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1></div></div>`;
     await playAudioFile('/assets/intro-theme.mp3');
-    if (introContent) introContent.innerHTML = state.kissStatus === 'ready' ? `<img class="kiss-souvenir" src="/api/room/${state.code}/kiss" alt="AI-edited Richard Dawson greeting ${escapeHtml(kissed.name)}"><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p><p class="kiss-disclosure">AI-edited fictional souvenir</p>` : `<div class="host-card"><img src="/assets/richard-dawson.jpg" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p></div></div>`;
+    if (introContent) introContent.innerHTML = state.kissStatus === 'ready' ? `<img class="kiss-souvenir" src="/api/room/${state.code}/kiss" alt="AI-edited Richard Dawson greeting ${escapeHtml(kissed.name)}"><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p><p class="kiss-disclosure">AI-edited fictional souvenir</p>` : `<div class="host-card"><img class="host-isolated" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p></div></div>`;
     await new Promise(resolve => setTimeout(resolve, state.kissStatus === 'ready' ? 3800 : 1200));
     await new Promise(resolve => setTimeout(resolve, 900));
   } finally {
@@ -179,10 +174,23 @@ function playAudioElement(audio){return new Promise((resolve,reject)=>{audio.one
 function renderGame() {
   clearInterval(fastTimer); introRun = false;
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
-  app.innerHTML = `${testToolbar()}<main class="game-shell"><section class="stage">${round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
+  const faceoffScene = showFaceoffScene();
+  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
   wireControls();
   startVisibleClocks();
   offerSoundUnlock();
+}
+
+function showFaceoffScene() {
+  return !!state.faceoff && state.controlFamily === null && state.faceoff.winnerFamily === null && !state.faceoff.showBoard && ['faceoff', 'host_wait', 'answer'].includes(state.phase);
+}
+
+function faceoffBuzzControls() {
+  if (state.phase !== 'faceoff' || isDisplay || state.faceoff.buzzedBy) return '';
+  const enabled = state.faceoff.canBuzz;
+  if (isTestController()) return `<div class="remote-buzzers">${state.faceoff.players.map(id => `<button class="buzz" data-test-buzz="${escapeHtml(id)}" ${enabled ? '' : 'disabled'}><small>${escapeHtml(state.players.find(p => p.id === id).name)}</small>${enabled ? 'BUZZ!' : 'LISTEN'}</button>`).join('')}</div>`;
+  if (state.faceoff.players.includes(myPlayerId)) return `<div class="remote-buzzers"><button class="buzz" id="buzz" ${enabled ? '' : 'disabled'}>${enabled ? 'BUZZ!' : 'LISTEN'}</button></div>`;
+  return '';
 }
 
 function board(round) {
@@ -208,7 +216,7 @@ function fastRevealStage(){
 
 function controls() {
   const mine = state.turnPlayerId === myPlayerId || (isTestController() && !!state.turnPlayerId);
-  if (state.phase === 'faceoff' && state.faceoff.players.includes(myPlayerId) && !state.faceoff.buzzedBy && !state.inputLocked) return '<button class="buzz" id="buzz">BUZZ!</button>';
+  if (state.phase === 'faceoff') return faceoffBuzzControls() || '<span class="muted">Listen to the host. Faceoff contestants buzz on their own phones.</span>';
   if (state.phase === 'answer' && mine && !state.inputLocked) return `<span class="answer-clock" data-answer-clock>5.0</span><form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Answer now" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
   if (state.phase === 'decision' && (state.faceoff.winnerFamily === familyIndex() || isTestController())) return '<div class="decision"><button class="primary" data-choice="play">PLAY</button><button class="secondary" data-choice="pass">PASS</button></div>';
   if (state.testPart && (state.phase === 'round_end' || state.phase === 'fast_results')) return '<p>Test complete.</p><a class="primary" href="/?test=1">Replay or choose another test</a>';
@@ -227,7 +235,8 @@ function fastForm() {
 }
 
 function wireControls() {
-  document.querySelector('#buzz')?.addEventListener('click', () => socket.emit('buzz', { code: state.code }));
+  document.querySelector('#buzz')?.addEventListener('click', () => { if (state.faceoff.canBuzz) { cancelCurrentHost(); socket.emit('buzz', { code: state.code }); } });
+  document.querySelectorAll('[data-test-buzz]').forEach(button => button.onclick = () => { if (state.faceoff.canBuzz) { cancelCurrentHost(); socket.emit('buzz', { code: state.code, playerId: button.dataset.testBuzz }); } });
   document.querySelector('#answerForm')?.addEventListener('submit', e => {
     e.preventDefault(); const answer=val('#answer'); if(!answer) return;
     const button=e.target.querySelector('[type=submit]'); button.disabled=true; button.textContent='OpenAI is judging…';
