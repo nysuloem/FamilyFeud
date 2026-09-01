@@ -4,6 +4,14 @@ A phone-controlled Family Feud game inspired by the Richard Dawson era. It suppo
 
 Games support 2–10 players. If a one-player family reaches Fast Money, that player completes both timed halves.
 
+## Solo Test Mode
+
+Choose **Open Test Mode** on the home screen, then either **Test Introduction + Round 1** or **Test Fast Money**. No joining link, second device, or other player is required. The test creates two sample families, and you control the active contestant (including both faceoff buzzers and both Fast Money players).
+
+The introduction test plays the normal opening sequence, runs one full round including strikes/steal/unrevealed answers, and stops there. Fast Money starts at player selection and includes both timed halves, both narrated reveals, and the payout. Use **Restart / switch test** at any time to return to the test setup, or **Exit test** to return to regular games.
+
+Tests use fixed built-in surveys in separate rooms, without generating a new survey package or changing real games. The normal host audio, OpenAI judging, microphone input, and timers remain active. Optional: upload your own photo and explicitly consent to test the introduction souvenir too; otherwise sample avatars are used and no image edit is requested. API audio/judging/image usage still applies when configured. This is a solo rehearsal of the shared game flow, not a simulation of multiplayer network latency.
+
 ## Run locally
 
 ```bash

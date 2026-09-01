@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { io: connect } = require('socket.io-client');
 const { BUILTIN_GAME } = require('../src/game');
-const { server, io, makeRoom, beginRound, publicRoom, awardRound, beginFastMoney, finishFastPlayer, disposeRoom } = require('../server');
+const { server, io, rooms, makeRoom, beginRound, publicRoom, awardRound, beginFastMoney, finishFastPlayer, disposeRoom } = require('../server');
 
 const previousKey = process.env.OPENAI_API_KEY;
 delete process.env.OPENAI_API_KEY; // Deterministic offline surveys/judging, never spend API credits in tests.
@@ -132,4 +132,114 @@ test('repeated second-player Fast Money answers score zero and under-200 payouts
   await playFast(f, [0, 0, 0, 0, 0]);
   assert.deepEqual(room.fastScores[1], [0, 0, 0, 0, 0]);
   assert.equal(room.fastPrize, room.fastScores[0].reduce((a, b) => a + b, 0) * 5);
+});
+
+async function rehearsal(t, part) {
+  const client = connect(url, { transports: ['websocket'], forceNew: true });
+  await new Promise(resolve => client.once('connect', resolve));
+  const created = await client.emitWithAck('createTestRoom', { part, name: 'Pat' });
+  assert.equal(created.ok, true);
+  const room = rooms.get(created.code);
+  t.after(() => { disposeRoom(room); client.disconnect(); });
+  const finish = async () => {
+    const id = room.pendingCue?.cueId; assert.ok(id);
+    client.emit('cueFinished', { code: room.code, cueId: id });
+    await until(() => room.pendingCue?.cueId !== id);
+  };
+  return { room, clients: [client], finish };
+}
+
+test('solo introduction test controls the opponent and ends after the first round', async t => {
+  const { room, clients: [client], finish } = await rehearsal(t, 'intro');
+  assert.equal(room.phase, 'intro'); assert.equal(room.round, -1);
+  assert.equal(room.players.length, 4); assert.equal(room.kissStatus, 'off');
+  assert.deepEqual(room.families.map(f => f.playerIds.length), [2, 2]);
+  assert.equal(room.players[0].name, 'Pat');
+  client.emit('introComplete', { code: room.code }); await until(() => room.phase === 'faceoff');
+  await finish(); await finish();
+  const opponent = room.faceoff.players[1];
+  client.emit('buzz', { code: room.code, playerId: opponent }); await until(() => room.phase === 'answer');
+  assert.equal(room.turnPlayerId, opponent);
+  const answer = await client.emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'phone' });
+  assert.equal(answer.ok, true); await until(() => room.pendingCue);
+  await finish(); await finish();
+  assert.match(room.speechCues.get(room.pendingCue.cueId).text, /Let me read Pat the entire question/);
+  await finish();
+  assert.equal((await client.emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'keys' })).ok, true);
+  await until(() => room.pendingCue); await finish(); await finish(); await finish();
+  assert.equal(room.phase, 'decision');
+  client.emit('playOrPass', { code: room.code, choice: 'pass' }); await until(() => room.phase === 'host_wait');
+  await finish(); assert.equal(room.controlFamily, 1);
+  // Intentionally strike out and fail the steal, exercising every sample player's turn.
+  for (let i = 0; i < 4; i++) {
+    assert.equal((await client.emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'xyzzy' })).ok, true);
+    await until(() => room.pendingCue); await finish(); await finish();
+    if (i < 3) await finish();
+  }
+  assert.equal(room.phase, 'round_reveal');
+  while (room.pendingCue) await finish();
+  assert.equal(room.phase, 'round_end'); assert.equal(room.revealed.length, 7);
+  client.emit('nextRound', { code: room.code }); await pause(20);
+  assert.equal(room.round, 0); assert.equal(room.phase, 'round_end');
+  assert.match(room.message, /test complete/);
+});
+
+test('solo Fast Money test runs both selected contestants and both reveals without playing main rounds', async t => {
+  const f = await rehearsal(t, 'fast'), { room, clients: [client] } = f;
+  assert.equal(room.phase, 'fast_select'); assert.equal(room.round, -1);
+  assert.equal(room.kissStatus, 'off');
+  const playerIds = [...room.families[0].playerIds].reverse();
+  client.emit('selectFastPlayers', { code: room.code, playerIds }); await until(() => room.pendingCue);
+  assert.equal(room.turnPlayerId, playerIds[0]);
+  await playFast(f, [0, 0, 0, 0, 0]);
+  client.emit('continueFastMoney', { code: room.code }); await until(() => room.fastIndex === 1);
+  await playFast(f, [1, 1, 1, 1, 1]);
+  client.emit('continueFastMoney', { code: room.code }); await until(() => room.phase === 'fast_results');
+  assert.equal(room.fastPrize, 10000);
+});
+
+test('test mode cannot override ordinary turns or be claimed by a spectator', async t => {
+  const normal = await fixture(t), { room, clients, finish } = normal;
+  beginRound(room, 0); await finish(); await finish();
+  clients[0].emit('buzz', { code: room.code, playerId: clients[1].id }); await until(() => room.phase === 'answer');
+  assert.equal(room.turnPlayerId, clients[0].id, 'Regular rooms ignore impersonation');
+  assert.equal((await clients[1].emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'keys' })).ok, false);
+  const f = await rehearsal(t, 'intro');
+  const spectator = clients[1];
+  assert.equal((await spectator.emitWithAck('rejoin', { code: f.room.code, playerId: f.room.players[1].id })).ok, false);
+  spectator.emit('watchRoom', { code: f.room.code }); await pause(10);
+  spectator.emit('introComplete', { code: f.room.code }); await pause(10); assert.equal(f.room.phase, 'intro');
+  clients[0].emit('introComplete', { code: f.room.code }); await pause(10); assert.equal(f.room.phase, 'intro');
+  f.clients[0].emit('introComplete', { code: f.room.code }); await until(() => f.room.phase === 'faceoff');
+  await f.finish(); await f.finish();
+  spectator.emit('buzz', { code: f.room.code, playerId: f.room.faceoff.players[1] }); await pause(20);
+  assert.equal(f.room.phase, 'faceoff'); assert.equal(f.room.faceoff.buzzedBy, null);
+});
+
+test('test setup validates its entry point and requires an actual upload for souvenir consent', async t => {
+  const client = connect(url, { transports: ['websocket'], forceNew: true });
+  await new Promise(resolve => client.once('connect', resolve)); t.after(() => client.disconnect());
+  const count = rooms.size;
+  assert.equal((await client.emitWithAck('createTestRoom', { part: 'bad' })).ok, false);
+  assert.equal((await client.emitWithAck('createTestRoom', { part: 'intro', kissConsent: true })).ok, false);
+  assert.equal((await client.emitWithAck('createTestRoom', { part: 'intro', photo: '<script>' })).ok, false);
+  assert.equal(rooms.size, count);
+});
+
+test('a solo test owner can reconnect and still control sample contestants', async t => {
+  const { room, clients: [original] } = await rehearsal(t, 'fast');
+  const oldId = original.id; original.disconnect();
+  const client = connect(url, { transports: ['websocket'], forceNew: true });
+  await new Promise(resolve => client.once('connect', resolve)); t.after(() => client.disconnect());
+  const result = await client.emitWithAck('rejoin', { code: room.code, playerId: oldId });
+  assert.equal(result.ok, true); assert.equal(room.adminId, client.id); assert.equal(room.fastSelectorId, client.id);
+  assert.ok(room.families[0].playerIds.includes(client.id));
+  client.emit('selectFastPlayers', { code: room.code, playerIds: [...room.families[0].playerIds].reverse() });
+  await until(() => room.pendingCue);
+  for (let i = 0; i < 2; i++) {
+    const cueId = room.pendingCue.cueId; client.emit('cueFinished', { code: room.code, cueId });
+    await until(() => room.pendingCue?.cueId !== cueId);
+  }
+  assert.equal(room.turnPlayerId, room.players[1].id);
+  assert.equal((await client.emitWithAck('submitFastAnswer', { code: room.code, answer: 'pizza', questionIndex: 0, fastIndex: 0 })).ok, true);
 });

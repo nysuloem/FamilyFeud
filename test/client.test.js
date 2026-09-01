@@ -67,3 +67,16 @@ test('Dawson board is column-major, has eight physical slots and uses data-drive
   assert.match(html, /DOUBLE/);
   assert.match(vm.runInContext('dotNumber(153)', b.context), /aria-label="153"/);
 });
+
+test('test controls follow the active sample contestant, remain absent for regular players, and stop at round one', () => {
+  const b = browser(async () => ({}));
+  vm.runInContext("state={testPart:'intro',adminId:'P',phase:'answer',turnPlayerId:'sample',inputLocked:false}", b.context);
+  assert.match(vm.runInContext('controls()', b.context), /answerForm/);
+  vm.runInContext("state.testPart=null", b.context);
+  assert.doesNotMatch(vm.runInContext('controls()', b.context), /answerForm/);
+  vm.runInContext("state.testPart='intro';state.phase='round_end'", b.context);
+  assert.match(vm.runInContext('controls()', b.context), /Test complete/);
+  assert.doesNotMatch(vm.runInContext('controls()', b.context), /Next Round/);
+  vm.runInContext("state.testPart='fast';state.phase='fast_play';state.fastQuestionIndex=0", b.context);
+  assert.match(vm.runInContext('controls()', b.context), /fastForm/);
+});

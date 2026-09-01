@@ -2,15 +2,16 @@ const socket = io();
 const app = document.querySelector('#app');
 let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = false, serverOffset = 0;
 let hostAudioQueue = Promise.resolve(), activeRecognition = null, activeHostPlayback = null, cancelledCues = new Set(), clockInterval = null;
-const session = JSON.parse(localStorage.getItem('feudSession') || 'null');
+let session = JSON.parse(localStorage.getItem('feudSession') || 'null');
 
 const pathBits = location.pathname.split('/').filter(Boolean);
 if (pathBits[0] === 'join' && pathBits[1]) showJoin(pathBits[1].toUpperCase());
 else if (pathBits[0] === 'host' && pathBits[1]) watchRoom(pathBits[1].toUpperCase());
+else if (location.search?.includes('test=')) showTestMenu();
 else showLanding();
 
 socket.on('connect', () => {
-  if (session?.code && session?.playerId && pathBits[0] === 'join') {
+  if (session?.code && session?.playerId && location.pathname.split('/')[1] === 'join' && location.pathname.split('/')[2]?.toUpperCase() === session.code) {
     socket.emit('rejoin', session, result => {
       if (result?.ok) { roomCode = session.code; myPlayerId = result.playerId; saveSession(); }
     });
@@ -32,9 +33,38 @@ socket.on('answerResult', result => { if (!result.correct) flashStrike(result.co
 socket.on('boardReveal', result => { playEffect('ding'); requestAnimationFrame(() => document.querySelector(`[data-${result.fastIndex == null ? `board-slot="${result.index}"` : `fast-slot="${result.fastIndex}-${result.index}"`}]`)?.classList.add('flip-now')); });
 
 function showLanding() {
-  app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">The classic survey game, made for your family.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article></div></section></main>`;
+  app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">The classic survey game, made for your family.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article><article class="mode-card test-mode-card"><h2>TEST MODE</h2><p>Try the introduction and first round, or jump straight to Fast Money. No other players needed.</p><button class="primary" id="testMode">Open Test Mode</button></article></div></section></main>`;
   document.querySelector('#hostMode').onclick = () => createRoom('host');
   document.querySelector('#remoteMode').onclick = () => createRoom('remote');
+  document.querySelector('#testMode').onclick = showTestMenu;
+}
+
+function showTestMenu() {
+  app.innerHTML = `<main class="page"><section class="panel test-setup"><h1>TEST MODE</h1><p>Rehearse on your own. Two sample families are provided; you control whichever contestant is up. The normal AI host, judging, five-second guesses, microphone, and reveals stay active.</p><p>Tests use fixed sample surveys so you can repeat the same sequence. They do not affect real games. AI audio, judging, and optional image generation use your configured API.</p><label>Your contestant name <input id="testName" maxlength="24" value="Alex"></label><details><summary>Optional: use your photo and test the introduction souvenir</summary><div class="photo-row"><img class="photo-preview" id="testPreview" alt="Your optional photo"><label class="secondary file-button">Upload your photo<input type="file" id="testPhoto" accept="image/*"></label></div><label class="consent-check"><input type="checkbox" id="testKissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it. This is optional and only runs in the introduction test.</span></label></details><div class="test-actions"><button class="primary" data-test-part="intro">Test Introduction + Round 1</button><button class="primary" data-test-part="fast">Test Fast Money</button></div><p>Fast Money includes player selection, both timed halves, both reveals, and the final payout.</p><a href="/">Back to regular games</a></section></main>`;
+  let photo = '';
+  document.querySelector('#testPhoto').onchange = async event => {
+    const file = event.target.files[0]; if (!file) return;
+    photo = await resizeImage(file); document.querySelector('#testPreview').src = photo;
+  };
+  document.querySelectorAll('[data-test-part]').forEach(button => button.onclick = () => {
+    const part = button.dataset.testPart;
+    const kissConsent = part === 'intro' && document.querySelector('#testKissConsent').checked;
+    if (kissConsent && !photo) return toast('Upload your own photo to test the souvenir.');
+    unlockAudio();
+    const buttons = [...document.querySelectorAll('[data-test-part]')]; buttons.forEach(b => b.disabled = true);
+    socket.emit('createTestRoom', { part, name: val('#testName'), photo, kissConsent }, result => {
+      if (!result?.ok) { buttons.forEach(b => b.disabled = false); return toast(result?.error || 'Could not start the test.'); }
+      roomCode = result.code; myPlayerId = result.playerId; isDisplay = false; introRun = false;
+      history.replaceState({}, '', `/join/${result.code}`); saveSession();
+    });
+  });
+}
+
+function isTestController() { return !!state?.testPart && state.adminId === myPlayerId; }
+function testToolbar() {
+  if (!state?.testPart) return '';
+  const contestant = state.players.find(p => p.id === state.turnPlayerId);
+  return `<nav class="test-toolbar" aria-label="Test controls"><strong>TEST: ${state.testPart === 'intro' ? 'INTRO + ROUND 1' : 'FAST MONEY'}</strong><span>${contestant ? `You control ${escapeHtml(contestant.name)}` : 'You control both families'}</span><a href="/?test=1">Restart / switch test</a><a href="/">Exit test</a></nav>`;
 }
 
 function createRoom(mode) {
@@ -72,9 +102,12 @@ function showJoin(code) {
 
 function render() {
   if (!state) return; clearInterval(clockInterval);
+  if (state.testPart && state.phase === 'generating') {
+    app.innerHTML = `${testToolbar()}<main class="page"><section class="panel"><h1>Preparing your test…</h1><p>${state.kissStatus === 'preparing' ? 'Creating your optional souvenir. This can take up to 90 seconds.' : 'Setting up the sample families.'}</p></section></main>`; return;
+  }
   if (state.phase === 'lobby' || state.phase === 'generating') return renderLobby();
   if (state.phase === 'intro') return renderIntro();
-  if (state.phase === 'faceoff' && state.faceoff?.players.includes(myPlayerId) && !isDisplay) return renderFaceoffBuzzer();
+  if (state.phase === 'faceoff' && (state.faceoff?.players.includes(myPlayerId) || isTestController()) && !isDisplay) return renderFaceoffBuzzer();
   renderGame();
 }
 
@@ -91,6 +124,11 @@ function renderLobby() {
 
 function renderFaceoffBuzzer(){
   const enabled = state.faceoff.canBuzz && !state.faceoff.buzzedBy;
+  if (isTestController()) {
+    app.innerHTML = `${testToolbar()}<main class="faceoff-phone test-faceoff">${state.faceoff.players.map(id => `<div><p>${escapeHtml(state.players.find(p => p.id === id).name)}</p><button class="buzz" data-test-buzz="${escapeHtml(id)}" ${enabled ? '' : 'disabled'}>${enabled ? 'BUZZ!' : 'LISTEN'}</button></div>`).join('')}</main>`;
+    document.querySelectorAll('[data-test-buzz]').forEach(button => button.onclick = () => { if (enabled) { cancelCurrentHost(); socket.emit('buzz', { code: state.code, playerId: button.dataset.testBuzz }); } });
+    offerSoundUnlock(); return;
+  }
   app.innerHTML = `<main class="faceoff-phone"><button class="buzz" id="buzz" ${enabled ? '' : 'disabled'}>${enabled ? 'BUZZ!' : 'LISTEN'}</button></main>`;
   document.querySelector('#buzz').onclick=()=>{if(enabled){cancelCurrentHost();socket.emit('buzz',{code:state.code})}};
   offerSoundUnlock();
@@ -98,7 +136,7 @@ function renderFaceoffBuzzer(){
 
 function renderIntro() {
   const families = state.families;
-  app.innerHTML = `<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent"><h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p><div class="family-columns">${families.map(f => familyPanel(f)).join('')}</div></div></section>`;
+  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent"><h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p><div class="family-columns">${families.map(f => familyPanel(f)).join('')}</div></div></section>`;
   document.querySelector('#sound').onclick = () => { unlockAudio(); runIntro(); };
   runIntro();
 }
@@ -141,7 +179,7 @@ function playAudioElement(audio){return new Promise((resolve,reject)=>{audio.one
 function renderGame() {
   clearInterval(fastTimer); introRun = false;
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
-  app.innerHTML = `<main class="game-shell"><section class="stage">${round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
+  app.innerHTML = `${testToolbar()}<main class="game-shell"><section class="stage">${round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
   wireControls();
   startVisibleClocks();
   offerSoundUnlock();
@@ -169,10 +207,11 @@ function fastRevealStage(){
 }
 
 function controls() {
-  const mine = state.turnPlayerId === myPlayerId;
+  const mine = state.turnPlayerId === myPlayerId || (isTestController() && !!state.turnPlayerId);
   if (state.phase === 'faceoff' && state.faceoff.players.includes(myPlayerId) && !state.faceoff.buzzedBy && !state.inputLocked) return '<button class="buzz" id="buzz">BUZZ!</button>';
   if (state.phase === 'answer' && mine && !state.inputLocked) return `<span class="answer-clock" data-answer-clock>5.0</span><form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Answer now" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
-  if (state.phase === 'decision' && state.faceoff.winnerFamily === familyIndex()) return '<div class="decision"><button class="primary" data-choice="play">PLAY</button><button class="secondary" data-choice="pass">PASS</button></div>';
+  if (state.phase === 'decision' && (state.faceoff.winnerFamily === familyIndex() || isTestController())) return '<div class="decision"><button class="primary" data-choice="play">PLAY</button><button class="secondary" data-choice="pass">PASS</button></div>';
+  if (state.testPart && (state.phase === 'round_end' || state.phase === 'fast_results')) return '<p>Test complete.</p><a class="primary" href="/?test=1">Replay or choose another test</a>';
   if (state.phase === 'round_end' && state.adminId === myPlayerId) { const label=state.round<3?'Next Round':state.round===3&&Math.max(...state.scores)<300?'Go to Sudden Death':'Go to Fast Money';return `<button class="primary" id="next">${label}</button>`; }
   if (state.phase === 'fast_select' && state.fastSelectorId === myPlayerId) {
     const winner = state.winnerFamily ?? (state.scores[0] >= state.scores[1] ? 0 : 1);
@@ -210,7 +249,7 @@ function familyIndex(){return state.families.findIndex(f=>f.playerIds.includes(m
 function names(f){return f.playerIds.map(id=>state.players.find(p=>p.id===id)?.name).filter(Boolean).join(', ')}
 function randomPlayer(){return state.players[Math.floor(Math.random()*state.players.length)]}
 function val(sel){return document.querySelector(sel)?.value.trim()||''}
-function saveSession(){localStorage.setItem('feudSession',JSON.stringify({code:roomCode,playerId:myPlayerId}))}
+function saveSession(){session={code:roomCode,playerId:myPlayerId};localStorage.setItem('feudSession',JSON.stringify(session))}
 function escapeHtml(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function toast(text){const el=document.querySelector('#toast');el.textContent=text;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000)}
 function flashStrike(count=1){const el=document.createElement('div');el.className='strike-flash';el.innerHTML=Array.from({length:Math.min(3,count)},()=>`<span class="strike-frame"><svg viewBox="0 0 100 130" aria-hidden="true"><path d="M18 16L82 114M82 16L18 114" stroke="#a92d1e" stroke-width="24" stroke-linecap="square"/></svg></span>`).join('');document.body.append(el);setTimeout(()=>el.remove(),1250)}

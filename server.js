@@ -4,7 +4,7 @@ const fs = require('node:fs/promises');
 const express = require('express');
 const { Server } = require('socket.io');
 const QRCode = require('qrcode');
-const { generateGamePackage, judgeAnswer, matchAnswer, newCode } = require('./src/game');
+const { BUILTIN_GAME, generateGamePackage, judgeAnswer, matchAnswer, newCode } = require('./src/game');
 
 const app = express();
 const server = http.createServer(app);
@@ -91,6 +91,14 @@ function publicRoom(room) {
 
 function emit(room) { io.to(room.code).emit('state', publicRoom(room)); }
 function player(room, id) { return room.players.find(p => p.id === id); }
+// Only the owner of an explicitly created rehearsal can play the sample contestants.
+function testController(room, socketId) { return !!room?.testPart && room.adminId === socketId; }
+function answeringPlayer(room, socketId) { return testController(room, socketId) ? room.turnPlayerId : socketId; }
+function samplePhoto(index) {
+  const colors = ['#456c91', '#875333', '#4a7867', '#895768'];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="${colors[index]}"/><circle cx="120" cy="86" r="43" fill="#e9d7ab"/><path d="M35 240v-30a85 85 0 0 1 170 0v30" fill="#e9d7ab"/><text x="120" y="225" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#342917">SAMPLE ${index + 1}</text></svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
 function familyOf(room, id) { return room.families.findIndex(f => f.playerIds.includes(id)); }
 function familyPlayers(room, fi) { return room.families[fi]?.playerIds.map(id => player(room, id)).filter(Boolean) || []; }
 function boardFor(room, index = room.round) { return index === 4 ? room.game.suddenDeath : room.game.rounds[index]; }
@@ -180,6 +188,32 @@ async function resolveAnswer(room, contestant, given, timedOut = false) {
 }
 
 io.on('connection', socket => {
+  socket.on('createTestRoom', async ({ part, name, photo, kissConsent = false } = {}, reply) => {
+    if (!['intro', 'fast'].includes(part)) return reply?.({ ok: false, error: 'Choose an introduction or Fast Money test.' });
+    if (photo && (typeof photo !== 'string' || photo.length > 1_500_000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo))) return reply?.({ ok: false, error: 'Please use a smaller JPG, PNG, or WebP photo.' });
+    if (kissConsent && !photo) return reply?.({ ok: false, error: 'Upload your own photo to test the optional souvenir.' });
+    const existing = rooms.get(socket.data.roomCode);
+    if (existing) return reply?.({ ok: false, error: 'Exit your current game before starting a test.' });
+    const room = makeRoom('remote');
+    room.testPart = part; room.adminId = socket.id; room.phase = 'generating';
+    room.game = structuredClone(BUILTIN_GAME); // Repeatable, isolated fixtures; no survey-generation charge.
+    room.players = [String(name || '').trim().slice(0, 24) || 'Alex', 'Sam', 'Taylor', 'Jordan'].map((name, i) => ({
+      id: i === 0 ? socket.id : `sample-${room.code}-${i}`, name, photo: i === 0 && photo ? photo : samplePhoto(i),
+      familyName: i < 2 ? 'Sunshine' : 'Moonlight', connected: true, sample: i !== 0,
+      kissConsent: i === 0 && part === 'intro' && kissConsent === true
+    }));
+    room.families = ['Sunshine', 'Moonlight'].map((name, i) => ({ name, playerIds: room.players.slice(i * 2, i * 2 + 2).map(p => p.id) }));
+    socket.join(room.code); socket.data.roomCode = room.code; socket.data.playerId = socket.id; socket.data.isDisplay = false;
+    reply?.({ ok: true, code: room.code, playerId: socket.id });
+    room.message = 'Preparing your test…'; emit(room);
+    if (part === 'fast') {
+      room.scores = [350, 180]; room.winnerFamily = 0; beginFastMoney(room);
+    } else {
+      await prepareKissImage(room);
+      room.phase = 'intro'; room.introStartedAt = Date.now(); room.message = 'Introduction and Round 1 rehearsal'; emit(room);
+    }
+  });
+
   socket.on('createRoom', ({ mode = 'host' } = {}, reply) => {
     const room = makeRoom(mode === 'remote' ? 'remote' : 'host');
     socket.join(room.code); socket.data.roomCode = room.code; socket.data.isDisplay = mode === 'host';
@@ -209,7 +243,7 @@ io.on('connection', socket => {
 
   socket.on('rejoin', ({ code, playerId }, reply) => {
     const room = rooms.get(String(code).toUpperCase()); const p = room && player(room, playerId);
-    if (!p) return reply?.({ ok: false });
+    if (!p || p.sample) return reply?.({ ok: false });
     const oldId = p.id; p.id = socket.id; p.connected = true;
     room.players.forEach(x => { if (x.id === oldId) x.id = socket.id; });
     room.families.forEach(f => { f.playerIds = f.playerIds.map(id => id === oldId ? socket.id : id); });
@@ -265,31 +299,34 @@ io.on('connection', socket => {
 
   socket.on('introComplete', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
+    if (room?.testPart && !testController(room, socket.id)) return;
     if (!room || (socket.id !== room.adminId && !socket.data.isDisplay) || room.phase !== 'intro') return;
     beginRound(room, 0);
   });
 
-  socket.on('buzz', ({ code }) => {
+  socket.on('buzz', ({ code, playerId }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'faceoff' || !room.faceoff?.canBuzz || room.faceoff.buzzedBy || !room.faceoff.players.includes(socket.id)) return;
-    room.faceoff.buzzedBy = socket.id; room.faceoff.canBuzz = false;
+    const contestantId = testController(room, socket.id) ? playerId : socket.id;
+    if (!room || room.phase !== 'faceoff' || !room.faceoff?.canBuzz || room.faceoff.buzzedBy || !room.faceoff.players.includes(contestantId)) return;
+    room.faceoff.buzzedBy = contestantId; room.faceoff.canBuzz = false;
     cancelHostedCue(room);
-    room.message = `${player(room, socket.id).name} buzzed in! Five seconds.`;
-    emitCue(room, room.message, 'buzz', false); openAnswer(room, socket.id);
+    room.message = `${player(room, contestantId).name} buzzed in! Five seconds.`;
+    emitCue(room, room.message, 'buzz', false); openAnswer(room, contestantId);
   });
 
   socket.on('submitAnswer', ({ code, answer, token }, reply) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'answer' || room.turnPlayerId !== socket.id || room.judging || room.inputLocked || token !== room.answerToken) return reply?.({ ok: false, error: 'Please wait for your turn.' });
-    if (Date.now() >= room.answerDeadline) { void resolveAnswer(room, player(room, socket.id), '', true); return reply?.({ ok: false, error: 'Time is up.' }); }
+    const contestantId = room && answeringPlayer(room, socket.id);
+    if (!room || room.phase !== 'answer' || room.turnPlayerId !== contestantId || room.judging || room.inputLocked || token !== room.answerToken) return reply?.({ ok: false, error: 'Please wait for your turn.' });
+    if (Date.now() >= room.answerDeadline) { void resolveAnswer(room, player(room, contestantId), '', true); return reply?.({ ok: false, error: 'Time is up.' }); }
     const given = String(answer || '').trim().slice(0, 80);
     if (!given) return reply?.({ ok: false, error: 'Enter an answer.' });
-    reply?.({ ok: true }); void resolveAnswer(room, player(room, socket.id), given);
+    reply?.({ ok: true }); void resolveAnswer(room, player(room, contestantId), given);
   });
 
   socket.on('playOrPass', ({ code, choice }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'decision' || familyOf(room, socket.id) !== room.faceoff.winnerFamily) return;
+    if (!room || room.phase !== 'decision' || (!testController(room, socket.id) && familyOf(room, socket.id) !== room.faceoff.winnerFamily)) return;
     room.controlFamily = choice === 'pass' ? 1 - room.faceoff.winnerFamily : room.faceoff.winnerFamily;
     startFamilyTurn(room);
   });
@@ -297,6 +334,7 @@ io.on('connection', socket => {
   socket.on('nextRound', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || socket.id !== room.adminId || room.phase !== 'round_end') return;
+    if (room.testPart) return; // The Round 1 rehearsal must never spill into a full game.
     if (room.round < 3) beginRound(room, room.round + 1);
     else if (room.round === 3 && Math.max(...room.scores) < 300) beginRound(room, 4);
     else beginFastMoney(room);
@@ -313,7 +351,7 @@ io.on('connection', socket => {
 
   socket.on('submitFastAnswer', ({ code, answer, questionIndex, fastIndex }, reply) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || room.judging || room.inputLocked || questionIndex !== room.fastQuestionIndex || fastIndex !== room.fastIndex) return reply?.({ ok: false });
+    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== answeringPlayer(room, socket.id) || room.judging || room.inputLocked || questionIndex !== room.fastQuestionIndex || fastIndex !== room.fastIndex) return reply?.({ ok: false });
     if (Date.now() >= room.fastDeadline) { void finishFastPlayer(room); return reply?.({ ok: false }); }
     reply?.({ ok: true });
     room.fastDraftAnswers[room.fastQuestionIndex] = String(answer || '').trim().slice(0, 80);
@@ -434,6 +472,7 @@ function awardRound(room, familyIndex) {
 
 function revealRemainingAnswer(room, remaining) {
   if (!remaining.length) {
+    if (room.testPart === 'intro') room.message = 'Introduction and Round 1 test complete. You can replay it or test Fast Money.';
     room.phase = 'round_end'; room.inputLocked = false; emit(room); return;
   }
   const index = remaining.shift(); const answer = boardFor(room).answers[index];
