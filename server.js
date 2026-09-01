@@ -54,14 +54,15 @@ function makeRoom(mode) {
     code, mode, phase: 'lobby', adminId: null, players: [], families: [], scores: [0, 0],
     game: null, round: -1, revealed: [], strikes: 0, bank: 0, faceoff: null,
     controlFamily: null, turnPlayerId: null, message: 'Waiting for players', winnerFamily: null,
-    fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null], fastSelectorId: null, fastRevealIndex: null, fastPrize: null,
-    speechCues: new Map(), cueCounter: 0, createdAt: Date.now()
+    fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null], fastSelectorId: null, fastRevealIndex: null, fastRevealCount: 0, fastPrize: null,
+    fastQuestionIndex: null, fastDraftAnswers: [], fastDeadline: null, inputLocked: false,
+    speechCues: new Map(), cueCounter: 0, pendingCue: null, displayId: null, createdAt: Date.now()
   };
   rooms.set(code, room); return room;
 }
 
 function publicRoom(room) {
-  const { announcementAudio, speechCues, fastMatches, ...safeRoom } = room;
+  const { announcementAudio, speechCues, fastMatches, pendingCue, fastDraftAnswers, displayId, ...safeRoom } = room;
   return {
     ...safeRoom,
     players: room.players.map(({ familyName, ...p }) => p),
@@ -71,7 +72,7 @@ function publicRoom(room) {
     } : null,
     fastAnswers: room.fastAnswers.map((answers, i) => canRevealFast(room, i) ? answers : answers ? answers.map(() => '••••') : null),
     fastScores: room.fastScores.map((scores, i) => canRevealFast(room, i) ? scores : null),
-    fastTopAnswers: room.game && (room.phase === 'fast_results' || (room.phase === 'fast_reveal' && room.fastRevealIndex === 1)) ? room.game.fastMoney.map(q => q.answers[0].text) : null
+    fastTopAnswers: room.game && (room.phase === 'fast_results' || ((room.phase === 'fast_reveal' || room.phase === 'fast_reveal_done') && room.fastRevealIndex === 1)) ? room.game.fastMoney.map(q => q.answers[0].text) : null
   };
 }
 
@@ -80,21 +81,39 @@ function player(room, id) { return room.players.find(p => p.id === id); }
 function familyOf(room, id) { return room.families.findIndex(f => f.playerIds.includes(id)); }
 function familyPlayers(room, fi) { return room.families[fi]?.playerIds.map(id => player(room, id)).filter(Boolean) || []; }
 function boardFor(room, index = room.round) { return index === 4 ? room.game.suddenDeath : room.game.rounds[index]; }
-function canRevealFast(room, index) { return room.phase === 'fast_results' || (room.phase === 'fast_reveal' && index <= room.fastRevealIndex); }
-function emitCue(room, text, sound, speak = true) {
+function canRevealFast(room, index) { return room.phase === 'fast_results' || ((room.phase === 'fast_reveal' || room.phase === 'fast_reveal_done') && index <= room.fastRevealIndex); }
+function emitCue(room, text, sound, speak = true, requiresAck = false) {
   const cueId = ++room.cueCounter;
   if (speak) {
     room.speechCues.set(cueId, { text, audioPromise: null });
     while (room.speechCues.size > 80) room.speechCues.delete(room.speechCues.keys().next().value);
   }
-  io.to(room.code).emit('cue', { text, sound, speechUrl: speak ? `/api/room/${room.code}/speech/${cueId}` : null });
+  io.to(room.code).emit('cue', { cueId, text, sound, requiresAck, speechUrl: speak ? `/api/room/${room.code}/speech/${cueId}` : null });
+  return cueId;
 }
 function setMessage(room, text, sound, speak = true) { room.message = text; emitCue(room, text, sound, speak); }
+
+function runHostedCue(room, text, sound, onComplete) {
+  room.inputLocked = true;
+  const cueId = emitCue(room, text, sound, true, true);
+  const timeout = setTimeout(() => finishHostedCue(room, cueId), Math.min(60000, Math.max(15000, text.split(/\s+/).length * 650)));
+  room.pendingCue = { cueId, onComplete, timeout };
+  emit(room);
+}
+
+function finishHostedCue(room, cueId) {
+  if (!room.pendingCue || room.pendingCue.cueId !== cueId) return;
+  clearTimeout(room.pendingCue.timeout);
+  const complete = room.pendingCue.onComplete;
+  room.pendingCue = null;
+  complete?.();
+}
 
 io.on('connection', socket => {
   socket.on('createRoom', ({ mode = 'host' } = {}, reply) => {
     const room = makeRoom(mode === 'remote' ? 'remote' : 'host');
     socket.join(room.code); socket.data.roomCode = room.code; socket.data.isDisplay = mode === 'host';
+    if (room.mode === 'host') room.displayId = socket.id;
     reply?.({ ok: true, code: room.code, mode: room.mode }); emit(room);
   });
 
@@ -102,6 +121,7 @@ io.on('connection', socket => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room) return reply?.({ ok: false, error: 'That game no longer exists.' });
     socket.join(room.code); socket.data.roomCode = room.code; socket.data.isDisplay = true;
+    if (room.mode === 'host') room.displayId = socket.id;
     reply?.({ ok: true, room: publicRoom(room) }); emit(room);
   });
 
@@ -127,9 +147,18 @@ io.on('connection', socket => {
     if (room.adminId === oldId) room.adminId = socket.id;
     if (room.turnPlayerId === oldId) room.turnPlayerId = socket.id;
     if (room.fastSelectorId === oldId) room.fastSelectorId = socket.id;
+    if (room.displayId === oldId) room.displayId = socket.id;
     room.fastPlayers = room.fastPlayers.map(id => id === oldId ? socket.id : id);
     socket.join(room.code); socket.data.roomCode = room.code; socket.data.playerId = socket.id;
     reply?.({ ok: true, playerId: socket.id, isAdmin: room.adminId === socket.id, mode: room.mode }); emit(room);
+  });
+
+  socket.on('cueFinished', ({ code, cueId }) => {
+    const room = rooms.get(String(code).toUpperCase());
+    if (!room || !room.pendingCue || Number(cueId) !== room.pendingCue.cueId) return;
+    const controller = room.mode === 'host' ? room.displayId : room.adminId;
+    if (socket.id !== controller) return;
+    finishHostedCue(room, Number(cueId));
   });
 
   socket.on('startGame', async ({ code }, reply) => {
@@ -155,30 +184,36 @@ io.on('connection', socket => {
 
   socket.on('buzz', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'faceoff' || room.faceoff?.buzzedBy || !room.faceoff?.players.includes(socket.id)) return;
+    if (!room || room.phase !== 'faceoff' || room.inputLocked || room.faceoff?.buzzedBy || !room.faceoff?.players.includes(socket.id)) return;
     room.faceoff.buzzedBy = socket.id; room.turnPlayerId = socket.id; room.phase = 'answer';
-    setMessage(room, `${player(room, socket.id).name} buzzed in!`, 'buzz'); emit(room);
+    room.inputLocked = false; room.message = `${player(room, socket.id).name} buzzed in! Give your answer.`;
+    emitCue(room, room.message, 'buzz', false); emit(room);
   });
 
   socket.on('submitAnswer', async ({ code, answer }, reply) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'answer' || room.turnPlayerId !== socket.id || room.judging) return reply?.({ ok: false, error: room?.judging ? 'OpenAI is already judging that answer.' : 'It is not your turn.' });
-    room.judging = true;
+    if (!room || room.phase !== 'answer' || room.turnPlayerId !== socket.id || room.judging || room.inputLocked) return reply?.({ ok: false, error: room?.judging || room?.inputLocked ? 'Please wait for the host to finish.' : 'It is not your turn.' });
+    room.judging = true; room.inputLocked = true; emit(room);
     const board = boardFor(room); const given = String(answer || '').trim().slice(0, 80);
-    emitCue(room, `${player(room, socket.id).name} says… ${given}.`);
     const match = await judgeAnswer(given, board.answers, room.revealed);
+    let resultText; let resultSound;
     if (match.index >= 0) {
       room.revealed.push(match.index); room.bank += board.answers[match.index].points * multiplier(room.round);
       io.to(room.code).emit('answerResult', { correct: true, index: match.index, text: board.answers[match.index].text, points: board.answers[match.index].points });
-      emitCue(room, `Survey says… ${board.answers[match.index].text}! ${board.answers[match.index].points} people gave that answer.`, 'reveal');
+      resultText = `The question was: ${board.question} ${player(room, socket.id).name} said ${given}. Survey says… ${board.answers[match.index].text}! ${board.answers[match.index].points} people gave that answer.`;
+      resultSound = 'reveal';
     } else {
       io.to(room.code).emit('answerResult', { correct: false });
-      emitCue(room, room.controlFamily === null ? 'That answer is not on the board.' : 'Ohhh! That is a strike.', 'strike');
+      resultText = `The question was: ${board.question} ${player(room, socket.id).name} said ${given}. ${room.controlFamily === null ? 'That answer is not on the board.' : 'Ohhh! That is a strike.'}`;
+      resultSound = 'strike';
     }
-    room.judging = false;
-    if (room.round === 4 && match.index >= 0) awardSuddenDeath(room, familyOf(room, socket.id));
-    else handleAnswer(room, socket.id, match.index);
-    emit(room); reply?.({ ok: true, correct: match.index >= 0 });
+    reply?.({ ok: true, correct: match.index >= 0 });
+    runHostedCue(room, resultText, resultSound, () => {
+      room.judging = false; room.inputLocked = false;
+      if (room.round === 4 && match.index >= 0) awardSuddenDeath(room, familyOf(room, socket.id));
+      else handleAnswer(room, socket.id, match.index);
+      emit(room);
+    });
   });
 
   socket.on('playOrPass', ({ code, choice }) => {
@@ -205,11 +240,26 @@ io.on('connection', socket => {
     room.fastPlayers = valid; startFastPlayer(room, 0);
   });
 
-  socket.on('submitFastMoney', async ({ code, answers }) => {
+  socket.on('submitFastAnswer', ({ code, answer }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || !Array.isArray(answers) || room.judging) return;
-    room.judging = true;
-    const idx = room.fastIndex; const clean = answers.slice(0, 5).map(x => String(x || '').slice(0, 80));
+    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || room.judging || room.inputLocked) return;
+    room.fastDraftAnswers[room.fastQuestionIndex] = String(answer || '').trim().slice(0, 80);
+    if (room.fastQuestionIndex >= 4) return finishFastPlayer(room);
+    room.fastQuestionIndex++;
+    askFastQuestion(room);
+  });
+
+  socket.on('fastTimeout', ({ code }) => {
+    const room = rooms.get(String(code).toUpperCase());
+    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || room.judging) return;
+    while (room.fastDraftAnswers.length < 5) room.fastDraftAnswers.push('');
+    finishFastPlayer(room);
+  });
+
+  async function finishFastPlayer(room) {
+    if (room.judging || room.phase !== 'fast_play') return;
+    room.judging = true; room.inputLocked = true; emit(room);
+    const idx = room.fastIndex; const clean = Array.from({ length: 5 }, (_, i) => String(room.fastDraftAnswers[i] || '').slice(0, 80));
     room.fastAnswers[idx] = clean;
     const judgments = await Promise.all(clean.map((guess, qi) => judgeAnswer(guess, room.game.fastMoney[qi].answers)));
     room.fastMatches[idx] = judgments.map(judgment => judgment.index);
@@ -222,15 +272,14 @@ io.on('connection', socket => {
       }
       return m.index >= 0 ? candidates[m.index].points : 0;
     });
-    room.judging = false; room.phase = 'fast_reveal'; room.fastRevealIndex = idx; room.turnPlayerId = null;
+    room.judging = false; room.turnPlayerId = null;
     if (idx === 1) { const total = room.fastScores.flat().reduce((a, b) => a + b, 0); room.fastPrize = total >= 200 ? 10000 : total * 5; }
-    setMessage(room, `Let’s reveal ${player(room, room.fastPlayers[idx]).name}’s Fast Money answers.`, 'reveal', false);
-    emitCue(room, fastRevealScript(room, idx), 'reveal'); emit(room);
-  });
+    startFastReveal(room, idx);
+  }
 
   socket.on('continueFastMoney', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'fast_reveal' || socket.id !== room.fastSelectorId) return;
+    if (!room || room.phase !== 'fast_reveal_done' || socket.id !== room.fastSelectorId) return;
     if (room.fastRevealIndex === 0) startFastPlayer(room, 1);
     else {
       const total = room.fastScores.flat().reduce((a, b) => a + b, 0);
@@ -252,8 +301,10 @@ function beginRound(room, index) {
   room.faceoff = { players: [p0.id, p1.id], buzzedBy: null, attempts: [], winnerFamily: null };
   room.phase = 'faceoff'; room.turnPlayerId = null;
   const opening = index === 4 ? 'Sudden Death.' : `Round ${index + 1}.`;
-  room.message = `${opening} Listen carefully for the question.`; emitCue(room, room.message, 'round', false);
-  emitCue(room, `${opening} We asked 100 people: ${boardFor(room, index).question} ${p0.name} and ${p1.name}, get ready to buzz in!`); emit(room);
+  room.message = `${opening} The host is calling the faceoff players.`;
+  runHostedCue(room, `${opening} Let's have ${p0.name}. Let's have ${p1.name}. We asked 100 people: ${boardFor(room, index).question}`, 'round', () => {
+    room.inputLocked = false; room.message = 'Buzz now!'; emit(room);
+  });
 }
 
 function handleAnswer(room, playerId, answerIndex) {
@@ -263,9 +314,9 @@ function handleAnswer(room, playerId, answerIndex) {
   if (answerIndex < 0) room.strikes++;
   if (room.revealed.length === boardFor(room).answers.length) return awardRound(room, room.controlFamily);
   if (room.strikes >= 3) {
-    room.phase = 'answer'; room.controlFamily = 1 - room.controlFamily;
-    room.turnPlayerId = familyPlayers(room, room.controlFamily)[0].id;
-    room.isSteal = true; setMessage(room, `${room.families[room.controlFamily].name} family can steal!`, 'strike'); return;
+    room.controlFamily = 1 - room.controlFamily; room.isSteal = true;
+    const stealer = familyPlayers(room, room.controlFamily)[0].id;
+    return promptForAnswer(room, stealer, `${room.families[room.controlFamily].name} family can steal. ${player(room, stealer).name}, give one answer.`, 'strike');
   }
   advanceTurn(room);
 }
@@ -274,41 +325,60 @@ function handleFaceoffAnswer(room, playerId, answerIndex) {
   room.faceoff.attempts.push({ playerId, answerIndex });
   const other = room.faceoff.players.find(id => id !== playerId);
   if (room.faceoff.attempts.length === 1 && answerIndex !== 0) {
-    room.turnPlayerId = other; room.phase = 'answer';
-    setMessage(room, `${player(room, other).name}, give an answer.`, answerIndex < 0 ? 'strike' : 'reveal'); return;
+    return promptForAnswer(room, other, `${player(room, other).name}, give an answer.`, answerIndex < 0 ? 'strike' : 'reveal');
   }
   const attempts = room.faceoff.attempts.filter(x => x.answerIndex >= 0).sort((a, b) => a.answerIndex - b.answerIndex);
   if (!attempts.length && room.faceoff.attempts.length < 2) { room.turnPlayerId = other; return; }
   if (!attempts.length) {
     room.faceoff.attempts = []; room.faceoff.buzzedBy = null; room.turnPlayerId = null; room.phase = 'faceoff';
-    setMessage(room, 'Neither answer made the survey. Buzz in and try again!', 'strike'); return;
+    return runHostedCue(room, 'Neither answer made the survey. Listen to the question again, then buzz in. ' + boardFor(room).question, 'strike', () => {
+      room.inputLocked = false; room.message = 'Buzz now!'; emit(room);
+    });
   }
   const winner = attempts[0];
   room.faceoff.winnerFamily = familyOf(room, winner.playerId);
-  room.turnPlayerId = winner.playerId; room.phase = 'decision';
-  setMessage(room, `${room.families[room.faceoff.winnerFamily].name} family: play or pass?`, 'reveal');
+  room.turnPlayerId = winner.playerId; room.phase = 'host_wait';
+  runHostedCue(room, `${room.families[room.faceoff.winnerFamily].name} family, play or pass?`, 'reveal', () => {
+    room.phase = 'decision'; room.inputLocked = false; emit(room);
+  });
 }
 
 function startFamilyTurn(room) {
-  room.phase = 'answer'; room.strikes = 0; room.isSteal = false;
+  room.strikes = 0; room.isSteal = false;
   const members = familyPlayers(room, room.controlFamily);
   const face = room.faceoff.players.find(id => familyOf(room, id) === room.controlFamily);
   const index = Math.max(0, members.findIndex(p => p.id === face));
-  room.turnPlayerId = members[(index + 1) % members.length].id;
-  setMessage(room, `${room.families[room.controlFamily].name} family is playing. ${player(room, room.turnPlayerId).name}, your answer!`); emit(room);
+  const next = members[(index + 1) % members.length].id;
+  promptForAnswer(room, next, `${room.families[room.controlFamily].name} family is playing. ${player(room, next).name}, your answer!`);
 }
 
 function advanceTurn(room) {
   const members = familyPlayers(room, room.controlFamily); const index = members.findIndex(p => p.id === room.turnPlayerId);
-  room.turnPlayerId = members[(index + 1) % members.length].id;
-  setMessage(room, `${player(room, room.turnPlayerId).name}, your answer!`);
+  const next = members[(index + 1) % members.length].id;
+  promptForAnswer(room, next, `${player(room, next).name}, your answer!`);
+}
+
+function promptForAnswer(room, playerId, text, sound) {
+  room.phase = 'host_wait'; room.turnPlayerId = playerId; room.message = text;
+  runHostedCue(room, text, sound, () => {
+    room.phase = 'answer'; room.inputLocked = false; emit(room);
+  });
 }
 
 function awardRound(room, familyIndex) {
-  room.scores[familyIndex] += room.bank; room.phase = 'round_end'; room.turnPlayerId = null; room.isSteal = false;
-  const remaining = boardFor(room).answers.filter((_, i) => !room.revealed.includes(i)).map(a => a.text);
-  room.revealed = boardFor(room).answers.map((_, i) => i);
-  setMessage(room, `${room.families[familyIndex].name} family wins ${room.bank} points!${remaining.length ? ` The answers left on the board were ${remaining.join(', ')}.` : ''}`, 'win');
+  room.scores[familyIndex] += room.bank; room.phase = 'round_reveal'; room.turnPlayerId = null; room.isSteal = false;
+  const remaining = boardFor(room).answers.map((_, i) => i).filter(i => !room.revealed.includes(i));
+  room.message = `${room.families[familyIndex].name} family wins ${room.bank} points!`;
+  runHostedCue(room, room.message + (remaining.length ? ` Let's reveal the answers left on the board.` : ''), 'win', () => revealRemainingAnswer(room, remaining));
+}
+
+function revealRemainingAnswer(room, remaining) {
+  if (!remaining.length) {
+    room.phase = 'round_end'; room.inputLocked = false; emit(room); return;
+  }
+  const index = remaining.shift(); const answer = boardFor(room).answers[index];
+  room.revealed.push(index); room.message = `${answer.text} — ${answer.points}`;
+  runHostedCue(room, `Number ${index + 1}. ${answer.text}. ${answer.points} people gave that answer.`, 'reveal', () => revealRemainingAnswer(room, remaining));
 }
 
 function beginFastMoney(room) {
@@ -324,26 +394,49 @@ function beginFastMoney(room) {
 
 function awardSuddenDeath(room, familyIndex) {
   const points = boardFor(room).answers[0].points * 3;
-  room.scores[familyIndex] += points; room.winnerFamily = familyIndex; room.phase = 'round_end'; room.turnPlayerId = null;
+  room.scores[familyIndex] += points; room.winnerFamily = familyIndex; room.phase = 'host_wait'; room.turnPlayerId = null;
   room.revealed = [0];
-  setMessage(room, `${room.families[familyIndex].name} family wins Sudden Death and the game with ${points} points!`, 'win');
+  room.message = `${room.families[familyIndex].name} family wins Sudden Death and the game with ${points} points!`;
+  runHostedCue(room, room.message, 'win', () => {
+    room.phase = 'round_end'; room.inputLocked = false; emit(room);
+  });
 }
 
 function startFastPlayer(room, index) {
-  room.phase = 'fast_play'; room.fastIndex = index; room.fastRevealIndex = null; room.fastStartedAt = Date.now(); room.turnPlayerId = room.fastPlayers[index];
+  room.phase = 'host_wait'; room.fastIndex = index; room.fastRevealIndex = null; room.fastRevealCount = 0; room.fastQuestionIndex = 0; room.fastDraftAnswers = []; room.fastDeadline = null; room.turnPlayerId = room.fastPlayers[index];
   const seconds = index === 0 ? 45 : 60; const name = player(room, room.turnPlayerId).name;
-  setMessage(room, `${name}: ${seconds} seconds. Good luck!`, 'fast', false);
-  const questions = room.game.fastMoney.map((q, i) => `Question ${i + 1}. ${q.question}`).join(' ');
-  emitCue(room, `${name}, you have ${seconds} seconds. ${questions}`, 'fast'); emit(room);
+  room.message = `${name} is getting ready for Fast Money.`;
+  runHostedCue(room, `${name}, you have ${seconds} seconds. Listen carefully and answer each question as quickly as you can.`, 'fast', () => {
+    room.phase = 'fast_play'; room.fastDeadline = Date.now() + seconds * 1000; askFastQuestion(room);
+  });
 }
 
-function fastRevealScript(room, index) {
-  const name = player(room, room.fastPlayers[index]).name;
-  return room.game.fastMoney.map((q, i) => {
-    const guess = room.fastAnswers[index][i] || 'no answer'; const points = room.fastScores[index][i] || 0;
-    const top = index === 1 ? ` The number one answer was ${q.answers[0].text}.` : '';
-    return `Question ${i + 1}. ${q.question} ${name} said ${guess}. That scored ${points} points.${top}`;
-  }).join(' ');
+function askFastQuestion(room) {
+  if (room.phase !== 'fast_play') return;
+  const question = room.game.fastMoney[room.fastQuestionIndex].question;
+  room.message = `Fast Money question ${room.fastQuestionIndex + 1} of 5. Listen to the host.`;
+  runHostedCue(room, `Question ${room.fastQuestionIndex + 1}. ${question}`, 'fast', () => {
+    if (room.phase !== 'fast_play') return;
+    room.inputLocked = false; emit(room);
+  });
+}
+
+function startFastReveal(room, index) {
+  room.phase = 'fast_reveal'; room.fastRevealIndex = index; room.fastRevealCount = 0; room.fastDeadline = null;
+  room.message = `Let's reveal ${player(room, room.fastPlayers[index]).name}'s answers.`;
+  revealNextFastAnswer(room);
+}
+
+function revealNextFastAnswer(room) {
+  if (room.fastRevealCount >= 5) {
+    room.phase = 'fast_reveal_done'; room.inputLocked = false;
+    room.message = `${player(room, room.fastPlayers[room.fastRevealIndex]).name}'s reveal is complete.`; emit(room); return;
+  }
+  const i = room.fastRevealCount++; const idx = room.fastRevealIndex; const q = room.game.fastMoney[i];
+  const guess = room.fastAnswers[idx][i] || 'no answer'; const points = room.fastScores[idx][i] || 0;
+  const top = idx === 1 ? ` The number one answer was ${q.answers[0].text}.` : '';
+  room.message = `${guess} — ${points} points`;
+  runHostedCue(room, `Question ${i + 1}. ${q.question} ${player(room, room.fastPlayers[idx]).name} said ${guess}. That scored ${points} points.${top}`, 'reveal', () => revealNextFastAnswer(room));
 }
 
 function multiplier(round) { return round < 2 ? 1 : round === 2 ? 2 : 3; }

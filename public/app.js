@@ -1,6 +1,6 @@
 const socket = io();
 const app = document.querySelector('#app');
-let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = false;
+let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, fastTimeoutSent = false, audioEnabled = false;
 let hostAudioQueue = Promise.resolve(), activeRecognition = null;
 const session = JSON.parse(localStorage.getItem('feudSession') || 'null');
 
@@ -19,7 +19,10 @@ socket.on('connect', () => {
 socket.on('state', next => { state = next; roomCode = next.code; render(); });
 socket.on('cue', cue => {
   if (cue.sound) playEffect(cue.sound);
-  if (cue.speechUrl && shouldHearHost()) hostAudioQueue = hostAudioQueue.then(() => playHostSpeech(cue.speechUrl, cue.text)).catch(() => {});
+  if (cue.speechUrl && shouldHearHost()) {
+    hostAudioQueue = hostAudioQueue.then(() => playHostSpeech(cue.speechUrl, cue.text)).catch(() => {});
+    if (cue.requiresAck && isAudioController()) hostAudioQueue.then(() => socket.emit('cueFinished', { code: roomCode, cueId: cue.cueId }));
+  }
 });
 socket.on('answerResult', result => { if (!result.correct) flashStrike(); });
 
@@ -82,7 +85,7 @@ function renderLobby() {
 }
 
 function renderFaceoffBuzzer(){
-  app.innerHTML = `<main class="faceoff-phone"><button class="buzz" id="buzz" ${state.faceoff.buzzedBy ? 'disabled' : ''}>BUZZ!</button></main>`;
+  app.innerHTML = `<main class="faceoff-phone"><button class="buzz" id="buzz" ${state.faceoff.buzzedBy || state.inputLocked ? 'disabled' : ''}>${state.inputLocked ? 'WAIT' : 'BUZZ!'}</button></main>`;
   document.querySelector('#buzz').onclick=()=>socket.emit('buzz',{code:state.code});
 }
 
@@ -139,7 +142,7 @@ function board(round) {
 }
 
 function fastStage() {
-  if (state.phase === 'fast_reveal') return fastRevealStage();
+  if (state.phase === 'fast_reveal' || state.phase === 'fast_reveal_done') return fastRevealStage();
   if (state.phase === 'fast_results') {
     const rows = state.game.fastMoney.map((q,i)=>`<div class="fast-row"><div class="fast-cell">${escapeHtml(state.fastAnswers[0]?.[i] || '—')}</div><div class="fast-cell fast-point">${state.fastScores[0]?.[i] || 0}</div><div class="fast-cell">${escapeHtml(state.fastAnswers[1]?.[i] || '—')}</div><div class="fast-cell fast-point">${state.fastScores[1]?.[i] || 0}</div></div>`).join('');
     const total = (state.fastScores.flat().filter(Number).reduce((a,b)=>a+b,0));
@@ -150,29 +153,30 @@ function fastStage() {
 
 function fastRevealStage(){
   const idx=state.fastRevealIndex, contestant=state.players.find(p=>p.id===state.fastPlayers[idx]);
-  const rows=state.game.fastMoney.map((q,i)=>`<div class="fm-reveal-row"><div><small>${escapeHtml(q.question)}</small><strong>${escapeHtml(state.fastAnswers[idx]?.[i]||'NO ANSWER')}</strong>${idx===1?`<em>Number one: ${escapeHtml(state.fastTopAnswers?.[i]||'')}</em>`:''}</div><span>${state.fastScores[idx]?.[i]||0}</span></div>`).join('');
+  const shown=state.phase==='fast_reveal_done'?5:state.fastRevealCount;
+  const rows=state.game.fastMoney.slice(0,shown).map((q,i)=>`<div class="fm-reveal-row"><div><small>${escapeHtml(q.question)}</small><strong>${escapeHtml(state.fastAnswers[idx]?.[i]||'NO ANSWER')}</strong>${idx===1?`<em>Number one: ${escapeHtml(state.fastTopAnswers?.[i]||'')}</em>`:''}</div><span>${state.fastScores[idx]?.[i]||0}</span></div>`).join('');
   return `<div class="panel fast-results"><div class="winner">${escapeHtml(contestant?.name||'PLAYER')}’S ANSWERS</div>${rows}</div>`;
 }
 
 function controls() {
   const mine = state.turnPlayerId === myPlayerId;
-  if (state.phase === 'faceoff' && state.faceoff.players.includes(myPlayerId) && !state.faceoff.buzzedBy) return '<button class="buzz" id="buzz">BUZZ!</button>';
-  if (state.phase === 'answer' && mine) return `<form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Type your answer or tap the microphone" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
+  if (state.phase === 'faceoff' && state.faceoff.players.includes(myPlayerId) && !state.faceoff.buzzedBy && !state.inputLocked) return '<button class="buzz" id="buzz">BUZZ!</button>';
+  if (state.phase === 'answer' && mine && !state.inputLocked) return `<form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Type your answer or tap the microphone" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
   if (state.phase === 'decision' && state.faceoff.winnerFamily === familyIndex()) return '<div class="decision"><button class="primary" data-choice="play">PLAY</button><button class="secondary" data-choice="pass">PASS</button></div>';
   if (state.phase === 'round_end' && state.adminId === myPlayerId) { const label=state.round<3?'Next Round':state.round===3&&Math.max(...state.scores)<300?'Go to Sudden Death':'Go to Fast Money';return `<button class="primary" id="next">${label}</button>`; }
   if (state.phase === 'fast_select' && state.fastSelectorId === myPlayerId) {
     const winner = state.winnerFamily ?? (state.scores[0] >= state.scores[1] ? 0 : 1);
     return `<form id="fastSelect"><p>Select two players:</p>${state.families[winner].playerIds.map(id=>{const p=state.players.find(x=>x.id===id);return `<label><input type="checkbox" name="fast" value="${id}"> ${escapeHtml(p.name)}</label>`}).join(' ')}<br><br><button class="primary">Start Fast Money</button></form>`;
   }
-  if (state.phase === 'fast_play' && mine) return fastForm();
-  if (state.phase === 'fast_reveal' && state.fastSelectorId === myPlayerId) { const same=state.fastPlayers[0]===state.fastPlayers[1];return `<button class="primary" id="continueFast">${state.fastRevealIndex===0?(same?'Play Second Half':`Bring in ${escapeHtml(state.players.find(p=>p.id===state.fastPlayers[1])?.name||'Second Player')}`):'Show Final Result'}</button>`; }
+  if (state.phase === 'fast_play' && mine && !state.inputLocked) return fastForm();
+  if (state.phase === 'fast_reveal_done' && state.fastSelectorId === myPlayerId) { const same=state.fastPlayers[0]===state.fastPlayers[1];return `<button class="primary" id="continueFast">${state.fastRevealIndex===0?(same?'Play Second Half':`Bring in ${escapeHtml(state.players.find(p=>p.id===state.fastPlayers[1])?.name||'Second Player')}`):'Show Final Result'}</button>`; }
   return '<span class="muted">Follow the game on screen…</span>';
 }
 
 function fastForm() {
-  const seconds = state.fastIndex === 0 ? 45 : 60;
-  setTimeout(() => startFastTimer(seconds), 0);
-  return `<div class="timer" id="timer">${seconds}</div><form class="fast-grid" id="fastForm">${state.game.fastMoney.map((q,i)=>`<label class="fast-question"><span>${i+1}. ${escapeHtml(q.question)}</span><span class="voice-field"><input name="q${i}" id="fast${i}" autocomplete="off"><button class="mic-button compact" type="button" data-mic="#fast${i}" aria-label="Speak answer ${i+1}">🎤</button></span></label>`).join('')}<p class="mic-status" aria-live="polite"></p><button class="primary">Lock In Answers</button></form>`;
+  const seconds = Math.max(0, Math.ceil((state.fastDeadline-Date.now())/1000));
+  setTimeout(() => startFastTimer(), 0);
+  return `<div class="timer" id="timer">${seconds}</div><div class="fast-progress">ANSWER ${state.fastQuestionIndex+1} OF 5</div><form class="answer-form" id="fastForm"><input id="fastAnswer" autocomplete="off" placeholder="Type or speak your answer" autofocus required><button class="mic-button" type="button" data-mic="#fastAnswer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
 }
 
 function wireControls() {
@@ -190,8 +194,8 @@ function wireControls() {
   document.querySelector('#continueFast')?.addEventListener('click',async e=>{e.currentTarget.disabled=true;e.currentTarget.textContent='Finishing the reveal…';await hostAudioQueue;socket.emit('continueFastMoney',{code:state.code});});
 }
 
-function submitFast(form) { clearInterval(fastTimer); const answers=state.game.fastMoney.map((_,i)=>form.querySelector(`[name=q${i}]`).value); socket.emit('submitFastMoney',{code:state.code,answers}); }
-function startFastTimer(seconds) { let left=seconds; const el=document.querySelector('#timer'); fastTimer=setInterval(()=>{left--;if(el)el.textContent=left;if(left<=0){clearInterval(fastTimer);const form=document.querySelector('#fastForm');if(form)submitFast(form)}},1000); }
+function submitFast(form) { const answer=form.querySelector('#fastAnswer').value.trim();if(!answer)return;form.querySelector('[type=submit]').disabled=true;socket.emit('submitFastAnswer',{code:state.code,answer}); }
+function startFastTimer() { fastTimeoutSent=false;const tick=()=>{const left=Math.max(0,Math.ceil((state.fastDeadline-Date.now())/1000)),el=document.querySelector('#timer');if(el)el.textContent=left;if(left<=0&&!fastTimeoutSent){fastTimeoutSent=true;clearInterval(fastTimer);socket.emit('fastTimeout',{code:state.code})}};tick();fastTimer=setInterval(tick,250); }
 function scoreCard(i,right=false){const f=state.families[i];return `<div class="family-score ${right?'right':''}"><div>${f?`${escapeHtml(f.name)}<br><small>FAMILY</small>`:'FAMILY'}</div><div class="score-number">${state.scores[i]||0}</div></div>`}
 function playerCard(p){return `<div class="player-card"><img src="${p.photo}" alt=""><strong>${escapeHtml(p.name)}</strong>${p.connected?'':'<small>Reconnecting…</small>'}</div>`}
 function familyPanel(f){return `<article class="family-panel"><h2>${escapeHtml(f.name)} FAMILY</h2><div class="family-list">${f.playerIds.map(id=>playerCard(state.players.find(p=>p.id===id))).join('')}</div></article>`}
@@ -210,6 +214,7 @@ function unlockAudio(){
 }
 function speak(text){if(!('speechSynthesis'in window)||!audioEnabled)return;const u=new SpeechSynthesisUtterance(text);u.rate=.88;u.pitch=.78;u.volume=1;speechSynthesis.speak(u)}
 function shouldHearHost(){return audioEnabled&&(isDisplay||state?.mode==='remote')}
+function isAudioController(){return state?.mode==='host'?isDisplay:state?.adminId===myPlayerId}
 async function playHostSpeech(url,text){
   try{const response=await fetch(url);if(!response.ok||response.status===204)throw new Error('No API audio');await playAudioBlob(await response.blob())}
   catch{await speakAsync(text)}

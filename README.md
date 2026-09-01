@@ -23,7 +23,7 @@ Connect this repository to Railway. Optional variables:
 
 With `OPENAI_API_KEY` configured, OpenAI generates and validates every game package, makes the final decision on every main-game and Fast Money answer, announces the families, and voices the host prompts and survey reveals. Players can either type or use the microphone button; voice recognition is performed by the browser and the resulting transcript is still judged by OpenAI.
 
-After four rounds, a game below 300 points proceeds to a one-answer Sudden Death face-off. The winning family’s leader selects the Fast Money players. Each player’s five answers receive a hosted reveal; 200 combined points wins $10,000, while a lower score wins $5 per point.
+After four rounds, a game below 300 points proceeds to a one-answer Sudden Death face-off. The winning family’s leader selects the Fast Money players. Host speech gates buzzing and answering, unused board answers reveal individually, and Fast Money is spoken and revealed one question at a time without showing its questions to contestants. Two hundred combined points wins $10,000, while a lower score wins $5 per point.
 - `PUBLIC_URL`: the public Railway URL, if Railway's forwarded host is unavailable.
 
 ## Game package requirements
