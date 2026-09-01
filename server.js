@@ -29,6 +29,18 @@ app.get('/api/room/:code/announcement', async (req, res) => {
     res.status(204).end();
   }
 });
+app.get('/api/room/:code/speech/:cueId', async (req, res) => {
+  const room = rooms.get(req.params.code.toUpperCase());
+  const cue = room?.speechCues?.get(Number(req.params.cueId));
+  if (!room || !cue || !process.env.OPENAI_API_KEY) return res.status(204).end();
+  try {
+    if (!cue.audioPromise) cue.audioPromise = createHostSpeech(cue.text);
+    res.type('audio/mpeg').send(await cue.audioPromise);
+  } catch (error) {
+    console.error('AI host speech unavailable:', error.message);
+    res.status(204).end();
+  }
+});
 app.get('*path', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 function joinUrl(req, code) {
@@ -41,14 +53,14 @@ function makeRoom(mode) {
   const room = {
     code, mode, phase: 'lobby', adminId: null, players: [], families: [], scores: [0, 0],
     game: null, round: -1, revealed: [], strikes: 0, bank: 0, faceoff: null,
-    controlFamily: null, turnPlayerId: null, message: 'Waiting for players', fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null],
-    createdAt: Date.now()
+    controlFamily: null, turnPlayerId: null, message: 'Waiting for players', fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null],
+    speechCues: new Map(), cueCounter: 0, createdAt: Date.now()
   };
   rooms.set(code, room); return room;
 }
 
 function publicRoom(room) {
-  const { announcementAudio, ...safeRoom } = room;
+  const { announcementAudio, speechCues, fastMatches, ...safeRoom } = room;
   return {
     ...safeRoom,
     game: room.game && room.phase !== 'lobby' && room.phase !== 'generating' ? {
@@ -63,7 +75,15 @@ function emit(room) { io.to(room.code).emit('state', publicRoom(room)); }
 function player(room, id) { return room.players.find(p => p.id === id); }
 function familyOf(room, id) { return room.families.findIndex(f => f.playerIds.includes(id)); }
 function familyPlayers(room, fi) { return room.families[fi]?.playerIds.map(id => player(room, id)).filter(Boolean) || []; }
-function setMessage(room, text, sound) { room.message = text; io.to(room.code).emit('cue', { text, sound }); }
+function emitCue(room, text, sound, speak = true) {
+  const cueId = ++room.cueCounter;
+  if (speak) {
+    room.speechCues.set(cueId, { text, audioPromise: null });
+    while (room.speechCues.size > 80) room.speechCues.delete(room.speechCues.keys().next().value);
+  }
+  io.to(room.code).emit('cue', { text, sound, speechUrl: speak ? `/api/room/${room.code}/speech/${cueId}` : null });
+}
+function setMessage(room, text, sound, speak = true) { room.message = text; emitCue(room, text, sound, speak); }
 
 io.on('connection', socket => {
   socket.on('createRoom', ({ mode = 'host' } = {}, reply) => {
@@ -107,7 +127,7 @@ io.on('connection', socket => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || socket.id !== room.adminId || room.phase !== 'lobby') return reply?.({ ok: false, error: 'Only the first player can start.' });
     if (room.players.length < 4) return reply?.({ ok: false, error: 'At least four players are needed so each family can send two players to Fast Money.' });
-    room.phase = 'generating'; setMessage(room, 'Survey boards are being prepared…'); emit(room); reply?.({ ok: true });
+    room.phase = 'generating'; setMessage(room, 'OpenAI is preparing tonight’s surveys…', null, false); emit(room); reply?.({ ok: true });
     room.game = await generateGamePackage();
     const shuffled = [...room.players].sort(() => Math.random() - .5);
     const ids = [[], []]; shuffled.forEach((p, i) => ids[i % 2].push(p.id));
@@ -115,7 +135,7 @@ io.on('connection', socket => {
       const suggestions = playerIds.map(id => player(room, id).familyName).filter(Boolean);
       return { name: suggestions[Math.floor(Math.random() * suggestions.length)] || `Family ${fi + 1}`, playerIds };
     });
-    room.phase = 'intro'; room.introStartedAt = Date.now(); setMessage(room, 'It’s time for the Family Feud!'); emit(room);
+    room.phase = 'intro'; room.introStartedAt = Date.now(); setMessage(room, 'It’s time for the Family Feud!', null, false); emit(room);
   });
 
   socket.on('introComplete', ({ code }) => {
@@ -133,14 +153,19 @@ io.on('connection', socket => {
 
   socket.on('submitAnswer', async ({ code, answer }, reply) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'answer' || room.turnPlayerId !== socket.id) return reply?.({ ok: false, error: 'It is not your turn.' });
+    if (!room || room.phase !== 'answer' || room.turnPlayerId !== socket.id || room.judging) return reply?.({ ok: false, error: room?.judging ? 'OpenAI is already judging that answer.' : 'It is not your turn.' });
+    room.judging = true;
     const board = room.game.rounds[room.round];
     const match = await judgeAnswer(answer, board.answers, room.revealed);
     if (match.index >= 0) {
       room.revealed.push(match.index); room.bank += board.answers[match.index].points * multiplier(room.round);
       io.to(room.code).emit('answerResult', { correct: true, index: match.index, text: board.answers[match.index].text, points: board.answers[match.index].points });
-    } else io.to(room.code).emit('answerResult', { correct: false });
-    handleAnswer(room, socket.id, match.index); emit(room); reply?.({ ok: true, correct: match.index >= 0 });
+      emitCue(room, `Survey says… ${board.answers[match.index].text}! ${board.answers[match.index].points} people gave that answer.`, 'reveal');
+    } else {
+      io.to(room.code).emit('answerResult', { correct: false });
+      emitCue(room, room.controlFamily === null ? 'That answer is not on the board.' : 'Ohhh! That is a strike.', 'strike');
+    }
+    room.judging = false; handleAnswer(room, socket.id, match.index); emit(room); reply?.({ ok: true, correct: match.index >= 0 });
   });
 
   socket.on('playOrPass', ({ code, choice }) => {
@@ -166,17 +191,20 @@ io.on('connection', socket => {
     room.turnPlayerId = valid[0]; setMessage(room, `${player(room, valid[0]).name}: 45 seconds. Good luck!`, 'fast'); emit(room);
   });
 
-  socket.on('submitFastMoney', ({ code, answers }) => {
+  socket.on('submitFastMoney', async ({ code, answers }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || !Array.isArray(answers)) return;
+    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || !Array.isArray(answers) || room.judging) return;
+    room.judging = true;
     const idx = room.fastIndex; const clean = answers.slice(0, 5).map(x => String(x || '').slice(0, 80));
     room.fastAnswers[idx] = clean;
+    const judgments = await Promise.all(clean.map((guess, qi) => judgeAnswer(guess, room.game.fastMoney[qi].answers)));
+    room.fastMatches[idx] = judgments.map(judgment => judgment.index);
     room.fastScores[idx] = clean.map((guess, qi) => {
       const candidates = room.game.fastMoney[qi].answers;
-      const m = matchAnswer(guess, candidates);
+      const m = judgments[qi];
       if (idx === 1 && room.fastAnswers[0]) {
-        const first = matchAnswer(room.fastAnswers[0][qi], candidates);
-        if ((m.index >= 0 && m.index === first.index) || normalizeLoose(guess) === normalizeLoose(room.fastAnswers[0][qi])) return 0;
+        const firstIndex = room.fastMatches[0]?.[qi] ?? matchAnswer(room.fastAnswers[0][qi], candidates).index;
+        if ((m.index >= 0 && m.index === firstIndex) || normalizeLoose(guess) === normalizeLoose(room.fastAnswers[0][qi])) return 0;
       }
       return m.index >= 0 ? candidates[m.index].points : 0;
     });
@@ -188,7 +216,7 @@ io.on('connection', socket => {
       const total = room.fastScores.flat().reduce((a, b) => a + b, 0);
       setMessage(room, total >= 200 ? `You scored ${total}! You won Fast Money!` : `You scored ${total} points!`, total >= 200 ? 'win' : 'reveal');
     }
-    emit(room);
+    room.judging = false; emit(room);
   });
 
   socket.on('disconnect', () => {
@@ -203,7 +231,7 @@ function beginRound(room, index) {
   const p1 = familyPlayers(room, 1)[index % familyPlayers(room, 1).length];
   room.faceoff = { players: [p0.id, p1.id], buzzedBy: null, attempts: [], winnerFamily: null };
   room.phase = 'faceoff'; room.turnPlayerId = null;
-  setMessage(room, `Round ${index + 1}: ${p0.name} and ${p1.name}, come to the face-off!`, 'round'); emit(room);
+  setMessage(room, `Round ${index + 1}. We asked 100 people: ${room.game.rounds[index].question} ${p0.name} and ${p1.name}, come to the face-off!`, 'round'); emit(room);
 }
 
 function handleAnswer(room, playerId, answerIndex) {
@@ -256,8 +284,9 @@ function advanceTurn(room) {
 
 function awardRound(room, familyIndex) {
   room.scores[familyIndex] += room.bank; room.phase = 'round_end'; room.turnPlayerId = null; room.isSteal = false;
+  const remaining = room.game.rounds[room.round].answers.filter((_, i) => !room.revealed.includes(i)).map(a => a.text);
   room.revealed = room.game.rounds[room.round].answers.map((_, i) => i);
-  setMessage(room, `${room.families[familyIndex].name} family wins ${room.bank} points!`, 'win');
+  setMessage(room, `${room.families[familyIndex].name} family wins ${room.bank} points!${remaining.length ? ` The answers left on the board were ${remaining.join(', ')}.` : ''}`, 'win');
 }
 
 function beginFastMoney(room) {
@@ -277,6 +306,19 @@ async function createAnnouncement(room) {
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts', voice: 'onyx', input: lines, response_format: 'mp3',
       instructions: 'You are an exuberant 1970s television game-show announcer. Project clearly, build excitement, and pause briefly after each family name and player name. Do not imitate any real person.'
+    })
+  });
+  if (!response.ok) throw new Error(`OpenAI speech ${response.status}: ${await response.text()}`);
+  return Buffer.from(await response.arrayBuffer());
+}
+
+async function createHostSpeech(input) {
+  const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini-tts', voice: 'onyx', input, response_format: 'mp3',
+      instructions: 'Act as a warm, quick-witted 1970s television game-show host. Speak energetically and naturally, with crisp pacing and short dramatic pauses around survey reveals. Do not imitate any real person and do not add words that are not in the script.'
     })
   });
   if (!response.ok) throw new Error(`OpenAI speech ${response.status}: ${await response.text()}`);

@@ -102,7 +102,7 @@ function validatePackage(game) {
   if (game.rounds.length !== 4 || game.fastMoney.length !== 5) return false;
   const expected = [7, 6, 5, 4];
   return game.rounds.every((r, i) => r.question && r.answers?.length === expected[i] && r.answers.every(validAnswer) && total(r.answers) === 100 && descending(r.answers))
-    && game.fastMoney.every(q => q.question && q.answers?.length >= 4 && q.answers.every(validAnswer) && total(q.answers) === 100 && descending(q.answers));
+    && game.fastMoney.every(q => q.question && q.answers?.length >= 5 && q.answers.every(validAnswer) && total(q.answers) === 100 && descending(q.answers));
 }
 
 function validAnswer(a) { return typeof a.text === 'string' && Number.isInteger(a.points) && a.points > 0 && Array.isArray(a.aliases); }
@@ -111,24 +111,37 @@ function descending(answers) { return answers.every((answer, i) => i === 0 || an
 
 async function judgeAnswer(guess, answers, revealed = []) {
   const local = matchAnswer(guess, answers, revealed);
-  if (local.index >= 0 || !process.env.OPENAI_API_KEY || local.confidence < .42) return local;
+  if (!String(guess || '').trim() || !process.env.OPENAI_API_KEY) return local;
   try {
     const candidates = answers.map((a, index) => ({ index, answer: a.text, aliases: a.aliases })).filter(x => !revealed.includes(x.index));
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: process.env.OPENAI_JUDGE_MODEL || 'gpt-5-nano',
-        instructions: 'Judge a Family Feud guess conservatively. Match only when an ordinary host would clearly treat the guess as the same concept as one candidate. Examples and narrower forms may match a broader category. Related-but-distinct concepts do not match. Return -1 when uncertain.',
-        input: JSON.stringify({ guess, candidates }),
-        text: { format: { type: 'json_schema', name: 'answer_judgment', strict: true, schema: { type: 'object', additionalProperties: false, properties: { index: { type: 'integer', minimum: -1 }, reason: { type: 'string' } }, required: ['index', 'reason'] } } }
+        model: process.env.OPENAI_JUDGE_MODEL || process.env.OPENAI_MODEL || 'gpt-5-mini',
+        instructions: `You are the final answer judge for a live Family Feud game. Decide whether the contestant's wording expresses the same core concept as exactly one unrevealed board answer.
+
+JUDGING RULES
+- Accept synonyms, paraphrases, singular/plural forms, ordinary regional wording, and a specific example that clearly belongs inside a broader board category.
+- Accept speech-to-text mistakes only when the intended answer is unambiguous from a very close phonetic transcription.
+- Reject answers that are merely associated with a board answer, share only one vague word, are broader than the board category in a way that could cover several answers, or require a strained explanation.
+- Never match a revealed answer or invent a category.
+- The deterministic matcher is only a suggestion. Independently make the final decision.
+- When genuinely uncertain, reject the guess. Return index -1.
+
+Give a short reason suitable for an audit log, not for the contestant.`,
+        input: JSON.stringify({ contestant_guess: guess, deterministic_suggestion: local, unrevealed_board_answers: candidates }),
+        text: { format: { type: 'json_schema', name: 'answer_judgment', strict: true, schema: { type: 'object', additionalProperties: false, properties: { index: { type: 'integer', minimum: -1 }, accepted: { type: 'boolean' }, reason: { type: 'string' } }, required: ['index', 'accepted', 'reason'] } } }
       })
     });
     if (!response.ok) return local;
     const payload = await response.json();
     const output = payload.output_text || payload.output?.flatMap(x => x.content || []).find(x => x.type === 'output_text')?.text;
     const judged = JSON.parse(output);
-    return candidates.some(x => x.index === judged.index) ? { index: judged.index, confidence: .7, ai: true } : local;
+    if (!judged.accepted || judged.index < 0) return { index: -1, confidence: 1, ai: true, reason: judged.reason };
+    return candidates.some(x => x.index === judged.index)
+      ? { index: judged.index, confidence: 1, ai: true, reason: judged.reason }
+      : { index: -1, confidence: 1, ai: true, reason: 'The model returned an unavailable answer.' };
   } catch { return local; }
 }
 
@@ -169,26 +182,31 @@ async function generateGamePackage() {
       fastMoney: { type: 'array', minItems: 5, maxItems: 5, items: boardSchema() }
     }, required: ['rounds', 'fastMoney']
   };
-  try {
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST', headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || 'gpt-5-mini',
-        instructions: GENERATOR_INSTRUCTIONS,
-        input: 'Create one new complete game package. Use the exact requested answer counts and ensure every board totals 100.',
-        text: { format: { type: 'json_schema', name: 'family_feud_game', strict: true, schema } }
-      })
-    });
-    if (!response.ok) throw new Error(`OpenAI ${response.status}: ${await response.text()}`);
-    const payload = await response.json();
-    const output = payload.output_text || payload.output?.flatMap(x => x.content || []).find(x => x.type === 'output_text')?.text;
-    const game = JSON.parse(output);
-    if (!validatePackage(game)) throw new Error('Generated package failed validation');
-    return game;
-  } catch (error) {
-    console.error('Using built-in boards:', error.message);
-    return structuredClone(BUILTIN_GAME);
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST', headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL || 'gpt-5-mini',
+          instructions: GENERATOR_INSTRUCTIONS,
+          input: `Create one new complete game package. This is validation attempt ${attempt} of 3. Use the exact requested answer counts, strictly descending integer scores, and make every survey total exactly 100.`,
+          text: { format: { type: 'json_schema', name: 'family_feud_game', strict: true, schema } }
+        })
+      });
+      if (!response.ok) throw new Error(`OpenAI ${response.status}: ${await response.text()}`);
+      const payload = await response.json();
+      const output = payload.output_text || payload.output?.flatMap(x => x.content || []).find(x => x.type === 'output_text')?.text;
+      const game = JSON.parse(output);
+      if (!validatePackage(game)) throw new Error('Generated package failed answer-count, ranking, or 100-point validation');
+      return game;
+    } catch (error) {
+      lastError = error;
+      console.error(`Board generation attempt ${attempt} failed:`, error.message);
+    }
   }
+  console.error('Using built-in boards after three API attempts:', lastError?.message);
+  return structuredClone(BUILTIN_GAME);
 }
 
 function boardSchema() {

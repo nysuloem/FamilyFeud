@@ -1,6 +1,7 @@
 const socket = io();
 const app = document.querySelector('#app');
 let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = false;
+let hostAudioQueue = Promise.resolve(), activeRecognition = null;
 const session = JSON.parse(localStorage.getItem('feudSession') || 'null');
 
 const pathBits = location.pathname.split('/').filter(Boolean);
@@ -16,8 +17,10 @@ socket.on('connect', () => {
   } else if (isDisplay && roomCode) watchRoom(roomCode);
 });
 socket.on('state', next => { state = next; roomCode = next.code; render(); });
-socket.on('cue', cue => { if (cue.sound) playEffect(cue.sound); });
-socket.on('answerResult', result => playEffect(result.correct ? 'reveal' : 'strike'));
+socket.on('cue', cue => {
+  if (cue.sound) playEffect(cue.sound);
+  if (cue.speechUrl && shouldHearHost()) hostAudioQueue = hostAudioQueue.then(() => playHostSpeech(cue.speechUrl, cue.text)).catch(() => {});
+});
 
 function showLanding() {
   app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">The classic survey game, made for your family.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article></div></section></main>`;
@@ -49,7 +52,7 @@ function showJoin(code) {
   document.querySelector('#file').onchange = async e => { if (e.target.files[0]) setPhoto(await resizeImage(e.target.files[0])); };
   function setPhoto(value) { photo = value; document.querySelector('#preview').src = value; }
   document.querySelector('#joinForm').onsubmit = e => {
-    e.preventDefault(); if (!photo) return toast('Please take or upload a photo.');
+    e.preventDefault(); if (!photo) return toast('Please take or upload a photo.'); unlockAudio();
     const submit = e.target.querySelector('[type=submit]'); submit.disabled = true;
     socket.emit('joinRoom', { code, name: val('#name'), familyName: val('#family'), photo }, result => {
       submit.disabled = false; if (!result?.ok) return toast(result.error);
@@ -128,7 +131,7 @@ function fastStage() {
 function controls() {
   const mine = state.turnPlayerId === myPlayerId;
   if (state.phase === 'faceoff' && state.faceoff.players.includes(myPlayerId) && !state.faceoff.buzzedBy) return '<button class="buzz" id="buzz">BUZZ!</button>';
-  if (state.phase === 'answer' && mine) return `<form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Say or type your answer" autofocus required><button class="primary">Submit</button></form>`;
+  if (state.phase === 'answer' && mine) return `<form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Type your answer or tap the microphone" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
   if (state.phase === 'decision' && state.faceoff.winnerFamily === familyIndex()) return '<div class="decision"><button class="primary" data-choice="play">PLAY</button><button class="secondary" data-choice="pass">PASS</button></div>';
   if (state.phase === 'round_end' && state.adminId === myPlayerId) return `<button class="primary" id="next">${state.round < 3 ? 'Next Round' : 'Go to Fast Money'}</button>`;
   if (state.phase === 'fast_select' && state.adminId === myPlayerId) {
@@ -142,12 +145,17 @@ function controls() {
 function fastForm() {
   const seconds = state.fastIndex === 0 ? 45 : 60;
   setTimeout(() => startFastTimer(seconds), 0);
-  return `<div class="timer" id="timer">${seconds}</div><form class="fast-grid" id="fastForm">${state.game.fastMoney.map((q,i)=>`<label class="fast-question"><span>${i+1}. ${escapeHtml(q.question)}</span><input name="q${i}" autocomplete="off"></label>`).join('')}<button class="primary">Lock In Answers</button></form>`;
+  return `<div class="timer" id="timer">${seconds}</div><form class="fast-grid" id="fastForm">${state.game.fastMoney.map((q,i)=>`<label class="fast-question"><span>${i+1}. ${escapeHtml(q.question)}</span><span class="voice-field"><input name="q${i}" id="fast${i}" autocomplete="off"><button class="mic-button compact" type="button" data-mic="#fast${i}" aria-label="Speak answer ${i+1}">🎤</button></span></label>`).join('')}<p class="mic-status" aria-live="polite"></p><button class="primary">Lock In Answers</button></form>`;
 }
 
 function wireControls() {
   document.querySelector('#buzz')?.addEventListener('click', () => socket.emit('buzz', { code: state.code }));
-  document.querySelector('#answerForm')?.addEventListener('submit', e => { e.preventDefault(); const answer=val('#answer'); if(answer) socket.emit('submitAnswer',{code:state.code,answer},r=>{if(!r?.ok)toast(r.error)}); });
+  document.querySelector('#answerForm')?.addEventListener('submit', e => {
+    e.preventDefault(); const answer=val('#answer'); if(!answer) return;
+    const button=e.target.querySelector('[type=submit]'); button.disabled=true; button.textContent='OpenAI is judging…';
+    socket.emit('submitAnswer',{code:state.code,answer},r=>{if(!r?.ok){toast(r.error);button.disabled=false;button.textContent='Submit'}});
+  });
+  document.querySelectorAll('[data-mic]').forEach(button => button.addEventListener('click', () => startMicrophone(button.dataset.mic, button)));
   document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>socket.emit('playOrPass',{code:state.code,choice:b.dataset.choice}));
   document.querySelector('#next')?.addEventListener('click',()=>socket.emit('nextRound',{code:state.code}));
   document.querySelector('#fastSelect')?.addEventListener('submit',e=>{e.preventDefault();const ids=[...e.target.querySelectorAll(':checked')].map(x=>x.value);if(ids.length!==2)return toast('Choose exactly two players.');socket.emit('selectFastPlayers',{code:state.code,playerIds:ids});});
@@ -169,6 +177,23 @@ function toast(text){const el=document.querySelector('#toast');el.textContent=te
 async function share(url){try{if(navigator.share)await navigator.share({title:'Join our Family Feud game',url});else{await navigator.clipboard.writeText(url);toast('Join link copied!')}}catch{}}
 function unlockAudio(){audioEnabled=true;const Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx){window.feudAudio=window.feudAudio||new Ctx();window.feudAudio.resume()}new Audio('/assets/intro-theme.mp3').play().then(a=>a.pause()).catch(()=>{})}
 function speak(text){if(!('speechSynthesis'in window)||!audioEnabled)return;const u=new SpeechSynthesisUtterance(text);u.rate=.88;u.pitch=.78;u.volume=1;speechSynthesis.speak(u)}
+function shouldHearHost(){return audioEnabled&&(isDisplay||state?.mode==='remote')}
+async function playHostSpeech(url,text){
+  try{const response=await fetch(url);if(!response.ok||response.status===204)throw new Error('No API audio');const audio=new Audio(URL.createObjectURL(await response.blob()));await new Promise((resolve,reject)=>{audio.onended=resolve;audio.onerror=reject;audio.play().catch(reject)})}
+  catch{await speakAsync(text)}
+}
+function speakAsync(text){return new Promise(resolve=>{if(!('speechSynthesis'in window)||!audioEnabled)return resolve();const u=new SpeechSynthesisUtterance(text);u.rate=.9;u.pitch=.8;u.onend=resolve;u.onerror=resolve;speechSynthesis.speak(u)})}
+function startMicrophone(selector,button){
+  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Recognition)return toast('Voice input is not supported in this browser. You can still type your answer.');
+  activeRecognition?.abort(); const input=document.querySelector(selector),status=document.querySelector('.mic-status');
+  const recognition=new Recognition(); activeRecognition=recognition; recognition.lang='en-CA'; recognition.interimResults=true; recognition.continuous=false;
+  button.classList.add('listening'); if(status)status.textContent='Listening… say your answer.';
+  recognition.onresult=event=>{let words='';for(let i=event.resultIndex;i<event.results.length;i++)words+=event.results[i][0].transcript;input.value=words.trim();if(event.results[event.results.length-1].isFinal&&status)status.textContent=`Heard: “${input.value}” — review it, then submit when ready.`};
+  recognition.onerror=event=>{if(status)status.textContent=event.error==='not-allowed'?'Microphone permission was not granted. You can type instead.':'I could not hear that clearly. Tap the microphone to try again.'};
+  recognition.onend=()=>{button.classList.remove('listening');activeRecognition=null;if(status&&!input.value)status.textContent='Tap the microphone and speak, or type your answer.'};
+  recognition.start();
+}
 function playEffect(type){if(!audioEnabled)return;const ctx=window.feudAudio||(window.feudAudio=new(window.AudioContext||window.webkitAudioContext)());const now=ctx.currentTime;const tones={buzz:[440,.16],reveal:[660,.12],strike:[120,.42],win:[523,.7],round:[330,.25],fast:[780,.2]}[type]||[440,.1];for(let i=0;i<(type==='win'?4:1);i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g).connect(ctx.destination);o.frequency.value=tones[0]*(type==='win'?1+i*.25:1);g.gain.setValueAtTime(.18,now+i*.12);g.gain.exponentialRampToValueAtTime(.001,now+i*.12+tones[1]);o.start(now+i*.12);o.stop(now+i*.12+tones[1])}}
 async function resizeImage(file){const img=await new Promise((resolve,reject)=>{const i=new Image;i.onload=()=>resolve(i);i.onerror=reject;i.src=URL.createObjectURL(file)});const size=500,c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d'),scale=Math.max(size/img.width,size/img.height),w=img.width*scale,h=img.height*scale;x.drawImage(img,(size-w)/2,(size-h)/2,w,h);return c.toDataURL('image/jpeg',.78)}
 async function takeSelfie(){let stream;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false})}catch{return toast('Camera unavailable. Please upload a photo instead.')}return new Promise(resolve=>{const modal=document.createElement('div');modal.className='camera-modal';modal.innerHTML='<div class="camera-box"><video autoplay playsinline></video><button class="primary">Take Photo</button><button class="secondary" data-cancel>Cancel</button></div>';document.body.append(modal);const video=modal.querySelector('video');video.srcObject=stream;const finish=v=>{stream.getTracks().forEach(t=>t.stop());modal.remove();resolve(v)};modal.querySelector('.primary').onclick=()=>{const c=document.createElement('canvas');c.width=c.height=500;const x=c.getContext('2d'),scale=Math.max(500/video.videoWidth,500/video.videoHeight),w=video.videoWidth*scale,h=video.videoHeight*scale;x.translate(500,0);x.scale(-1,1);x.drawImage(video,(500-w)/2,(500-h)/2,w,h);finish(c.toDataURL('image/jpeg',.78))};modal.querySelector('[data-cancel]').onclick=()=>finish(null)})}

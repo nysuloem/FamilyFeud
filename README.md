@@ -17,7 +17,9 @@ Connect this repository to Railway. Optional variables:
 
 - `OPENAI_API_KEY`: generates a new, validated game package for each game. Without it, the game uses built-in boards.
 - `OPENAI_MODEL`: defaults to `gpt-5-mini`.
-- `OPENAI_JUDGE_MODEL`: defaults to `gpt-5-nano` for genuinely ambiguous guesses.
+- `OPENAI_JUDGE_MODEL`: optional judging-model override; otherwise uses `OPENAI_MODEL` or `gpt-5-mini`.
+
+With `OPENAI_API_KEY` configured, OpenAI generates and validates every game package, makes the final decision on every main-game and Fast Money answer, announces the families, and voices the host prompts and survey reveals. Players can either type or use the microphone button; voice recognition is performed by the browser and the resulting transcript is still judged by OpenAI.
 - `PUBLIC_URL`: the public Railway URL, if Railway's forwarded host is unavailable.
 
 ## Game package requirements
