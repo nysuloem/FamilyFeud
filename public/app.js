@@ -1,7 +1,7 @@
 const socket = io();
 const app = document.querySelector('#app');
-let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, fastTimeoutSent = false, audioEnabled = false;
-let hostAudioQueue = Promise.resolve(), activeRecognition = null;
+let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = false, serverOffset = 0;
+let hostAudioQueue = Promise.resolve(), activeRecognition = null, activeHostPlayback = null, cancelledCues = new Set(), clockInterval = null;
 const session = JSON.parse(localStorage.getItem('feudSession') || 'null');
 
 const pathBits = location.pathname.split('/').filter(Boolean);
@@ -16,15 +16,20 @@ socket.on('connect', () => {
     });
   } else if (isDisplay && roomCode) watchRoom(roomCode);
 });
-socket.on('state', next => { state = next; roomCode = next.code; render(); });
+socket.on('state', next => { serverOffset = next.serverNow - Date.now(); state = next; roomCode = next.code; render(); });
 socket.on('cue', cue => {
   if (cue.sound) playEffect(cue.sound);
   if (cue.speechUrl && shouldHearHost()) {
-    hostAudioQueue = hostAudioQueue.then(() => playHostSpeech(cue.speechUrl, cue.text)).catch(() => {});
-    if (cue.requiresAck && isAudioController()) hostAudioQueue.then(() => socket.emit('cueFinished', { code: roomCode, cueId: cue.cueId }));
+    hostAudioQueue = hostAudioQueue.then(async () => {
+      if (cancelledCues.delete(cue.cueId)) return;
+      await playHostSpeech(cue.speechUrl, cue.text, cue.cueId);
+      if (cue.requiresAck && isAudioController() && !cancelledCues.has(cue.cueId)) socket.emit('cueFinished', { code: roomCode, cueId: cue.cueId });
+    }).catch(() => {});
   }
 });
-socket.on('answerResult', result => { if (!result.correct) flashStrike(); });
+socket.on('cancelCue', ({ cueId }) => cancelHostCue(cueId));
+socket.on('answerResult', result => { if (!result.correct) flashStrike(result.count || 1); });
+socket.on('boardReveal', result => { playEffect('ding'); requestAnimationFrame(() => document.querySelector(`[data-${result.fastIndex == null ? `board-slot="${result.index}"` : `fast-slot="${result.fastIndex}-${result.index}"`}]`)?.classList.add('flip-now')); });
 
 function showLanding() {
   app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">The classic survey game, made for your family.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article></div></section></main>`;
@@ -50,7 +55,7 @@ function showJoin(code) {
   if (session?.code === code && session.playerId) {
     app.innerHTML = `<main class="page"><section class="panel"><h2>Rejoining game…</h2></section></main>`; return;
   }
-  app.innerHTML = `<main class="page"><section class="panel join-wrap"><h1>Join the Family Feud</h1><form class="join-form" id="joinForm"><label>Your name<input id="name" maxlength="24" required autocomplete="name" placeholder="e.g., Jason"></label><div class="photo-row"><img class="photo-preview" id="preview" alt="Your photo"><div class="photo-actions"><button class="secondary" type="button" id="camera">Take a selfie</button><label class="secondary file-button">Upload a photo<input type="file" id="file" accept="image/*"></label></div></div><label>Suggest a family name<input id="family" maxlength="24" required placeholder="e.g., Brown"><small>We’ll add “Family” on the game board.</small></label><button class="primary" type="submit">Join Game</button></form></section></main>`;
+  app.innerHTML = `<main class="page"><section class="panel join-wrap"><h1>Join the Family Feud</h1><form class="join-form" id="joinForm"><label>Your name<input id="name" maxlength="24" required autocomplete="name" placeholder="e.g., Jason"></label><div class="photo-row"><img class="photo-preview" id="preview" alt="Your photo"><div class="photo-actions"><button class="secondary" type="button" id="camera">Take a selfie</button><label class="secondary file-button">Upload a photo<input type="file" id="file" accept="image/*"></label></div></div><label>Suggest a family name<input id="family" maxlength="24" required placeholder="e.g., Brown"><small>We’ll add “Family” on the game board.</small></label><label class="consent-check"><input type="checkbox" id="kissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it.<small>Optional. Your photo remains available for the normal game even if this is unchecked.</small></span></label><button class="primary" type="submit">Join Game</button></form></section></main>`;
   let photo = '';
   document.querySelector('#camera').onclick = async () => { const result = await takeSelfie(); if (result) setPhoto(result); };
   document.querySelector('#file').onchange = async e => { if (e.target.files[0]) setPhoto(await resizeImage(e.target.files[0])); };
@@ -58,7 +63,7 @@ function showJoin(code) {
   document.querySelector('#joinForm').onsubmit = e => {
     e.preventDefault(); if (!photo) return toast('Please take or upload a photo.'); unlockAudio();
     const submit = e.target.querySelector('[type=submit]'); submit.disabled = true;
-    socket.emit('joinRoom', { code, name: val('#name'), familyName: val('#family'), photo }, result => {
+    socket.emit('joinRoom', { code, name: val('#name'), familyName: val('#family'), photo, kissConsent: document.querySelector('#kissConsent').checked }, result => {
       submit.disabled = false; if (!result?.ok) return toast(result.error);
       myPlayerId = result.playerId; saveSession();
     });
@@ -66,7 +71,7 @@ function showJoin(code) {
 }
 
 function render() {
-  if (!state) return;
+  if (!state) return; clearInterval(clockInterval);
   if (state.phase === 'lobby' || state.phase === 'generating') return renderLobby();
   if (state.phase === 'intro') return renderIntro();
   if (state.phase === 'faceoff' && state.faceoff?.players.includes(myPlayerId) && !isDisplay) return renderFaceoffBuzzer();
@@ -85,8 +90,10 @@ function renderLobby() {
 }
 
 function renderFaceoffBuzzer(){
-  app.innerHTML = `<main class="faceoff-phone"><button class="buzz" id="buzz" ${state.faceoff.buzzedBy || state.inputLocked ? 'disabled' : ''}>${state.inputLocked ? 'WAIT' : 'BUZZ!'}</button></main>`;
-  document.querySelector('#buzz').onclick=()=>socket.emit('buzz',{code:state.code});
+  const enabled = state.faceoff.canBuzz && !state.faceoff.buzzedBy;
+  app.innerHTML = `<main class="faceoff-phone"><button class="buzz" id="buzz" ${enabled ? '' : 'disabled'}>${enabled ? 'BUZZ!' : 'LISTEN'}</button></main>`;
+  document.querySelector('#buzz').onclick=()=>{if(enabled){cancelCurrentHost();socket.emit('buzz',{code:state.code})}};
+  offerSoundUnlock();
 }
 
 function renderIntro() {
@@ -106,9 +113,11 @@ async function runIntro() {
     const introContent = document.querySelector('#introContent');
     if (introContent) introContent.innerHTML = `<h1 class="intro-title">INTRODUCING<br>THE FAMILIES</h1><div class="family-columns">${state.families.map(f => familyPanel(f)).join('')}</div>`;
     await playFamilyAnnouncement();
-    const kissed = randomPlayer();
-    if (introContent) introContent.innerHTML = `<div class="host-card"><img src="/assets/richard-dawson.jpg" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard kissed ${escapeHtml(kissed.name)}! 💋</p></div></div>`;
+    const kissed = state.players.find(p => p.id === state.kissPlayerId) || randomPlayer();
+    if (introContent) introContent.innerHTML = `<div class="host-card"><img src="/assets/richard-dawson.jpg" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1></div></div>`;
     await playAudioFile('/assets/intro-theme.mp3');
+    if (introContent) introContent.innerHTML = state.kissStatus === 'ready' ? `<img class="kiss-souvenir" src="/api/room/${state.code}/kiss" alt="AI-edited Richard Dawson greeting ${escapeHtml(kissed.name)}"><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p><p class="kiss-disclosure">AI-edited fictional souvenir</p>` : `<div class="host-card"><img src="/assets/richard-dawson.jpg" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p></div></div>`;
+    await new Promise(resolve => setTimeout(resolve, state.kissStatus === 'ready' ? 3800 : 1200));
     await new Promise(resolve => setTimeout(resolve, 900));
   } finally {
     if (state?.phase === 'intro' && (state.adminId === myPlayerId || isDisplay)) socket.emit('introComplete', { code: state.code });
@@ -132,9 +141,10 @@ function playAudioElement(audio){return new Promise((resolve,reject)=>{audio.one
 function renderGame() {
   clearInterval(fastTimer); introRun = false;
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
-  const roundLabel = state.round === 4 ? 'SUDDEN DEATH' : state.round >= 0 ? `ROUND ${state.round + 1} · ${state.round < 2 ? 'SINGLE' : state.round === 2 ? 'DOUBLE' : 'TRIPLE'} POINTS` : 'FAST MONEY';
-  app.innerHTML = `<main class="game-shell"><header class="topbar">${scoreCard(0)}<div class="round-pill">${roundLabel}</div>${scoreCard(1, true)}</header><section class="stage">${round ? board(round) : fastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
+  app.innerHTML = `<main class="game-shell"><section class="stage">${round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
   wireControls();
+  startVisibleClocks();
+  offerSoundUnlock();
 }
 
 function board(round) {
@@ -161,7 +171,7 @@ function fastRevealStage(){
 function controls() {
   const mine = state.turnPlayerId === myPlayerId;
   if (state.phase === 'faceoff' && state.faceoff.players.includes(myPlayerId) && !state.faceoff.buzzedBy && !state.inputLocked) return '<button class="buzz" id="buzz">BUZZ!</button>';
-  if (state.phase === 'answer' && mine && !state.inputLocked) return `<form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Type your answer or tap the microphone" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
+  if (state.phase === 'answer' && mine && !state.inputLocked) return `<span class="answer-clock" data-answer-clock>5.0</span><form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Answer now" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
   if (state.phase === 'decision' && state.faceoff.winnerFamily === familyIndex()) return '<div class="decision"><button class="primary" data-choice="play">PLAY</button><button class="secondary" data-choice="pass">PASS</button></div>';
   if (state.phase === 'round_end' && state.adminId === myPlayerId) { const label=state.round<3?'Next Round':state.round===3&&Math.max(...state.scores)<300?'Go to Sudden Death':'Go to Fast Money';return `<button class="primary" id="next">${label}</button>`; }
   if (state.phase === 'fast_select' && state.fastSelectorId === myPlayerId) {
@@ -174,9 +184,7 @@ function controls() {
 }
 
 function fastForm() {
-  const seconds = Math.max(0, Math.ceil((state.fastDeadline-Date.now())/1000));
-  setTimeout(() => startFastTimer(), 0);
-  return `<div class="timer" id="timer">${seconds}</div><div class="fast-progress">ANSWER ${state.fastQuestionIndex+1} OF 5</div><form class="answer-form" id="fastForm"><input id="fastAnswer" autocomplete="off" placeholder="Type or speak your answer" autofocus required><button class="mic-button" type="button" data-mic="#fastAnswer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
+  return `<div class="fast-progress">ANSWER ${state.fastQuestionIndex+1} OF 5</div><form class="answer-form" id="fastForm"><input id="fastAnswer" autocomplete="off" placeholder="Type or speak your answer" autofocus required><button class="mic-button" type="button" data-mic="#fastAnswer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
 }
 
 function wireControls() {
@@ -184,7 +192,7 @@ function wireControls() {
   document.querySelector('#answerForm')?.addEventListener('submit', e => {
     e.preventDefault(); const answer=val('#answer'); if(!answer) return;
     const button=e.target.querySelector('[type=submit]'); button.disabled=true; button.textContent='OpenAI is judging…';
-    socket.emit('submitAnswer',{code:state.code,answer},r=>{if(!r?.ok){toast(r.error);button.disabled=false;button.textContent='Submit'}});
+    socket.emit('submitAnswer',{code:state.code,answer,token:state.answerToken},r=>{if(!r?.ok){toast(r.error);button.disabled=false;button.textContent='Submit'}});
   });
   document.querySelectorAll('[data-mic]').forEach(button => button.addEventListener('click', () => startMicrophone(button.dataset.mic, button)));
   document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>socket.emit('playOrPass',{code:state.code,choice:b.dataset.choice}));
@@ -194,8 +202,7 @@ function wireControls() {
   document.querySelector('#continueFast')?.addEventListener('click',async e=>{e.currentTarget.disabled=true;e.currentTarget.textContent='Finishing the reveal…';await hostAudioQueue;socket.emit('continueFastMoney',{code:state.code});});
 }
 
-function submitFast(form) { const answer=form.querySelector('#fastAnswer').value.trim();if(!answer)return;form.querySelector('[type=submit]').disabled=true;socket.emit('submitFastAnswer',{code:state.code,answer}); }
-function startFastTimer() { fastTimeoutSent=false;const tick=()=>{const left=Math.max(0,Math.ceil((state.fastDeadline-Date.now())/1000)),el=document.querySelector('#timer');if(el)el.textContent=left;if(left<=0&&!fastTimeoutSent){fastTimeoutSent=true;clearInterval(fastTimer);socket.emit('fastTimeout',{code:state.code})}};tick();fastTimer=setInterval(tick,250); }
+function submitFast(form) { const answer=form.querySelector('#fastAnswer').value.trim();if(!answer)return;const button=form.querySelector('button[type="submit"],button.primary');button.disabled=true;socket.emit('submitFastAnswer',{code:state.code,answer,questionIndex:state.fastQuestionIndex,fastIndex:state.fastIndex},result=>{if(!result?.ok)button.disabled=false}); }
 function scoreCard(i,right=false){const f=state.families[i];return `<div class="family-score ${right?'right':''}"><div>${f?`${escapeHtml(f.name)}<br><small>FAMILY</small>`:'FAMILY'}</div><div class="score-number">${state.scores[i]||0}</div></div>`}
 function playerCard(p){return `<div class="player-card"><img src="${p.photo}" alt=""><strong>${escapeHtml(p.name)}</strong>${p.connected?'':'<small>Reconnecting…</small>'}</div>`}
 function familyPanel(f){return `<article class="family-panel"><h2>${escapeHtml(f.name)} FAMILY</h2><div class="family-list">${f.playerIds.map(id=>playerCard(state.players.find(p=>p.id===id))).join('')}</div></article>`}
@@ -206,7 +213,7 @@ function val(sel){return document.querySelector(sel)?.value.trim()||''}
 function saveSession(){localStorage.setItem('feudSession',JSON.stringify({code:roomCode,playerId:myPlayerId}))}
 function escapeHtml(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function toast(text){const el=document.querySelector('#toast');el.textContent=text;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000)}
-function flashStrike(){const el=document.createElement('div');el.className='strike-flash';el.textContent='X';document.body.append(el);setTimeout(()=>el.remove(),1100)}
+function flashStrike(count=1){const el=document.createElement('div');el.className='strike-flash';el.innerHTML=Array.from({length:Math.min(3,count)},()=>`<span class="strike-frame"><svg viewBox="0 0 100 130" aria-hidden="true"><path d="M18 16L82 114M82 16L18 114" stroke="#a92d1e" stroke-width="24" stroke-linecap="square"/></svg></span>`).join('');document.body.append(el);setTimeout(()=>el.remove(),1250)}
 async function share(url){try{if(navigator.share)await navigator.share({title:'Join our Family Feud game',url});else{await navigator.clipboard.writeText(url);toast('Join link copied!')}}catch{}}
 function unlockAudio(){
   audioEnabled=true;const Ctx=window.AudioContext||window.webkitAudioContext;
@@ -215,11 +222,29 @@ function unlockAudio(){
 function speak(text){if(!('speechSynthesis'in window)||!audioEnabled)return;const u=new SpeechSynthesisUtterance(text);u.rate=.88;u.pitch=.78;u.volume=1;speechSynthesis.speak(u)}
 function shouldHearHost(){return audioEnabled&&(isDisplay||state?.mode==='remote')}
 function isAudioController(){return state?.mode==='host'?isDisplay:state?.adminId===myPlayerId}
-async function playHostSpeech(url,text){
-  try{const response=await fetch(url);if(!response.ok||response.status===204)throw new Error('No API audio');await playAudioBlob(await response.blob())}
-  catch{await speakAsync(text)}
+async function playHostSpeech(url,text,cueId){
+  const controller=new AbortController(),signal=controller.signal;
+  const session={cueId,audio:null,controller};activeHostPlayback=session;
+  const started=()=>{if(!signal.aborted&&isAudioController())socket.emit('cueStarted',{code:roomCode,cueId})};
+  let objectUrl;
+  try{
+    const response=await fetch(url,{signal});if(!response.ok||response.status===204)throw new Error('No API audio');
+    const blob=await response.blob();if(signal.aborted)return;
+    objectUrl=URL.createObjectURL(blob);const audio=new Audio(objectUrl);session.audio=audio;
+    await new Promise((resolve,reject)=>{
+      const aborted=()=>{audio.pause();resolve()};signal.addEventListener('abort',aborted,{once:true});
+      audio.onplaying=started;audio.onended=()=>{signal.removeEventListener('abort',aborted);resolve()};audio.onerror=reject;audio.play().catch(reject);
+    });
+  }catch(error){
+    if(!signal.aborted)await speakAsync(text,signal,started);
+  }finally{
+    if(objectUrl)URL.revokeObjectURL(objectUrl);
+    if(activeHostPlayback===session)activeHostPlayback=null;
+  }
 }
-function speakAsync(text){return new Promise(resolve=>{if(!('speechSynthesis'in window)||!audioEnabled)return resolve();const u=new SpeechSynthesisUtterance(text);u.rate=.9;u.pitch=.8;u.onend=resolve;u.onerror=resolve;speechSynthesis.speak(u)})}
+function cancelHostCue(cueId){cancelledCues.add(cueId);if(activeHostPlayback?.cueId===cueId){activeHostPlayback.controller.abort();activeHostPlayback.audio?.pause();if('speechSynthesis'in window)speechSynthesis.cancel()}}
+function cancelCurrentHost(){if(activeHostPlayback)cancelHostCue(activeHostPlayback.cueId)}
+function speakAsync(text,signal,onStart){return new Promise(resolve=>{if(!('speechSynthesis'in window)||!audioEnabled||signal?.aborted)return resolve();const u=new SpeechSynthesisUtterance(text);u.rate=text.startsWith('Question ')?1.25:1;u.pitch=.8;const done=()=>{signal?.removeEventListener('abort',aborted);resolve()};const aborted=()=>{speechSynthesis.cancel();done()};signal?.addEventListener('abort',aborted,{once:true});u.onstart=onStart;u.onend=done;u.onerror=done;speechSynthesis.speak(u)})}
 function startMicrophone(selector,button){
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!Recognition)return toast('Voice input is not supported in this browser. You can still type your answer.');
@@ -231,6 +256,20 @@ function startMicrophone(selector,button){
   recognition.onend=()=>{button.classList.remove('listening');activeRecognition=null;if(status&&!input.value)status.textContent='Tap the microphone and speak, or type your answer.'};
   recognition.start();
 }
-function playEffect(type){if(!audioEnabled)return;const ctx=window.feudAudio||(window.feudAudio=new(window.AudioContext||window.webkitAudioContext)());const now=ctx.currentTime;const tones={buzz:[440,.16],reveal:[660,.12],strike:[120,.42],win:[523,.7],round:[330,.25],fast:[780,.2]}[type]||[440,.1];for(let i=0;i<(type==='win'?4:1);i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g).connect(ctx.destination);o.frequency.value=tones[0]*(type==='win'?1+i*.25:1);g.gain.setValueAtTime(.18,now+i*.12);g.gain.exponentialRampToValueAtTime(.001,now+i*.12+tones[1]);o.start(now+i*.12);o.stop(now+i*.12+tones[1])}}
+function playEffect(type){if(!audioEnabled)return;if(type==='ding'){new Audio('/assets/answer-ding.mp3').play().catch(()=>{});return}const ctx=window.feudAudio||(window.feudAudio=new(window.AudioContext||window.webkitAudioContext)());const now=ctx.currentTime;const tones={buzz:[440,.16],reveal:[660,.12],strike:[120,.42],win:[523,.7],round:[330,.25],fast:[780,.2]}[type]||[440,.1];for(let i=0;i<(type==='win'?4:1);i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g).connect(ctx.destination);o.frequency.value=tones[0]*(type==='win'?1+i*.25:1);g.gain.setValueAtTime(.18,now+i*.12);g.gain.exponentialRampToValueAtTime(.001,now+i*.12+tones[1]);o.start(now+i*.12);o.stop(now+i*.12+tones[1])}}
+
+function serverTime(){return Date.now()+serverOffset}
+function offerSoundUnlock(){
+  if(audioEnabled||(!isDisplay&&state.mode!=='remote'))return;
+  const button=document.createElement('button');button.className='secondary sound-unlock';button.textContent='Enable host audio';app.append(button);
+  button.onclick=()=>{unlockAudio();button.remove();const cue=state.pendingSpeech;if(!cue)return;hostAudioQueue=hostAudioQueue.then(async()=>{await playHostSpeech(cue.speechUrl,cue.text,cue.cueId);if(isAudioController()&&!cancelledCues.has(cue.cueId))socket.emit('cueFinished',{code:roomCode,cueId:cue.cueId})})};
+}
+function startVisibleClocks(){
+  clearInterval(clockInterval);
+  const tick=()=>{
+    const answer=document.querySelector('[data-answer-clock]');if(answer&&state.answerDeadline){const left=Math.max(0,state.answerDeadline-serverTime());answer.textContent=(left/1000).toFixed(1);answer.classList.toggle('urgent',left<2000)}
+    const fast=document.querySelector('[data-fast-clock]');if(fast&&state.fastDeadline)fast.innerHTML=dotNumber(Math.max(0,Math.ceil((state.fastDeadline-serverTime())/1000)),2);
+  };tick();clockInterval=setInterval(tick,100);
+}
 async function resizeImage(file){const img=await new Promise((resolve,reject)=>{const i=new Image;i.onload=()=>resolve(i);i.onerror=reject;i.src=URL.createObjectURL(file)});const size=500,c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d'),scale=Math.max(size/img.width,size/img.height),w=img.width*scale,h=img.height*scale;x.drawImage(img,(size-w)/2,(size-h)/2,w,h);return c.toDataURL('image/jpeg',.78)}
 async function takeSelfie(){let stream;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false})}catch{return toast('Camera unavailable. Please upload a photo instead.')}return new Promise(resolve=>{const modal=document.createElement('div');modal.className='camera-modal';modal.innerHTML='<div class="camera-box"><video autoplay playsinline></video><button class="primary">Take Photo</button><button class="secondary" data-cancel>Cancel</button></div>';document.body.append(modal);const video=modal.querySelector('video');video.srcObject=stream;const finish=v=>{stream.getTracks().forEach(t=>t.stop());modal.remove();resolve(v)};modal.querySelector('.primary').onclick=()=>{const c=document.createElement('canvas');c.width=c.height=500;const x=c.getContext('2d'),scale=Math.max(500/video.videoWidth,500/video.videoHeight),w=video.videoWidth*scale,h=video.videoHeight*scale;x.translate(500,0);x.scale(-1,1);x.drawImage(video,(500-w)/2,(500-h)/2,w,h);finish(c.toDataURL('image/jpeg',.78))};modal.querySelector('[data-cancel]').onclick=()=>finish(null)})}
