@@ -2,6 +2,8 @@
 
 A phone-controlled Family Feud game inspired by the Richard Dawson era. It supports a shared-TV host display and fully remote play.
 
+Games support 2–10 players. If a one-player family reaches Fast Money, that player completes both timed halves.
+
 ## Run locally
 
 ```bash

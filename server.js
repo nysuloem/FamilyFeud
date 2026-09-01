@@ -102,6 +102,7 @@ io.on('connection', socket => {
   socket.on('joinRoom', ({ code, name, familyName, photo }, reply) => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || room.phase !== 'lobby') return reply?.({ ok: false, error: 'That lobby is unavailable.' });
+    if (room.players.length >= 10) return reply?.({ ok: false, error: 'This game is full. Family Feud supports a maximum of 10 players.' });
     if (!name?.trim() || !familyName?.trim() || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo || '')) return reply?.({ ok: false, error: 'Name, photo, and family name are required.' });
     if (photo.length > 1_500_000) return reply?.({ ok: false, error: 'Please use a smaller photo.' });
     const p = { id: socket.id, name: name.trim().slice(0, 24), familyName: familyName.trim().replace(/\s+family$/i, '').slice(0, 24), photo, connected: true };
@@ -126,7 +127,7 @@ io.on('connection', socket => {
   socket.on('startGame', async ({ code }, reply) => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || socket.id !== room.adminId || room.phase !== 'lobby') return reply?.({ ok: false, error: 'Only the first player can start.' });
-    if (room.players.length < 4) return reply?.({ ok: false, error: 'At least four players are needed so each family can send two players to Fast Money.' });
+    if (room.players.length < 2) return reply?.({ ok: false, error: 'At least two players are needed.' });
     room.phase = 'generating'; setMessage(room, 'OpenAI is preparing tonight’s surveys…', null, false); emit(room); reply?.({ ok: true });
     room.game = await generateGamePackage();
     const shuffled = [...room.players].sort(() => Math.random() - .5);
@@ -290,8 +291,14 @@ function awardRound(room, familyIndex) {
 }
 
 function beginFastMoney(room) {
-  room.phase = 'fast_select'; room.turnPlayerId = null;
   const winner = room.scores[0] >= room.scores[1] ? 0 : 1;
+  const winners = room.families[winner].playerIds;
+  if (winners.length === 1) {
+    room.fastPlayers = [winners[0], winners[0]]; room.phase = 'fast_play'; room.fastIndex = 0; room.fastStartedAt = Date.now();
+    room.turnPlayerId = winners[0];
+    setMessage(room, `${player(room, winners[0]).name} will play both halves of Fast Money. First up: 45 seconds. Good luck!`, 'fast'); emit(room); return;
+  }
+  room.phase = 'fast_select'; room.turnPlayerId = null;
   setMessage(room, `${room.families[winner].name} family wins the game! Choose two players for Fast Money.`, 'win'); emit(room);
 }
 
