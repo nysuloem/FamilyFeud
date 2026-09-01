@@ -53,7 +53,8 @@ function makeRoom(mode) {
   const room = {
     code, mode, phase: 'lobby', adminId: null, players: [], families: [], scores: [0, 0],
     game: null, round: -1, revealed: [], strikes: 0, bank: 0, faceoff: null,
-    controlFamily: null, turnPlayerId: null, message: 'Waiting for players', fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null],
+    controlFamily: null, turnPlayerId: null, message: 'Waiting for players', winnerFamily: null,
+    fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null], fastSelectorId: null, fastRevealIndex: null, fastPrize: null,
     speechCues: new Map(), cueCounter: 0, createdAt: Date.now()
   };
   rooms.set(code, room); return room;
@@ -63,11 +64,14 @@ function publicRoom(room) {
   const { announcementAudio, speechCues, fastMatches, ...safeRoom } = room;
   return {
     ...safeRoom,
+    players: room.players.map(({ familyName, ...p }) => p),
     game: room.game && room.phase !== 'lobby' && room.phase !== 'generating' ? {
-      rounds: room.game.rounds.map((r, i) => ({ question: r.question, answers: r.answers.map((a, ai) => ({ text: room.revealed.includes(ai) && i === room.round ? a.text : null, points: room.revealed.includes(ai) && i === room.round ? a.points : null })) })),
+      rounds: [...room.game.rounds, room.game.suddenDeath].map((r, i) => ({ question: r.question, answers: r.answers.map((a, ai) => ({ text: room.revealed.includes(ai) && i === room.round ? a.text : null, points: room.revealed.includes(ai) && i === room.round ? a.points : null })) })),
       fastMoney: room.game.fastMoney.map(q => ({ question: q.question }))
     } : null,
-    fastAnswers: room.fastAnswers.map((answers, i) => room.phase === 'fast_results' || room.phase === 'game_over' ? answers : answers ? answers.map(() => '••••') : null)
+    fastAnswers: room.fastAnswers.map((answers, i) => canRevealFast(room, i) ? answers : answers ? answers.map(() => '••••') : null),
+    fastScores: room.fastScores.map((scores, i) => canRevealFast(room, i) ? scores : null),
+    fastTopAnswers: room.game && (room.phase === 'fast_results' || (room.phase === 'fast_reveal' && room.fastRevealIndex === 1)) ? room.game.fastMoney.map(q => q.answers[0].text) : null
   };
 }
 
@@ -75,6 +79,8 @@ function emit(room) { io.to(room.code).emit('state', publicRoom(room)); }
 function player(room, id) { return room.players.find(p => p.id === id); }
 function familyOf(room, id) { return room.families.findIndex(f => f.playerIds.includes(id)); }
 function familyPlayers(room, fi) { return room.families[fi]?.playerIds.map(id => player(room, id)).filter(Boolean) || []; }
+function boardFor(room, index = room.round) { return index === 4 ? room.game.suddenDeath : room.game.rounds[index]; }
+function canRevealFast(room, index) { return room.phase === 'fast_results' || (room.phase === 'fast_reveal' && index <= room.fastRevealIndex); }
 function emitCue(room, text, sound, speak = true) {
   const cueId = ++room.cueCounter;
   if (speak) {
@@ -117,8 +123,10 @@ io.on('connection', socket => {
     const oldId = p.id; p.id = socket.id; p.connected = true;
     room.players.forEach(x => { if (x.id === oldId) x.id = socket.id; });
     room.families.forEach(f => { f.playerIds = f.playerIds.map(id => id === oldId ? socket.id : id); });
+    if (room.faceoff?.players) room.faceoff.players = room.faceoff.players.map(id => id === oldId ? socket.id : id);
     if (room.adminId === oldId) room.adminId = socket.id;
     if (room.turnPlayerId === oldId) room.turnPlayerId = socket.id;
+    if (room.fastSelectorId === oldId) room.fastSelectorId = socket.id;
     room.fastPlayers = room.fastPlayers.map(id => id === oldId ? socket.id : id);
     socket.join(room.code); socket.data.roomCode = room.code; socket.data.playerId = socket.id;
     reply?.({ ok: true, playerId: socket.id, isAdmin: room.adminId === socket.id, mode: room.mode }); emit(room);
@@ -156,8 +164,9 @@ io.on('connection', socket => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || room.phase !== 'answer' || room.turnPlayerId !== socket.id || room.judging) return reply?.({ ok: false, error: room?.judging ? 'OpenAI is already judging that answer.' : 'It is not your turn.' });
     room.judging = true;
-    const board = room.game.rounds[room.round];
-    const match = await judgeAnswer(answer, board.answers, room.revealed);
+    const board = boardFor(room); const given = String(answer || '').trim().slice(0, 80);
+    emitCue(room, `${player(room, socket.id).name} says… ${given}.`);
+    const match = await judgeAnswer(given, board.answers, room.revealed);
     if (match.index >= 0) {
       room.revealed.push(match.index); room.bank += board.answers[match.index].points * multiplier(room.round);
       io.to(room.code).emit('answerResult', { correct: true, index: match.index, text: board.answers[match.index].text, points: board.answers[match.index].points });
@@ -166,7 +175,10 @@ io.on('connection', socket => {
       io.to(room.code).emit('answerResult', { correct: false });
       emitCue(room, room.controlFamily === null ? 'That answer is not on the board.' : 'Ohhh! That is a strike.', 'strike');
     }
-    room.judging = false; handleAnswer(room, socket.id, match.index); emit(room); reply?.({ ok: true, correct: match.index >= 0 });
+    room.judging = false;
+    if (room.round === 4 && match.index >= 0) awardSuddenDeath(room, familyOf(room, socket.id));
+    else handleAnswer(room, socket.id, match.index);
+    emit(room); reply?.({ ok: true, correct: match.index >= 0 });
   });
 
   socket.on('playOrPass', ({ code, choice }) => {
@@ -179,17 +191,18 @@ io.on('connection', socket => {
   socket.on('nextRound', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || socket.id !== room.adminId || room.phase !== 'round_end') return;
-    if (room.round < 3) beginRound(room, room.round + 1); else beginFastMoney(room);
+    if (room.round < 3) beginRound(room, room.round + 1);
+    else if (room.round === 3 && Math.max(...room.scores) < 300) beginRound(room, 4);
+    else beginFastMoney(room);
   });
 
   socket.on('selectFastPlayers', ({ code, playerIds }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'fast_select' || socket.id !== room.adminId) return;
-    const winner = room.scores[0] >= room.scores[1] ? 0 : 1;
+    if (!room || room.phase !== 'fast_select' || socket.id !== room.fastSelectorId) return;
+    const winner = room.winnerFamily ?? (room.scores[0] >= room.scores[1] ? 0 : 1);
     const valid = [...new Set(playerIds)].filter(id => room.families[winner].playerIds.includes(id));
     if (valid.length !== 2) return;
-    room.fastPlayers = valid; room.phase = 'fast_play'; room.fastIndex = 0; room.fastStartedAt = Date.now();
-    room.turnPlayerId = valid[0]; setMessage(room, `${player(room, valid[0]).name}: 45 seconds. Good luck!`, 'fast'); emit(room);
+    room.fastPlayers = valid; startFastPlayer(room, 0);
   });
 
   socket.on('submitFastMoney', async ({ code, answers }) => {
@@ -209,15 +222,21 @@ io.on('connection', socket => {
       }
       return m.index >= 0 ? candidates[m.index].points : 0;
     });
-    if (idx === 0) {
-      room.fastIndex = 1; room.turnPlayerId = room.fastPlayers[1]; room.fastStartedAt = Date.now();
-      setMessage(room, `${player(room, room.turnPlayerId).name}: 60 seconds. Duplicate answers score zero!`, 'fast');
-    } else {
-      room.phase = 'fast_results'; room.turnPlayerId = null;
+    room.judging = false; room.phase = 'fast_reveal'; room.fastRevealIndex = idx; room.turnPlayerId = null;
+    if (idx === 1) { const total = room.fastScores.flat().reduce((a, b) => a + b, 0); room.fastPrize = total >= 200 ? 10000 : total * 5; }
+    setMessage(room, `Let’s reveal ${player(room, room.fastPlayers[idx]).name}’s Fast Money answers.`, 'reveal', false);
+    emitCue(room, fastRevealScript(room, idx), 'reveal'); emit(room);
+  });
+
+  socket.on('continueFastMoney', ({ code }) => {
+    const room = rooms.get(String(code).toUpperCase());
+    if (!room || room.phase !== 'fast_reveal' || socket.id !== room.fastSelectorId) return;
+    if (room.fastRevealIndex === 0) startFastPlayer(room, 1);
+    else {
       const total = room.fastScores.flat().reduce((a, b) => a + b, 0);
-      setMessage(room, total >= 200 ? `You scored ${total}! You won Fast Money!` : `You scored ${total} points!`, total >= 200 ? 'win' : 'reveal');
+      room.phase = 'fast_results'; room.turnPlayerId = null;
+      setMessage(room, total >= 200 ? `You scored ${total} points and won $10,000!` : `You scored ${total} points and won $${room.fastPrize.toLocaleString()}!`, 'win'); emit(room);
     }
-    room.judging = false; emit(room);
   });
 
   socket.on('disconnect', () => {
@@ -232,7 +251,9 @@ function beginRound(room, index) {
   const p1 = familyPlayers(room, 1)[index % familyPlayers(room, 1).length];
   room.faceoff = { players: [p0.id, p1.id], buzzedBy: null, attempts: [], winnerFamily: null };
   room.phase = 'faceoff'; room.turnPlayerId = null;
-  setMessage(room, `Round ${index + 1}. We asked 100 people: ${room.game.rounds[index].question} ${p0.name} and ${p1.name}, come to the face-off!`, 'round'); emit(room);
+  const opening = index === 4 ? 'Sudden Death.' : `Round ${index + 1}.`;
+  room.message = `${opening} Listen carefully for the question.`; emitCue(room, room.message, 'round', false);
+  emitCue(room, `${opening} We asked 100 people: ${boardFor(room, index).question} ${p0.name} and ${p1.name}, get ready to buzz in!`); emit(room);
 }
 
 function handleAnswer(room, playerId, answerIndex) {
@@ -240,7 +261,7 @@ function handleAnswer(room, playerId, answerIndex) {
   if (room.phase !== 'answer') return;
   if (room.isSteal) return awardRound(room, answerIndex >= 0 ? room.controlFamily : 1 - room.controlFamily);
   if (answerIndex < 0) room.strikes++;
-  if (room.revealed.length === room.game.rounds[room.round].answers.length) return awardRound(room, room.controlFamily);
+  if (room.revealed.length === boardFor(room).answers.length) return awardRound(room, room.controlFamily);
   if (room.strikes >= 3) {
     room.phase = 'answer'; room.controlFamily = 1 - room.controlFamily;
     room.turnPlayerId = familyPlayers(room, room.controlFamily)[0].id;
@@ -285,21 +306,44 @@ function advanceTurn(room) {
 
 function awardRound(room, familyIndex) {
   room.scores[familyIndex] += room.bank; room.phase = 'round_end'; room.turnPlayerId = null; room.isSteal = false;
-  const remaining = room.game.rounds[room.round].answers.filter((_, i) => !room.revealed.includes(i)).map(a => a.text);
-  room.revealed = room.game.rounds[room.round].answers.map((_, i) => i);
+  const remaining = boardFor(room).answers.filter((_, i) => !room.revealed.includes(i)).map(a => a.text);
+  room.revealed = boardFor(room).answers.map((_, i) => i);
   setMessage(room, `${room.families[familyIndex].name} family wins ${room.bank} points!${remaining.length ? ` The answers left on the board were ${remaining.join(', ')}.` : ''}`, 'win');
 }
 
 function beginFastMoney(room) {
-  const winner = room.scores[0] >= room.scores[1] ? 0 : 1;
+  const winner = room.winnerFamily ?? (room.scores[0] >= room.scores[1] ? 0 : 1);
   const winners = room.families[winner].playerIds;
+  room.fastSelectorId = winners[0];
   if (winners.length === 1) {
-    room.fastPlayers = [winners[0], winners[0]]; room.phase = 'fast_play'; room.fastIndex = 0; room.fastStartedAt = Date.now();
-    room.turnPlayerId = winners[0];
-    setMessage(room, `${player(room, winners[0]).name} will play both halves of Fast Money. First up: 45 seconds. Good luck!`, 'fast'); emit(room); return;
+    room.fastPlayers = [winners[0], winners[0]]; startFastPlayer(room, 0); return;
   }
   room.phase = 'fast_select'; room.turnPlayerId = null;
-  setMessage(room, `${room.families[winner].name} family wins the game! Choose two players for Fast Money.`, 'win'); emit(room);
+  setMessage(room, `${room.families[winner].name} family wins the game! ${player(room, room.fastSelectorId).name}, as team leader, choose two players for Fast Money.`, 'win'); emit(room);
+}
+
+function awardSuddenDeath(room, familyIndex) {
+  const points = boardFor(room).answers[0].points * 3;
+  room.scores[familyIndex] += points; room.winnerFamily = familyIndex; room.phase = 'round_end'; room.turnPlayerId = null;
+  room.revealed = [0];
+  setMessage(room, `${room.families[familyIndex].name} family wins Sudden Death and the game with ${points} points!`, 'win');
+}
+
+function startFastPlayer(room, index) {
+  room.phase = 'fast_play'; room.fastIndex = index; room.fastRevealIndex = null; room.fastStartedAt = Date.now(); room.turnPlayerId = room.fastPlayers[index];
+  const seconds = index === 0 ? 45 : 60; const name = player(room, room.turnPlayerId).name;
+  setMessage(room, `${name}: ${seconds} seconds. Good luck!`, 'fast', false);
+  const questions = room.game.fastMoney.map((q, i) => `Question ${i + 1}. ${q.question}`).join(' ');
+  emitCue(room, `${name}, you have ${seconds} seconds. ${questions}`, 'fast'); emit(room);
+}
+
+function fastRevealScript(room, index) {
+  const name = player(room, room.fastPlayers[index]).name;
+  return room.game.fastMoney.map((q, i) => {
+    const guess = room.fastAnswers[index][i] || 'no answer'; const points = room.fastScores[index][i] || 0;
+    const top = index === 1 ? ` The number one answer was ${q.answers[0].text}.` : '';
+    return `Question ${i + 1}. ${q.question} ${name} said ${guess}. That scored ${points} points.${top}`;
+  }).join(' ');
 }
 
 function multiplier(round) { return round < 2 ? 1 : round === 2 ? 2 : 3; }
@@ -325,7 +369,7 @@ async function createHostSpeech(input) {
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts', voice: 'onyx', input, response_format: 'mp3',
-      instructions: 'Act as a warm, quick-witted 1970s television game-show host. Speak energetically and naturally, with crisp pacing and short dramatic pauses around survey reveals. Do not imitate any real person and do not add words that are not in the script.'
+      instructions: 'Act as a warm, quick-witted 1970s television game-show host. Speak energetically and naturally, with crisp pacing and short dramatic pauses around survey reveals. When the script contains numbered Fast Money questions, read them especially quickly with only a very short pause between questions. Do not imitate any real person and do not add words that are not in the script.'
     })
   });
   if (!response.ok) throw new Error(`OpenAI speech ${response.status}: ${await response.text()}`);

@@ -4,6 +4,13 @@ const { matchAnswer, validatePackage, BUILTIN_GAME } = require('../src/game');
 
 test('built-in game has the required shape', () => {
   assert.equal(validatePackage(BUILTIN_GAME), true);
+  assert.equal(BUILTIN_GAME.suddenDeath.answers.length, 1);
+});
+
+test('a generated package without one-answer Sudden Death is rejected', () => {
+  const invalid = structuredClone(BUILTIN_GAME);
+  invalid.suddenDeath.answers.push({ text: 'GET OUT OF BED', points: 25, aliases: ['stand up', 'get up'] });
+  assert.equal(validatePackage(invalid), false);
 });
 
 test('answer matcher accepts aliases and close plurals', () => {

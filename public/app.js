@@ -21,6 +21,7 @@ socket.on('cue', cue => {
   if (cue.sound) playEffect(cue.sound);
   if (cue.speechUrl && shouldHearHost()) hostAudioQueue = hostAudioQueue.then(() => playHostSpeech(cue.speechUrl, cue.text)).catch(() => {});
 });
+socket.on('answerResult', result => { if (!result.correct) flashStrike(); });
 
 function showLanding() {
   app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">The classic survey game, made for your family.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article></div></section></main>`;
@@ -65,6 +66,7 @@ function render() {
   if (!state) return;
   if (state.phase === 'lobby' || state.phase === 'generating') return renderLobby();
   if (state.phase === 'intro') return renderIntro();
+  if (state.phase === 'faceoff' && state.faceoff?.players.includes(myPlayerId) && !isDisplay) return renderFaceoffBuzzer();
   renderGame();
 }
 
@@ -73,9 +75,15 @@ function renderLobby() {
   if (!joined && !isDisplay && pathBits[0] === 'join') return;
   const admin = state.adminId === myPlayerId;
   const url = `${location.origin}/join/${state.code}`;
-  app.innerHTML = `<main class="page"><section class="lobby"><div class="lobby-layout"><article class="panel"><h2>${state.mode === 'host' ? 'SCAN TO JOIN' : 'SHARE THIS GAME'}</h2><div class="join-code">${state.code}</div>${state.mode === 'host' ? `<img class="qr" src="/api/room/${state.code}/qr" alt="Join QR code">` : ''}<p class="share-url">${escapeHtml(url)}</p><button class="secondary" id="share">Share link</button><p><small>The dynamic announcer is an AI-generated voice.</small></p></article><article class="panel"><h1>${state.phase === 'generating' ? 'Preparing the surveys…' : `Who’s playing? (${state.players.length}/10)`}</h1><div class="players">${state.players.map(playerCard).join('') || '<p>No players yet</p>'}</div>${admin && state.phase === 'lobby' ? `<p>You’re the first player, so you control the game.</p><button class="primary" id="start" ${state.players.length < 2 ? 'disabled' : ''}>Start the Game</button>${state.players.length < 2 ? '<p><small>At least two players are needed.</small></p>' : ''}` : state.phase === 'lobby' ? '<p>Waiting for the first player to start…</p>' : ''}</article></div></section></main>`;
+  const roster = admin ? `<div class="players">${state.players.map(playerCard).join('') || '<p>No players yet</p>'}</div>` : `<div class="private-lobby"><div class="player-count">${state.players.length}/10</div><p>${isDisplay ? 'Players have joined.' : 'You’re in!'} Only the player who created the game can see the lobby roster.</p></div>`;
+  app.innerHTML = `<main class="page"><section class="lobby"><div class="lobby-layout"><article class="panel"><h2>${state.mode === 'host' ? 'SCAN TO JOIN' : 'SHARE THIS GAME'}</h2><div class="join-code">${state.code}</div>${state.mode === 'host' ? `<img class="qr" src="/api/room/${state.code}/qr" alt="Join QR code">` : ''}<p class="share-url">${escapeHtml(url)}</p><button class="secondary" id="share">Share link</button><p><small>The dynamic announcer is an AI-generated voice.</small></p></article><article class="panel"><h1>${state.phase === 'generating' ? 'Preparing the surveys…' : admin ? `Who’s playing? (${state.players.length}/10)` : 'Waiting for the game to start'}</h1>${roster}${admin && state.phase === 'lobby' ? `<p>You’re the first player, so you control the game.</p><button class="primary" id="start" ${state.players.length < 2 ? 'disabled' : ''}>Start the Game</button>${state.players.length < 2 ? '<p><small>At least two players are needed.</small></p>' : ''}` : state.phase === 'lobby' ? '<p>Waiting for the first player to start…</p>' : ''}</article></div></section></main>`;
   document.querySelector('#share').onclick = () => share(url);
   const start = document.querySelector('#start'); if (start) start.onclick = () => { unlockAudio(); socket.emit('startGame', { code: state.code }, r => { if (!r?.ok) toast(r.error); }); };
+}
+
+function renderFaceoffBuzzer(){
+  app.innerHTML = `<main class="faceoff-phone"><button class="buzz" id="buzz" ${state.faceoff.buzzedBy ? 'disabled' : ''}>BUZZ!</button></main>`;
+  document.querySelector('#buzz').onclick=()=>socket.emit('buzz',{code:state.code});
 }
 
 function renderIntro() {
@@ -121,22 +129,29 @@ function playAudioElement(audio){return new Promise((resolve,reject)=>{audio.one
 function renderGame() {
   clearInterval(fastTimer); introRun = false;
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
-  const multiplier = state.round < 2 ? 'SINGLE' : state.round === 2 ? 'DOUBLE' : 'TRIPLE';
-  app.innerHTML = `<main class="game-shell"><header class="topbar">${scoreCard(0)}<div class="round-pill">${state.round >= 0 ? `ROUND ${state.round + 1} · ${multiplier} POINTS` : 'FAST MONEY'}</div>${scoreCard(1, true)}</header><section class="stage">${round ? board(round) : fastStage()}${state.strikes ? `<div class="strikes">${Array.from({length:state.strikes},()=>'<span class="strike">X</span>').join('')}</div>` : ''}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
+  const roundLabel = state.round === 4 ? 'SUDDEN DEATH' : state.round >= 0 ? `ROUND ${state.round + 1} · ${state.round < 2 ? 'SINGLE' : state.round === 2 ? 'DOUBLE' : 'TRIPLE'} POINTS` : 'FAST MONEY';
+  app.innerHTML = `<main class="game-shell"><header class="topbar">${scoreCard(0)}<div class="round-pill">${roundLabel}</div>${scoreCard(1, true)}</header><section class="stage">${round ? board(round) : fastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
   wireControls();
 }
 
 function board(round) {
-  return `<div class="era-board"><div class="board-inner"><div class="question">${escapeHtml(round.question)}</div><div class="answers">${round.answers.map((a,i)=>a.text ? `<div class="answer-slot"><div class="answer-text">${escapeHtml(a.text)}</div><div class="answer-points">${a.points}</div></div>` : `<div class="answer-slot hidden"><span>${i+1}</span></div>`).join('')}</div></div></div>`;
+  return `<div class="era-board"><div class="board-inner"><div class="answers">${round.answers.map((a,i)=>a.text ? `<div class="answer-slot"><div class="answer-text">${escapeHtml(a.text)}</div><div class="answer-points">${a.points}</div></div>` : `<div class="answer-slot hidden"><span>${i+1}</span></div>`).join('')}</div></div></div>`;
 }
 
 function fastStage() {
+  if (state.phase === 'fast_reveal') return fastRevealStage();
   if (state.phase === 'fast_results') {
     const rows = state.game.fastMoney.map((q,i)=>`<div class="fast-row"><div class="fast-cell">${escapeHtml(state.fastAnswers[0]?.[i] || '—')}</div><div class="fast-cell fast-point">${state.fastScores[0]?.[i] || 0}</div><div class="fast-cell">${escapeHtml(state.fastAnswers[1]?.[i] || '—')}</div><div class="fast-cell fast-point">${state.fastScores[1]?.[i] || 0}</div></div>`).join('');
     const total = (state.fastScores.flat().filter(Number).reduce((a,b)=>a+b,0));
-    return `<div class="panel fast-results"><div class="winner">FAST MONEY: ${total} POINTS</div>${rows}</div>`;
+    return `<div class="panel fast-results"><div class="winner">${total >= 200 ? '$10,000 WIN!' : `$${Number(state.fastPrize || 0).toLocaleString()} WON`}</div><h2>${total} FAST MONEY POINTS</h2>${rows}</div>`;
   }
   return `<div class="era-board"><div class="board-inner"><div class="question">FAST MONEY</div><div class="answers">${state.game.fastMoney.map((q,i)=>`<div class="answer-slot hidden"><span>${i+1}</span></div>`).join('')}</div></div></div>`;
+}
+
+function fastRevealStage(){
+  const idx=state.fastRevealIndex, contestant=state.players.find(p=>p.id===state.fastPlayers[idx]);
+  const rows=state.game.fastMoney.map((q,i)=>`<div class="fm-reveal-row"><div><small>${escapeHtml(q.question)}</small><strong>${escapeHtml(state.fastAnswers[idx]?.[i]||'NO ANSWER')}</strong>${idx===1?`<em>Number one: ${escapeHtml(state.fastTopAnswers?.[i]||'')}</em>`:''}</div><span>${state.fastScores[idx]?.[i]||0}</span></div>`).join('');
+  return `<div class="panel fast-results"><div class="winner">${escapeHtml(contestant?.name||'PLAYER')}’S ANSWERS</div>${rows}</div>`;
 }
 
 function controls() {
@@ -144,12 +159,13 @@ function controls() {
   if (state.phase === 'faceoff' && state.faceoff.players.includes(myPlayerId) && !state.faceoff.buzzedBy) return '<button class="buzz" id="buzz">BUZZ!</button>';
   if (state.phase === 'answer' && mine) return `<form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Type your answer or tap the microphone" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
   if (state.phase === 'decision' && state.faceoff.winnerFamily === familyIndex()) return '<div class="decision"><button class="primary" data-choice="play">PLAY</button><button class="secondary" data-choice="pass">PASS</button></div>';
-  if (state.phase === 'round_end' && state.adminId === myPlayerId) return `<button class="primary" id="next">${state.round < 3 ? 'Next Round' : 'Go to Fast Money'}</button>`;
-  if (state.phase === 'fast_select' && state.adminId === myPlayerId) {
-    const winner = state.scores[0] >= state.scores[1] ? 0 : 1;
+  if (state.phase === 'round_end' && state.adminId === myPlayerId) { const label=state.round<3?'Next Round':state.round===3&&Math.max(...state.scores)<300?'Go to Sudden Death':'Go to Fast Money';return `<button class="primary" id="next">${label}</button>`; }
+  if (state.phase === 'fast_select' && state.fastSelectorId === myPlayerId) {
+    const winner = state.winnerFamily ?? (state.scores[0] >= state.scores[1] ? 0 : 1);
     return `<form id="fastSelect"><p>Select two players:</p>${state.families[winner].playerIds.map(id=>{const p=state.players.find(x=>x.id===id);return `<label><input type="checkbox" name="fast" value="${id}"> ${escapeHtml(p.name)}</label>`}).join(' ')}<br><br><button class="primary">Start Fast Money</button></form>`;
   }
   if (state.phase === 'fast_play' && mine) return fastForm();
+  if (state.phase === 'fast_reveal' && state.fastSelectorId === myPlayerId) { const same=state.fastPlayers[0]===state.fastPlayers[1];return `<button class="primary" id="continueFast">${state.fastRevealIndex===0?(same?'Play Second Half':`Bring in ${escapeHtml(state.players.find(p=>p.id===state.fastPlayers[1])?.name||'Second Player')}`):'Show Final Result'}</button>`; }
   return '<span class="muted">Follow the game on screen…</span>';
 }
 
@@ -171,12 +187,13 @@ function wireControls() {
   document.querySelector('#next')?.addEventListener('click',()=>socket.emit('nextRound',{code:state.code}));
   document.querySelector('#fastSelect')?.addEventListener('submit',e=>{e.preventDefault();const ids=[...e.target.querySelectorAll(':checked')].map(x=>x.value);if(ids.length!==2)return toast('Choose exactly two players.');socket.emit('selectFastPlayers',{code:state.code,playerIds:ids});});
   document.querySelector('#fastForm')?.addEventListener('submit',e=>{e.preventDefault();submitFast(e.target);});
+  document.querySelector('#continueFast')?.addEventListener('click',async e=>{e.currentTarget.disabled=true;e.currentTarget.textContent='Finishing the reveal…';await hostAudioQueue;socket.emit('continueFastMoney',{code:state.code});});
 }
 
 function submitFast(form) { clearInterval(fastTimer); const answers=state.game.fastMoney.map((_,i)=>form.querySelector(`[name=q${i}]`).value); socket.emit('submitFastMoney',{code:state.code,answers}); }
 function startFastTimer(seconds) { let left=seconds; const el=document.querySelector('#timer'); fastTimer=setInterval(()=>{left--;if(el)el.textContent=left;if(left<=0){clearInterval(fastTimer);const form=document.querySelector('#fastForm');if(form)submitFast(form)}},1000); }
 function scoreCard(i,right=false){const f=state.families[i];return `<div class="family-score ${right?'right':''}"><div>${f?`${escapeHtml(f.name)}<br><small>FAMILY</small>`:'FAMILY'}</div><div class="score-number">${state.scores[i]||0}</div></div>`}
-function playerCard(p){return `<div class="player-card"><img src="${p.photo}" alt=""><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.familyName)} Family${p.connected?'':' · reconnecting'}</small></div>`}
+function playerCard(p){return `<div class="player-card"><img src="${p.photo}" alt=""><strong>${escapeHtml(p.name)}</strong>${p.connected?'':'<small>Reconnecting…</small>'}</div>`}
 function familyPanel(f){return `<article class="family-panel"><h2>${escapeHtml(f.name)} FAMILY</h2><div class="family-list">${f.playerIds.map(id=>playerCard(state.players.find(p=>p.id===id))).join('')}</div></article>`}
 function familyIndex(){return state.families.findIndex(f=>f.playerIds.includes(myPlayerId))}
 function names(f){return f.playerIds.map(id=>state.players.find(p=>p.id===id)?.name).filter(Boolean).join(', ')}
@@ -185,6 +202,7 @@ function val(sel){return document.querySelector(sel)?.value.trim()||''}
 function saveSession(){localStorage.setItem('feudSession',JSON.stringify({code:roomCode,playerId:myPlayerId}))}
 function escapeHtml(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function toast(text){const el=document.querySelector('#toast');el.textContent=text;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000)}
+function flashStrike(){const el=document.createElement('div');el.className='strike-flash';el.textContent='X';document.body.append(el);setTimeout(()=>el.remove(),1100)}
 async function share(url){try{if(navigator.share)await navigator.share({title:'Join our Family Feud game',url});else{await navigator.clipboard.writeText(url);toast('Join link copied!')}}catch{}}
 function unlockAudio(){
   audioEnabled=true;const Ctx=window.AudioContext||window.webkitAudioContext;

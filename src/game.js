@@ -45,6 +45,10 @@ const BUILTIN_GAME = {
       ]
     }
   ],
+  suddenDeath: {
+    question: 'Name something people often do immediately after waking up.',
+    answers: [{ text: 'CHECK THEIR PHONE', points: 42, aliases: ['phone', 'check phone', 'look at phone', 'check messages', 'cellphone'] }]
+  },
   fastMoney: [
     { question: 'Name a food people eat with their hands.', answers: [{ text: 'PIZZA', points: 34, aliases: ['pizza'] }, { text: 'BURGER', points: 26, aliases: ['burger', 'hamburger'] }, { text: 'SANDWICH', points: 18, aliases: ['sandwich'] }, { text: 'FRIES', points: 13, aliases: ['fries', 'french fries'] }, { text: 'CHICKEN', points: 9, aliases: ['chicken', 'wings'] }] },
     { question: 'Name something you do before going to sleep.', answers: [{ text: 'BRUSH TEETH', points: 35, aliases: ['brush teeth', 'teeth'] }, { text: 'CHANGE CLOTHES', points: 23, aliases: ['pajamas', 'change clothes', 'get dressed'] }, { text: 'CHECK PHONE', points: 19, aliases: ['phone', 'check phone'] }, { text: 'READ', points: 14, aliases: ['read', 'book'] }, { text: 'WASH', points: 9, aliases: ['wash', 'shower', 'wash face'] }] },
@@ -98,10 +102,11 @@ function matchAnswer(guess, answers, revealed = []) {
 }
 
 function validatePackage(game) {
-  if (!game || !Array.isArray(game.rounds) || !Array.isArray(game.fastMoney)) return false;
+  if (!game || !Array.isArray(game.rounds) || !game.suddenDeath || !Array.isArray(game.fastMoney)) return false;
   if (game.rounds.length !== 4 || game.fastMoney.length !== 5) return false;
   const expected = [7, 6, 5, 4];
   return game.rounds.every((r, i) => r.question && r.answers?.length === expected[i] && r.answers.every(validAnswer) && total(r.answers) === 100 && descending(r.answers))
+    && game.suddenDeath.question && game.suddenDeath.answers?.length === 1 && game.suddenDeath.answers.every(a => validAnswer(a) && a.points >= 30 && a.points <= 80)
     && game.fastMoney.every(q => q.question && q.answers?.length >= 5 && q.answers.every(validAnswer) && total(q.answers) === 100 && descending(q.answers));
 }
 
@@ -152,7 +157,7 @@ QUALITY AND FAIRNESS
 - Do not use trivia, factual questions, specialist knowledge, brand advertising, politics, religion, sex, health diagnoses, stereotypes, protected traits, cruelty, or humiliating material.
 - Every main-board answer must be clearly distinct. Never split near-synonyms into separate slots.
 - Prefer answers that players can express in many natural ways. Give every answer 4-10 useful aliases, including common Canadian and American variants where relevant.
-- Points must be plausible counts from 100 surveyed people, descending strictly, and sum to exactly 100 for each board.
+- Main-game and Fast Money points must be plausible counts from 100 surveyed people, descend strictly, and sum to exactly 100 for each board. Sudden Death is the exception because only its top response is retained.
 - Write board labels in concise uppercase display language. Write questions in natural sentence case.
 
 MAIN GAME
@@ -160,6 +165,11 @@ MAIN GAME
 - Round 1: exactly 7 answers; round 2: 6; round 3: 5; round 4: 4.
 - Later questions should have broader top answers and fewer plausible categories.
 - Do not repeat a topic or dominant answer across the four rounds.
+
+SUDDEN DEATH
+- Create exactly one additional suddenDeath survey with exactly one answer: the most popular response only.
+- Give that top answer a realistic survey count between 30 and 80 and useful aliases.
+- Its topic must not overlap any main-game or Fast Money question.
 
 FAST MONEY
 - Exactly five separate, shorter questions.
@@ -179,8 +189,9 @@ async function generateGamePackage() {
     type: 'object', additionalProperties: false,
     properties: {
       rounds: { type: 'array', minItems: 4, maxItems: 4, items: boardSchema() },
+      suddenDeath: boardSchema(1, 1),
       fastMoney: { type: 'array', minItems: 5, maxItems: 5, items: boardSchema() }
-    }, required: ['rounds', 'fastMoney']
+    }, required: ['rounds', 'suddenDeath', 'fastMoney']
   };
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -209,13 +220,13 @@ async function generateGamePackage() {
   return structuredClone(BUILTIN_GAME);
 }
 
-function boardSchema() {
+function boardSchema(minItems = 4, maxItems = 7) {
   return {
     type: 'object', additionalProperties: false,
     properties: {
       question: { type: 'string' },
       answers: {
-        type: 'array', minItems: 4, maxItems: 7,
+        type: 'array', minItems, maxItems,
         items: {
           type: 'object', additionalProperties: false,
           properties: {
