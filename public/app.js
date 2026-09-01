@@ -85,27 +85,38 @@ function renderIntro() {
   runIntro();
 }
 
-function runIntro() {
-  if (introRun || !state?.families?.length || !audioEnabled) return; introRun = true;
-  const theme = new Audio('/assets/intro-theme.mp3'); theme.volume = .72; theme.play().catch(() => {});
-  setTimeout(async () => {
-    try {
-      const response = await fetch(`/api/room/${state.code}/announcement`);
-      if (!response.ok || response.status === 204) throw new Error('No API voice');
-      const audio = new Audio(URL.createObjectURL(await response.blob())); audio.play().catch(() => fallbackAnnouncement());
-    } catch { fallbackAnnouncement(); }
-  }, 1000);
-  setTimeout(() => {
-    const hostAudio = new Audio('/assets/richard-dawson-intro.mp3'); hostAudio.play().catch(() => {});
-    document.querySelector('#introContent').innerHTML = `<div class="host-card"><img src="/assets/richard-dawson.jpg" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard kissed ${escapeHtml(randomPlayer().name)}! 💋</p></div></div>`;
-  }, 27000);
-  if (state.adminId === myPlayerId) setTimeout(() => socket.emit('introComplete', { code: state.code }), 38500);
+async function runIntro() {
+  if (introRun || !state?.families?.length || !audioEnabled) return;
+  if (state.mode !== 'remote' && !isDisplay) return;
+  introRun = true;
+  try {
+    // The sequence is deliberate: opening clip, family introductions, then host clip.
+    await playAudioFile('/assets/richard-dawson-intro.mp3');
+    const introContent = document.querySelector('#introContent');
+    if (introContent) introContent.innerHTML = `<h1 class="intro-title">INTRODUCING<br>THE FAMILIES</h1><div class="family-columns">${state.families.map(f => familyPanel(f)).join('')}</div>`;
+    await playFamilyAnnouncement();
+    const kissed = randomPlayer();
+    if (introContent) introContent.innerHTML = `<div class="host-card"><img src="/assets/richard-dawson.jpg" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard kissed ${escapeHtml(kissed.name)}! 💋</p></div></div>`;
+    await playAudioFile('/assets/intro-theme.mp3');
+    await new Promise(resolve => setTimeout(resolve, 900));
+  } finally {
+    if (state?.phase === 'intro' && (state.adminId === myPlayerId || isDisplay)) socket.emit('introComplete', { code: state.code });
+  }
 }
 
 function fallbackAnnouncement() {
   const first = state.families[0], second = state.families[1];
-  speak(`Introducing the ${first.name} family. ${names(first)}. And now, introducing the ${second.name} family. ${names(second)}.`);
+  return speakAsync(`Introducing the ${first.name} family. ${names(first)}. And now, introducing the ${second.name} family. ${names(second)}.`);
 }
+
+async function playFamilyAnnouncement(){
+  try{const response=await fetch(`/api/room/${state.code}/announcement`);if(!response.ok||response.status===204)throw new Error('No API voice');await playAudioBlob(await response.blob())}
+  catch{return fallbackAnnouncement()}
+}
+
+function playAudioFile(src){return playAudioElement(new Audio(src))}
+function playAudioBlob(blob){return playAudioElement(new Audio(URL.createObjectURL(blob)))}
+function playAudioElement(audio){return new Promise((resolve,reject)=>{audio.onended=resolve;audio.onerror=reject;audio.play().catch(reject)})}
 
 function renderGame() {
   clearInterval(fastTimer); introRun = false;
@@ -175,11 +186,14 @@ function saveSession(){localStorage.setItem('feudSession',JSON.stringify({code:r
 function escapeHtml(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function toast(text){const el=document.querySelector('#toast');el.textContent=text;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000)}
 async function share(url){try{if(navigator.share)await navigator.share({title:'Join our Family Feud game',url});else{await navigator.clipboard.writeText(url);toast('Join link copied!')}}catch{}}
-function unlockAudio(){audioEnabled=true;const Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx){window.feudAudio=window.feudAudio||new Ctx();window.feudAudio.resume()}new Audio('/assets/intro-theme.mp3').play().then(a=>a.pause()).catch(()=>{})}
+function unlockAudio(){
+  audioEnabled=true;const Ctx=window.AudioContext||window.webkitAudioContext;
+  if(Ctx){window.feudAudio=window.feudAudio||new Ctx();window.feudAudio.resume();const oscillator=window.feudAudio.createOscillator(),gain=window.feudAudio.createGain();gain.gain.value=0;oscillator.connect(gain).connect(window.feudAudio.destination);oscillator.start();oscillator.stop(window.feudAudio.currentTime+.01)}
+}
 function speak(text){if(!('speechSynthesis'in window)||!audioEnabled)return;const u=new SpeechSynthesisUtterance(text);u.rate=.88;u.pitch=.78;u.volume=1;speechSynthesis.speak(u)}
 function shouldHearHost(){return audioEnabled&&(isDisplay||state?.mode==='remote')}
 async function playHostSpeech(url,text){
-  try{const response=await fetch(url);if(!response.ok||response.status===204)throw new Error('No API audio');const audio=new Audio(URL.createObjectURL(await response.blob()));await new Promise((resolve,reject)=>{audio.onended=resolve;audio.onerror=reject;audio.play().catch(reject)})}
+  try{const response=await fetch(url);if(!response.ok||response.status===204)throw new Error('No API audio');await playAudioBlob(await response.blob())}
   catch{await speakAsync(text)}
 }
 function speakAsync(text){return new Promise(resolve=>{if(!('speechSynthesis'in window)||!audioEnabled)return resolve();const u=new SpeechSynthesisUtterance(text);u.rate=.9;u.pitch=.8;u.onend=resolve;u.onerror=resolve;speechSynthesis.speak(u)})}

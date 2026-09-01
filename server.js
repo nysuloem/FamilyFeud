@@ -140,7 +140,7 @@ io.on('connection', socket => {
 
   socket.on('introComplete', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || socket.id !== room.adminId || room.phase !== 'intro') return;
+    if (!room || (socket.id !== room.adminId && !socket.data.isDisplay) || room.phase !== 'intro') return;
     beginRound(room, 0);
   });
 
