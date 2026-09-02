@@ -490,5 +490,20 @@ test('Harvey host announcement uses Steve and modern voice direction through the
   t.after(()=>{global.fetch=originalFetch;if(originalKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=originalKey});
   const response=await originalFetch(`${url}/api/room/${room.code}/announcement?part=host`);
   assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/audio\/mpeg/);
-  assert.equal(payload.input,"And here's your host, Steve Harvey!");assert.match(payload.instructions,/modern/);assert.doesNotMatch(payload.input,/Dawson/);
+  assert.equal(payload.voice,"echo");assert.equal(payload.input,"And here's your host, Steve Harvey!");assert.match(payload.instructions,/modern/);assert.doesNotMatch(payload.input,/Dawson/);
+});
+
+test('host speech requests use a distinct AI voice for each era',async t=>{
+  const {room}=await fixture(t);
+  const originalFetch=global.fetch,originalKey=process.env.OPENAI_API_KEY;const payloads=[];
+  global.fetch=async(url,options)=>{payloads.push(JSON.parse(options.body));return {ok:true,arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer}};
+  process.env.OPENAI_API_KEY='test';
+  t.after(()=>{global.fetch=originalFetch;if(originalKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=originalKey});
+  for(const era of ['dawson','harvey']){
+    room.era=era;beginRound(room,0);
+    const response=await originalFetch(`${url}/api/room/${room.code}/speech/${room.pendingCue.cueId}`);
+    assert.equal(response.status,200);await response.arrayBuffer();
+  }
+  assert.deepEqual(payloads.map(p=>p.voice),['onyx','echo']);
+  assert.match(payloads[0].instructions,/1970s/);assert.match(payloads[1].instructions,/modern/);
 });

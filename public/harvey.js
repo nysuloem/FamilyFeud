@@ -1,5 +1,5 @@
 function isHarvey(){return state?.era === 'harvey';}
-function harveyHostCard(){return `<div class="harvey-host-card"><div class="harvey-host-portrait" role="img" aria-label="Steve Harvey"></div><div><p>YOUR HOST</p><h1>STEVE<br>HARVEY</h1><span>FAMILY FEUD</span></div></div>`;}
+function harveyHostCard(){return `<div class="harvey-host-card"><img class="harvey-host-portrait" src="/assets/harvey-intro-portrait.png" alt="Steve Harvey"><div><p>YOUR HOST</p><h1>STEVE<br> HARVEY</h1><span>FAMILY FEUD</span></div></div>`;}
 async function runHarveyIntroduction(){
   const content=document.querySelector('#introContent');
   if(content)content.innerHTML=harveyHostCard();

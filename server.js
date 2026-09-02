@@ -755,7 +755,7 @@ async function createAnnouncement(room, index, part) {
     method: 'POST', signal: AbortSignal.timeout(15000),
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gpt-4o-mini-tts', voice: 'onyx', input: lines, response_format: 'mp3',
+      model: 'gpt-4o-mini-tts', voice: ERAS[room.era || 'dawson'].voice, input: lines, response_format: 'mp3',
       instructions: `You are an exuberant ${ERAS[room.era || 'dawson'].period} television game-show announcer. Project with big, welcoming energy, build excitement, and pause briefly after each family name and player name. Read the script exactly. Do not imitate any real person.`
     })
   });
@@ -768,7 +768,7 @@ async function createHostSpeech(input, era = 'dawson') {
     method: 'POST', signal: AbortSignal.timeout(15000),
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gpt-4o-mini-tts', voice: 'onyx', input, response_format: 'mp3',
+      model: 'gpt-4o-mini-tts', voice: ERAS[era].voice, input, response_format: 'mp3',
       instructions: `Deliver a VERY enthusiastic, charismatic ${ERAS[era].period} television game-show performance for an excited live studio audience. Sound delighted to be here: smile audibly, project with bright energy, use lively rising and falling intonation, and put strong expressive emphasis on contestant names, big points, and prizes. Celebrate wins with genuine excitement and make invitations feel like an event. Keep the warmth and playful encouragement even after a wrong answer. Build suspense with one short dramatic pause around Survey says, then deliver the result with a punch. Fast Money questions must be brisk, urgent, upbeat, and exceptionally clear; keep those sentences moving and save the bigger celebrations for the reveals. Avoid a flat, sleepy, solemn, or documentary-style delivery. Be animated without shouting or distorting words. Do not imitate any real person, add question numbers, invent laughter or crowd sounds, or add any words that are not in the script.`
     })
   });
