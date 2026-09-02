@@ -427,7 +427,7 @@ test('regular starts immediately load distinct prepared games without consuming 
   assert.notEqual(first.room.game.id,second.room.game.id);
   assert.notEqual(first.room.game.rounds[0].question,BUILTIN_GAME.rounds[0].question);
   const history=JSON.parse(fs.readFileSync(path.join(bankDirectory,'survey-bank.json'),'utf8'));
-  assert.equal(history.used.length,2);assert.equal(history.available.length,10);
+  assert.equal(history.used.length,2);assert.equal(history.available.length,22);
 });
 
 test('competing faceoff buzzer presses produce only one winning buzz cue',async t=>{

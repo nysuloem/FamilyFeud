@@ -1,23 +1,25 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {SurveyBank,questions}=require('../src/survey-bank');
+const {SurveyBank,questions,similar}=require('../src/survey-bank');
 const {validatePackage,BUILTIN_GAME}=require('../src/game');
 const seeds=require('../data/survey-seeds.json');
 function directory(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'feud-bank-test-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir;}
-test('120 valid prepared surveys are disjoint from each other and fixed test questions',()=>{
-  assert.equal(seeds.length,12);assert.ok(seeds.every(validatePackage));
+test('240 valid prepared surveys are disjoint from each other and fixed test questions',()=>{
+  assert.equal(seeds.length,24);assert.ok(seeds.every(validatePackage));
   const all=[...questions(BUILTIN_GAME),...seeds.flatMap(questions)];
-  assert.equal(new Set(all).size,130);
+  assert.equal(new Set(all).size,250);
+  assert.equal(new Set(seeds.map(g=>g.id)).size,24);
+  for(let i=0;i<all.length;i++)for(const previous of all.slice(0,i))assert.equal(similar(all[i],previous),false,`${all[i]} repeats ${previous}`);
 });
 test('consumed packs never return after restarts or exhaustion; reservations are saved before use',t=>{
   const dir=directory(t),seen=new Set();
-  for(let i=0;i<12;i++){
-    const bank=new SurveyBank({directory:dir});assert.equal(bank.count(),12-i);
+  for(let i=0;i<24;i++){
+    const bank=new SurveyBank({directory:dir});assert.equal(bank.count(),24-i);
     for(const q of questions(bank.take())){assert.equal(seen.has(q),false);seen.add(q);}
     assert.equal(JSON.parse(fs.readFileSync(bank.file)).used.length,i+1);
   }
-  assert.equal(seen.size,120);
+  assert.equal(seen.size,240);
   assert.throws(()=>new SurveyBank({directory:dir}).take(),/All prepared surveys/);
 });
 test('background refill deduplicates, remembers questions, and never blocks taking a ready game',async t=>{
@@ -42,4 +44,21 @@ test('API failure and duplicate generation cannot fall back to the sample game',
 test('corrupt history is not silently reset and replayed',t=>{
   const dir=directory(t);fs.writeFileSync(path.join(dir,'survey-bank.json'),'broken');
   assert.throws(()=>new SurveyBank({directory:dir}).count(),/Cannot read survey history/);
+});
+
+
+test('upgrading an existing volume adds only the twelve new packs and keeps all usage history',t=>{
+  const dir=directory(t),original=new SurveyBank({directory:dir,seedGames:seeds.slice(0,12)});
+  for(let i=0;i<5;i++)original.take();
+  const used=structuredClone(original.data.used),known=[...original.data.knownQuestions];
+  const beforeIds=original.data.available.map(g=>g.id);
+  const upgraded=new SurveyBank({directory:dir});
+  assert.equal(upgraded.count(),19);
+  assert.deepEqual(upgraded.data.used,used);
+  assert.ok(known.every(q=>upgraded.data.knownQuestions.includes(q)));
+  assert.deepEqual(upgraded.data.available.filter(g=>!beforeIds.includes(g.id)).map(g=>g.id),seeds.slice(12).map(g=>g.id));
+  for(const game of used)assert.equal(upgraded.data.available.some(g=>g.id===game.id),false);
+  const restarted=new SurveyBank({directory:dir});
+  assert.equal(restarted.count(),19,'New packs import only once');
+  assert.deepEqual(restarted.data.used,used);
 });

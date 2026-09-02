@@ -72,7 +72,7 @@ function dawsonFastStage() {
 
 function fastHostAndContestant(contestant, reveal){
   if(reveal)return `<div class="fast-host-pair reveal-pair" aria-label="Richard Dawson beside ${escapeHtml(contestant.name)}"><img class="fast-reveal-host" src="/assets/dawson-fast-reveal.png" alt="Richard Dawson"><img class="fast-guest" src="${escapeHtml(contestant.photo)}" alt="${escapeHtml(contestant.name)}"><img class="fast-reveal-arm" src="/assets/dawson-fast-reveal.png" alt="" aria-hidden="true"><strong>${escapeHtml(contestant.name)}</strong></div>`;
-  return `<div class="fast-host-pair timed-pair"><img class="fast-timed-host" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><img class="fast-guest" src="${escapeHtml(contestant.photo)}" alt="${escapeHtml(contestant.name)}"><strong>${escapeHtml(contestant.name)}</strong></div>`;
+  return `<div class="fast-host-pair timed-pair"><img class="fast-timed-host" src="/assets/dawson-fast-reading.png" alt="Richard Dawson"><img class="fast-guest" src="${escapeHtml(contestant.photo)}" alt="${escapeHtml(contestant.name)}"><strong>${escapeHtml(contestant.name)}</strong></div>`;
 }
 
 function dawsonFamilyIntroduction(family) {

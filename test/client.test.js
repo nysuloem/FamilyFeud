@@ -224,7 +224,7 @@ test('Fast Money cameras show the host, hide the reveal clock, and make room for
   const b=browser(async()=>({}));
   vm.runInContext("state={phase:'fast_play',fastIndex:0,fastRevealIndex:null,fastRevealCount:0,fastPlayers:['P','Q'],players:[{id:'P',name:'Pat',photo:'pat.png'},{id:'Q',name:'Sam',photo:'sam.png'}],fastAnswers:[null,null],fastScores:[null,null]}",b.context);
   let html=vm.runInContext('dawsonFastStage()',b.context);
-  assert.match(html,/timed-pair/);assert.match(html,/alt="Richard Dawson"/);assert.match(html,/alt="Pat"/);assert.match(html,/data-fast-clock/);
+  assert.match(html,/timed-pair/);assert.match(html,/src="\/assets\/dawson-fast-reading.png"/);assert.match(html,/alt="Richard Dawson"/);assert.match(html,/alt="Pat"/);assert.match(html,/data-fast-clock/);
   vm.runInContext("state.phase='fast_reveal';state.fastRevealIndex=0;state.fastAnswers=[['coffee'],null];state.fastScores=[[42],null]",b.context);
   html=vm.runInContext('dawsonFastStage()',b.context);
   assert.match(html,/reveal-pair/);assert.match(html,/fast-reveal-arm/);assert.doesNotMatch(html,/data-fast-clock/);

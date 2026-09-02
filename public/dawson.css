@@ -47,7 +47,7 @@
 .fast-total{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:1ch;font:bold 2.5cqw monospace;color:#f2e8b7}.fast-total .dot-number{width:13%;height:100%;padding:0;background:transparent}
 .fast-host-pair{position:relative;overflow:hidden;background:#050606;isolation:isolate}.fast-host-pair strong{position:absolute;z-index:4;bottom:0;left:0;right:0;background:#050606b8;text-align:center;font:700 2.2cqw 'Oswald',sans-serif;padding:1%}
 .timed-pair{position:absolute;left:21%;bottom:0;width:58%;height:44%;background:transparent}
-.fast-timed-host{position:absolute;left:0;bottom:-12%;height:115%;width:61%;object-fit:contain;object-position:center bottom;mask-image:linear-gradient(to bottom,#000 82%,transparent)}
+.fast-timed-host{position:absolute;left:0;top:0;height:122%;width:58%;object-fit:cover;object-position:center top;mask-image:linear-gradient(to bottom,#000 80%,transparent)}
 .timed-pair .fast-guest{position:absolute;left:54%;top:17%;height:83%;width:42%;object-fit:cover;object-position:center top;border-radius:45% 45% 0 0;mask-image:linear-gradient(to bottom,#000 83%,transparent)}
 .fast-clock{position:absolute;bottom:9%;right:4%;width:15%;height:12%;border:3px solid #adbaaa;background:#11150f}.fast-clock .dot-number{background:transparent}
 .fast-first-reveal .fast-split,.fast-both .fast-split{top:17%;height:66%;gap:0 3%}.fast-both .fast-split{height:62%}

@@ -1,5 +1,11 @@
 # Dawson image edits
 
+## Fast Money question-reading portrait
+
+- Final asset: `public/assets/dawson-fast-reading.png`.
+- Mode: built-in image editor; supplied Richard-and-contestant screenshot used as the edit target. The timed-play composition uses this pose, while the first-reveal embrace asset remains separate.
+- Final prompt: Use case: background-extraction. Asset type: photographic host cutout for the existing Fast Money game screen. Image 1 is the EDIT TARGET. Preserve Richard Dawson on the LEFT exactly in his question-reading pose, looking down at the white question card, dark suit, white shirt, hair and face, and his hands and card. Remove the woman, the entire stage background, the microphone belonging to the woman, all broadcast captions, logos and the number 15 timer. Restore the obscured lower jacket naturally. Improve clarity and resolution while preserving his recognizable original face and pose; do not invent a new person or modernize clothing. Frame only Richard from head to upper thighs in a vertical portrait, with his card extending to the right and a little margin around his silhouette. Use a completely flat solid blue-gray background #6e90a5 that matches the game's set, no shadows or texture on the background. No transparency checkerboard. No lettering, numbers, border or other people. One clean photographic asset, not a game mockup.
+
 These assets were produced with the built-in image editor from the supplied references. Originals remain unchanged. These are AI-assisted reconstructions, not recovered original broadcast masters.
 
 - public/assets/richard-dawson-isolated.png: original portrait isolated on a maroon backdrop. The editor did not produce true alpha transparency; two checkerboard variants were rejected. The game uses the clean maroon version.

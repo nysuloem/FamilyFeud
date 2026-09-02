@@ -766,7 +766,7 @@ async function createHostSpeech(input) {
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts', voice: 'onyx', input, response_format: 'mp3',
-      instructions: 'Act as a warm, quick-witted 1970s television game-show host. Speak energetically and naturally, with crisp pacing and short dramatic pauses around survey reveals. Read questions briskly and clearly, without adding question numbers. Do not imitate any real person and do not add words that are not in the script.'
+      instructions: 'Deliver a VERY enthusiastic, charismatic 1970s television game-show performance for an excited live studio audience. Sound delighted to be here: smile audibly, project with bright energy, use lively rising and falling intonation, and put strong expressive emphasis on contestant names, big points, and prizes. Celebrate wins with genuine excitement and make invitations feel like an event. Keep the warmth and playful encouragement even after a wrong answer. Build suspense with one short dramatic pause around Survey says, then deliver the result with a punch. Fast Money questions must be brisk, urgent, upbeat, and exceptionally clear; keep those sentences moving and save the bigger celebrations for the reveals. Avoid a flat, sleepy, solemn, or documentary-style delivery. Be animated without shouting or distorting words. Do not imitate any real person, add question numbers, invent laughter or crowd sounds, or add any words that are not in the script.'
     })
   });
   if (!response.ok) throw new Error(`OpenAI speech ${response.status}: ${await response.text()}`);
