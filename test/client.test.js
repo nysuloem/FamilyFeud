@@ -17,7 +17,7 @@ function browser(fetchImpl) {
     URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} },
     fetch: fetchImpl,
     Audio: class {
-      constructor() { audioInstances.push(this); }
+      constructor(src) { this.src=src; audioInstances.push(this); }
       play() { this.onplaying?.(); return Promise.resolve(); }
       pause() { this.paused = true; }
     }
@@ -182,4 +182,27 @@ test('Good Answer is available only to teammates who are not giving the answer',
   assert.match(vm.runInContext('goodAnswerControl()',b.context),/Good Answer/);
   vm.runInContext("myPlayerId='Q'",b.context);assert.equal(vm.runInContext('goodAnswerControl()',b.context),'');
   vm.runInContext("myPlayerId='R'",b.context);assert.equal(vm.runInContext('goodAnswerControl()',b.context),'');
+});
+
+test('podium lights follow the first buzz through handoffs and reset for a new faceoff',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={families:[{name:'Brown',playerIds:['P','R']},{name:'Smith',playerIds:['Q','S']}],turnPlayerId:null,faceoff:{buzzedBy:null,players:['P','Q']}}",b.context);
+  assert.doesNotMatch(vm.runInContext('faceoffPodiumLights()',b.context),/panel lit/);
+  for(const [id,side] of [['P',0],['Q',1]]){
+    b.context.winner=id;vm.runInContext('state.faceoff.buzzedBy=winner',b.context);
+    const lights=vm.runInContext('faceoffPodiumLights()',b.context);
+    assert.match(lights,new RegExp(`panel lit" data-podium-side="${side}"`));
+    assert.equal((lights.match(/panel lit/g)||[]).length,1);
+    vm.runInContext("state.turnPlayerId='S';state.faceoff.players=['R','S']",b.context);
+    assert.equal(vm.runInContext('faceoffPodiumLights()',b.context),lights,'Changing answerer must not move the first-buzz lamp');
+  }
+  vm.runInContext('state.faceoff.buzzedBy=null',b.context);
+  assert.doesNotMatch(vm.runInContext('faceoffPodiumLights()',b.context),/panel lit/);
+});
+
+test('accepted faceoff buzzer cue plays the supplied recording',()=>{
+  const b=browser(async()=>({}));
+  b.handlers.cue({sound:'buzz'});
+  assert.equal(b.audioInstances.length,1);
+  assert.equal(b.audioInstances[0].src,'/assets/faceoff-buzzer.mp3');
 });

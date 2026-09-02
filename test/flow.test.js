@@ -380,3 +380,15 @@ test('regular starts immediately load distinct prepared games without consuming 
   const history=JSON.parse(fs.readFileSync(path.join(bankDirectory,'survey-bank.json'),'utf8'));
   assert.equal(history.used.length,2);assert.equal(history.available.length,10);
 });
+
+test('competing faceoff buzzer presses produce only one winning buzz cue',async t=>{
+  const {room,clients,finish}=await fixture(t),buzzes=[];
+  clients[0].on('cue',cue=>{if(cue.sound==='buzz')buzzes.push(cue);});
+  beginRound(room,0);await finish();await finish();
+  clients[0].emit('buzz',{code:room.code});clients[1].emit('buzz',{code:room.code});
+  await until(()=>room.phase==='answer');await pause(20);
+  assert.equal(buzzes.length,1);const first=room.faceoff.buzzedBy;
+  clients[1].emit('buzz',{code:room.code});await pause(10);
+  assert.equal(buzzes.length,1);assert.equal(room.faceoff.buzzedBy,first);
+  beginRound(room,1);assert.equal(room.faceoff.buzzedBy,null);
+});

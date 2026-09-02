@@ -34,7 +34,22 @@ function dawsonFaceoff() {
     const family = state.families.find(f => f.playerIds.includes(id));
     return `<article class="faceoff-contestant faceoff-side-${side} ${state.turnPlayerId === id ? 'active' : ''}"><img src="${p.photo}" alt="${escapeHtml(p.name)}"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(family.name)} FAMILY</span></article>`;
   }).join('');
-  return `<section class="dawson-faceoff" aria-label="Richard Dawson faceoff podium"><div class="stage-round">${state.round === 4 ? 'SUDDEN DEATH' : `ROUND ${state.round + 1}`} · FACE-OFF</div>${contestants}<div class="faceoff-podium-label">${state.faceoff.buzzedBy ? 'SURVEY SAYS' : 'FAMILY FEUD'}</div></section>`;
+  return `<section class="dawson-faceoff" aria-label="Richard Dawson faceoff podium"><div class="stage-round">${state.round === 4 ? 'SUDDEN DEATH' : `ROUND ${state.round + 1}`} · FACE-OFF</div>${faceoffPodiumLights()}${contestants}${state.faceoff.buzzedBy ? '' : '<div class="faceoff-podium-label">FAMILY FEUD</div>'}</section>`;
+}
+
+function faceoffPodiumLights() {
+  // The first-buzzing family stays lit through question/contestant handoffs.
+  const winner = state.faceoff.buzzedBy ? state.families.findIndex(f => f.playerIds.includes(state.faceoff.buzzedBy)) : -1;
+  const points = [];
+  for (const y of [734, 774, 814, 854, 894, 934]) {
+    for (const x of [485, 528, 571, 614, 657, 700]) {
+      if (y !== 734 || x > 500) points.push([x,y]);
+    }
+  }
+  points.push([447,690],[477,690],[447,726],[447,960],[477,960],[447,985],[477,985]);
+  const panels = [0,1].map(side => `<g class="podium-light-panel${winner === side ? ' lit' : ''}" data-podium-side="${side}">${points.map(([x,y])=>`<circle cx="${side === 0 ? x : 1426-x}" cy="${y}" r="7"/>`).join('')}</g>`).join('');
+  const label = winner < 0 ? 'Faceoff podium lights off' : `${escapeHtml(state.families[winner].name)} family buzzed first`;
+  return `<svg class="faceoff-podium-lights" viewBox="0 0 1438 1094" preserveAspectRatio="none" role="img" aria-label="${label}">${panels}</svg>`;
 }
 
 function dawsonFastStage() {

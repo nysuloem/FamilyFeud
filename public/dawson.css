@@ -74,6 +74,8 @@
 .faceoff-contestant span{font:700 clamp(9px,1.2vw,14px) sans-serif;background:#dfc485;color:#332719}
 .faceoff-contestant.active{outline:4px solid #fff18a;box-shadow:0 0 20px #ffda65}
 .faceoff-podium-label{position:absolute;left:34%;width:32%;top:71%;text-align:center;color:#e5d7af;font:clamp(9px,1.5vw,20px) 'Oswald',sans-serif;letter-spacing:2px}
+.faceoff-podium-lights{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.podium-light-panel{fill:#242623}.podium-light-panel.lit{fill:#fff9cc;filter:drop-shadow(0 0 5px #fff6b2) drop-shadow(0 0 9px #ffe89b)}
 .faceoff-layout .controls{width:min(760px,100%)}
 .remote-buzzers{display:flex;justify-content:center;gap:18px}
 .remote-buzzers .buzz{width:clamp(110px,20vw,190px);min-height:76px;height:auto;padding:12px 24px;font-size:clamp(22px,4vw,38px);border-width:5px;border-radius:28px}
