@@ -1,4 +1,16 @@
 /* Reference-matched set: live display and scores over the supplied stage photograph. */
+.family-introduction{container-type:inline-size;position:relative;width:100%;aspect-ratio:5/3;background:linear-gradient(120deg,#344d59,#98b4b9 24%,#71929f 72%,#334a54);border:8px ridge #91a5a7;box-shadow:0 12px 30px #0009,inset 0 0 24px #182d3c;overflow:hidden}
+.family-reveal-window{position:absolute;inset:9% 7%;border-radius:50%;overflow:hidden;background:radial-gradient(ellipse at top,#538099,#1c3b4b 70%);border:7px solid #57361b;box-shadow:0 0 0 3px #b9ba93,inset 0 0 30px #03151d}
+.intro-oval-bulbs{position:absolute;inset:2%;width:96%;height:96%;fill:#fcfff0;filter:drop-shadow(0 0 5px #fff7c0);pointer-events:none}
+.family-name-door{position:absolute;inset:0;z-index:3;border-radius:50%;background:radial-gradient(ellipse,#f4d956 15%,#e7c445 64%,#b38325 100%);box-shadow:inset 0 0 22px #754916;display:grid;place-items:center;transform:translateX(0);transition:transform 1.4s cubic-bezier(.65,.02,.3,1);will-change:transform}
+.family-name-door h1{font:400 var(--name-size,11cqw)/1.1 'Rye',Georgia,serif;color:#63280e;text-shadow:1px 2px #ffed94;letter-spacing:.035em;text-transform:uppercase;margin:0;max-width:86%;overflow-wrap:anywhere}
+.family-reveal-window.open .family-name-door{transform:translateX(-105%)}
+.oval-flourish{position:absolute;font:6cqw Georgia,serif;color:#709860;opacity:.65;letter-spacing:.15em}.flourish-top{top:7%;transform:rotate(-7deg)}.flourish-bottom{bottom:7%;transform:rotate(173deg)}
+.intro-family-lineup{position:absolute;inset:21% 9% 17%;display:flex;justify-content:center;align-items:end;gap:1.5%;visibility:hidden}.open .intro-family-lineup{visibility:visible}
+.intro-family-member{flex:1;max-width:23%;min-width:0;color:#fff7cc;background:#1f394a;border:3px solid #d4bc76;box-shadow:2px 4px 8px #001b2c}
+.intro-family-member img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}.intro-family-member strong{display:block;padding:5px 2px;font:700 clamp(10px,2cqw,25px) 'Oswald',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.intro-family-rail{position:absolute;bottom:0;left:0;right:0;height:17%;background:linear-gradient(#e5dcad,#b7ac79);border-top:5px ridge #e8d6a1;color:#3e2718;font:700 2.5cqw 'Oswald',sans-serif;padding-top:1%;letter-spacing:.12em}
+@media(max-width:650px){.family-introduction{border-width:4px;aspect-ratio:5/3}.family-reveal-window{border-width:4px}.intro-family-member{border-width:2px}.intro-family-member strong{padding:2px 0}.intro-overlay{padding:10px}.intro-family-rail{border-top-width:3px}}
 .game-shell{background:linear-gradient(#6b3b13,#b57218 60%,#6c928c);padding:12px 12px 22px;gap:8px}
 .dawson-stage{position:relative;width:min(1180px,100%);aspect-ratio:805/591;margin:auto;background:#b67717 url('/assets/dawson-stage-enhanced.png') center/100% 100% no-repeat;overflow:hidden;border:8px solid #3b2417;box-shadow:0 12px 36px #0008}
 .stage-round{position:absolute;top:1%;left:2%;color:#fff2b6;font:bold 14px monospace;letter-spacing:2px;text-shadow:1px 2px #000}

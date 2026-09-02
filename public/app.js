@@ -2,6 +2,7 @@ const socket = io();
 const app = document.querySelector('#app');
 let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = false, serverOffset = 0;
 let hostAudioQueue = Promise.resolve(), activeRecognition = null, activeHostPlayback = null, cancelledCues = new Set(), clockInterval = null;
+let fastMic = null, fastMicSession = null, fastMicMuted = false, fastMicError = '', fastMicRestart = null, fastDraft = { key: null, value: '' };
 let session = JSON.parse(localStorage.getItem('feudSession') || 'null');
 
 const pathBits = location.pathname.split('/').filter(Boolean);
@@ -30,7 +31,7 @@ socket.on('cue', cue => {
 });
 socket.on('cancelCue', ({ cueId }) => cancelHostCue(cueId));
 socket.on('answerResult', result => { if (!result.correct) flashStrike(result.count || 1); });
-socket.on('boardReveal', result => { playEffect('ding'); requestAnimationFrame(() => document.querySelector(`[data-${result.fastIndex == null ? `board-slot="${result.index}"` : `fast-slot="${result.fastIndex}-${result.index}"`}]`)?.classList.add('flip-now')); });
+socket.on('boardReveal', result => { playEffect(result.fastIndex != null && result.points === 0 ? 'strike' : 'ding'); requestAnimationFrame(() => document.querySelector(`[data-${result.fastIndex == null ? `board-slot="${result.index}"` : `fast-slot="${result.fastIndex}-${result.index}"`}]`)?.classList.add('flip-now')); });
 
 function showLanding() {
   app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">The classic survey game, made for your family.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article><article class="mode-card test-mode-card"><h2>TEST MODE</h2><p>Try the introduction and first round, or jump straight to Fast Money. No other players needed.</p><button class="primary" id="testMode">Open Test Mode</button></article></div></section></main>`;
@@ -102,6 +103,7 @@ function showJoin(code) {
 
 function render() {
   if (!state) return; clearInterval(clockInterval);
+  syncFastMicrophone();
   if (state.testPart && state.phase === 'generating') {
     app.innerHTML = `${testToolbar()}<main class="page"><section class="panel"><h1>Preparing your test…</h1><p>${state.kissStatus === 'preparing' ? 'Creating your optional souvenir. This can take up to 90 seconds.' : 'Setting up the sample families.'}</p></section></main>`; return;
   }
@@ -130,8 +132,8 @@ function renderFaceoffBuzzer(){
 }
 
 function renderIntro() {
-  const families = state.families;
-  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent"><h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p><div class="family-columns">${families.map(f => familyPanel(f)).join('')}</div></div></section>`;
+  if (introRun && document.querySelector('#introContent')) return;
+  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent"><h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p></div></section>`;
   document.querySelector('#sound').onclick = () => { unlockAudio(); runIntro(); };
   runIntro();
 }
@@ -144,8 +146,16 @@ async function runIntro() {
     // The sequence is deliberate: opening clip, family introductions, then host clip.
     await playAudioFile('/assets/richard-dawson-intro.mp3');
     const introContent = document.querySelector('#introContent');
-    if (introContent) introContent.innerHTML = `<h1 class="intro-title">INTRODUCING<br>THE FAMILIES</h1><div class="family-columns">${state.families.map(f => familyPanel(f)).join('')}</div>`;
-    await playFamilyAnnouncement();
+    for (let index = 0; index < state.families.length; index++) {
+      if (state.phase !== 'intro') return;
+      if (introContent) introContent.innerHTML = dawsonFamilyIntroduction(state.families[index]);
+      await playFamilyAnnouncement(index, 'name');
+      if (state.phase !== 'intro') return;
+      introContent?.querySelector('.family-reveal-window')?.classList.add('open');
+      await new Promise(resolve => setTimeout(resolve, 1450));
+      await playFamilyAnnouncement(index, 'members');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
     const kissed = state.players.find(p => p.id === state.kissPlayerId) || randomPlayer();
     if (introContent) introContent.innerHTML = `<div class="host-card"><img class="host-isolated" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1></div></div>`;
     await playAudioFile('/assets/intro-theme.mp3');
@@ -157,14 +167,11 @@ async function runIntro() {
   }
 }
 
-function fallbackAnnouncement() {
-  const first = state.families[0], second = state.families[1];
-  return speakAsync(`Introducing the ${first.name} family. ${names(first)}. And now, introducing the ${second.name} family. ${names(second)}.`);
-}
-
-async function playFamilyAnnouncement(){
-  try{const response=await fetch(`/api/room/${state.code}/announcement`);if(!response.ok||response.status===204)throw new Error('No API voice');await playAudioBlob(await response.blob())}
-  catch{return fallbackAnnouncement()}
+async function playFamilyAnnouncement(index, part){
+  const family = state.families[index];
+  const fallback = part === 'name' ? `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!` : `${names(family)}!`;
+  try{const response=await fetch(`/api/room/${state.code}/announcement?family=${index}&part=${part}`);if(!response.ok||response.status===204)throw new Error('No API voice');await playAudioBlob(await response.blob())}
+  catch{return speakAsync(fallback)}
 }
 
 function playAudioFile(src){return playAudioElement(new Audio(src))}
@@ -177,6 +184,7 @@ function renderGame() {
   const faceoffScene = showFaceoffScene();
   app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
   wireControls();
+  updateFastMicUI();
   startVisibleClocks();
   offerSoundUnlock();
 }
@@ -225,13 +233,14 @@ function controls() {
     const winner = state.winnerFamily ?? (state.scores[0] >= state.scores[1] ? 0 : 1);
     return `<form id="fastSelect"><p>Select two players:</p>${state.families[winner].playerIds.map(id=>{const p=state.players.find(x=>x.id===id);return `<label><input type="checkbox" name="fast" value="${id}"> ${escapeHtml(p.name)}</label>`}).join(' ')}<br><br><button class="primary">Start Fast Money</button></form>`;
   }
-  if (state.phase === 'fast_play' && mine && !state.inputLocked) return fastForm();
+  if (fastMicEligible()) return fastForm();
   if (state.phase === 'fast_reveal_done' && state.fastSelectorId === myPlayerId) { const same=state.fastPlayers[0]===state.fastPlayers[1];return `<button class="primary" id="continueFast">${state.fastRevealIndex===0?(same?'Play Second Half':`Bring in ${escapeHtml(state.players.find(p=>p.id===state.fastPlayers[1])?.name||'Second Player')}`):'Show Final Result'}</button>`; }
   return '<span class="muted">Follow the game on screen…</span>';
 }
 
 function fastForm() {
-  return `<div class="fast-progress">ANSWER ${state.fastQuestionIndex+1} OF 5</div><form class="answer-form" id="fastForm"><input id="fastAnswer" autocomplete="off" placeholder="Type or speak your answer" autofocus required><button class="mic-button" type="button" data-mic="#fastAnswer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
+  const locked = state.inputLocked;
+  return `<div class="fast-progress">ANSWER ${state.fastQuestionIndex+1} OF 5${locked ? ' · LISTEN TO THE HOST' : ''}</div><form class="answer-form" id="fastForm"><input id="fastAnswer" autocomplete="off" placeholder="${locked ? 'Listen to the host…' : 'Type or speak your answer'}" ${locked ? 'disabled' : ''} required><button class="mic-button" type="button" id="fastMicToggle" aria-label="Toggle Fast Money microphone">🎤 <span>Mic on</span></button><button class="primary" type="submit" ${locked ? 'disabled' : ''}>Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
 }
 
 function wireControls() {
@@ -247,10 +256,16 @@ function wireControls() {
   document.querySelector('#next')?.addEventListener('click',()=>socket.emit('nextRound',{code:state.code}));
   document.querySelector('#fastSelect')?.addEventListener('submit',e=>{e.preventDefault();const ids=[...e.target.querySelectorAll(':checked')].map(x=>x.value);if(ids.length!==2)return toast('Choose exactly two players.');socket.emit('selectFastPlayers',{code:state.code,playerIds:ids});});
   document.querySelector('#fastForm')?.addEventListener('submit',e=>{e.preventDefault();submitFast(e.target);});
+  document.querySelector('#fastAnswer')?.addEventListener('input',e=>{fastDraft={key:fastAnswerKey(),value:e.target.value};});
+  document.querySelector('#fastMicToggle')?.addEventListener('click',()=>{
+    if(fastMicError || fastMicMuted){fastMicMuted=false;fastMicError='';syncFastMicrophone();}
+    else {fastMicMuted=true;stopFastMicrophone();}
+    updateFastMicUI();
+  });
   document.querySelector('#continueFast')?.addEventListener('click',async e=>{e.currentTarget.disabled=true;e.currentTarget.textContent='Finishing the reveal…';await hostAudioQueue;socket.emit('continueFastMoney',{code:state.code});});
 }
 
-function submitFast(form) { const answer=form.querySelector('#fastAnswer').value.trim();if(!answer)return;const button=form.querySelector('button[type="submit"],button.primary');button.disabled=true;socket.emit('submitFastAnswer',{code:state.code,answer,questionIndex:state.fastQuestionIndex,fastIndex:state.fastIndex},result=>{if(!result?.ok)button.disabled=false}); }
+function submitFast(form) { const answer=form.querySelector('#fastAnswer').value.trim();if(!answer||state.inputLocked)return;const button=form.querySelector('button[type="submit"],button.primary');button.disabled=true;socket.emit('submitFastAnswer',{code:state.code,answer,questionIndex:state.fastQuestionIndex,fastIndex:state.fastIndex},result=>{if(!result?.ok)button.disabled=false}); }
 function scoreCard(i,right=false){const f=state.families[i];return `<div class="family-score ${right?'right':''}"><div>${f?`${escapeHtml(f.name)}<br><small>FAMILY</small>`:'FAMILY'}</div><div class="score-number">${state.scores[i]||0}</div></div>`}
 function playerCard(p){return `<div class="player-card"><img src="${p.photo}" alt=""><strong>${escapeHtml(p.name)}</strong>${p.connected?'':'<small>Reconnecting…</small>'}</div>`}
 function familyPanel(f){return `<article class="family-panel"><h2>${escapeHtml(f.name)} FAMILY</h2><div class="family-list">${f.playerIds.map(id=>playerCard(state.players.find(p=>p.id===id))).join('')}</div></article>`}
@@ -292,7 +307,50 @@ async function playHostSpeech(url,text,cueId){
 }
 function cancelHostCue(cueId){cancelledCues.add(cueId);if(activeHostPlayback?.cueId===cueId){activeHostPlayback.controller.abort();activeHostPlayback.audio?.pause();if('speechSynthesis'in window)speechSynthesis.cancel()}}
 function cancelCurrentHost(){if(activeHostPlayback)cancelHostCue(activeHostPlayback.cueId)}
-function speakAsync(text,signal,onStart){return new Promise(resolve=>{if(!('speechSynthesis'in window)||!audioEnabled||signal?.aborted)return resolve();const u=new SpeechSynthesisUtterance(text);u.rate=text.startsWith('Question ')?1.25:1;u.pitch=.8;const done=()=>{signal?.removeEventListener('abort',aborted);resolve()};const aborted=()=>{speechSynthesis.cancel();done()};signal?.addEventListener('abort',aborted,{once:true});u.onstart=onStart;u.onend=done;u.onerror=done;speechSynthesis.speak(u)})}
+function speakAsync(text,signal,onStart){return new Promise(resolve=>{if(!('speechSynthesis'in window)||!audioEnabled||signal?.aborted)return resolve();const u=new SpeechSynthesisUtterance(text);u.rate=state?.phase==='fast_play'?1.25:1;u.pitch=.8;const done=()=>{signal?.removeEventListener('abort',aborted);resolve()};const aborted=()=>{speechSynthesis.cancel();done()};signal?.addEventListener('abort',aborted,{once:true});u.onstart=onStart;u.onend=done;u.onerror=done;speechSynthesis.speak(u)})}
+
+function fastMicEligible(){return !isDisplay && !!state?.fastPlayers?.length && state.turnPlayerId===state.fastPlayers[state.fastIndex] && (state.turnPlayerId===myPlayerId||isTestController()) && ['host_wait','fast_play'].includes(state.phase);}
+function fastAnswerKey(){return `${state?.code}:${state?.fastIndex}:${state?.fastQuestionIndex}`;}
+function acceptingFastSpeech(){return fastMicEligible() && state.phase==='fast_play' && !state.inputLocked && !activeHostPlayback && !fastMicMuted;}
+function stopFastMicrophone(){clearTimeout(fastMicRestart);fastMicRestart=null;const mic=fastMic;fastMic=null;mic?.abort();}
+function syncFastMicrophone(){
+  if(!fastMicEligible()){stopFastMicrophone();fastMicSession=null;return;}
+  const sessionKey=`${state.code}:${state.fastIndex}`;
+  if(fastMicSession!==sessionKey){stopFastMicrophone();fastMicSession=sessionKey;fastMicMuted=false;fastMicError='';fastDraft={key:null,value:''};}
+  if(fastDraft.key!==fastAnswerKey())fastDraft={key:fastAnswerKey(),value:''};
+  if(fastMic || fastMicMuted || fastMicError || fastMicRestart)return;
+  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Recognition){fastMicError='Voice input is not supported in this browser. Type your answer instead.';return;}
+  activeRecognition?.abort();activeRecognition=null;
+  const mic=new Recognition();fastMic=mic;mic.lang='en-CA';mic.continuous=true;mic.interimResults=true;
+  let utteranceKey=null;
+  mic.onspeechstart=()=>{utteranceKey=acceptingFastSpeech()?fastAnswerKey():null;};
+  mic.onresult=event=>{
+    if(fastMic!==mic||!acceptingFastSpeech()||utteranceKey!==fastAnswerKey())return;
+    let words='';for(let i=event.resultIndex;i<event.results.length;i++)words+=event.results[i][0].transcript;
+    if(words.trim()){fastDraft={key:utteranceKey,value:words.trim()};updateFastMicUI();}
+  };
+  mic.onerror=event=>{
+    if(fastMic!==mic)return;
+    if(['not-allowed','service-not-allowed','audio-capture'].includes(event.error)){
+      fastMicError=event.error==='audio-capture'?'Microphone unavailable. Type your answer or retry the mic.':'Allow microphone access, then tap the mic to retry. You can also type.';
+      stopFastMicrophone();
+    }
+    updateFastMicUI();
+  };
+  mic.onend=()=>{
+    if(fastMic!==mic)return;fastMic=null;
+    if(fastMicEligible()&&!fastMicMuted&&!fastMicError)fastMicRestart=setTimeout(()=>{fastMicRestart=null;syncFastMicrophone();updateFastMicUI();},250);
+  };
+  try{mic.start();}catch{fastMic=null;fastMicError='Tap the mic to enable voice input, or type your answer.';}
+}
+function updateFastMicUI(){
+  const button=document.querySelector('#fastMicToggle');if(!button)return;
+  button.classList.toggle('listening',!!fastMic&&!fastMicMuted);button.setAttribute('aria-pressed',String(!!fastMic&&!fastMicMuted));
+  button.querySelector('span').textContent=fastMicError?'Retry mic':fastMicMuted?'Mic off':'Mic on';
+  const input=document.querySelector('#fastAnswer');if(input&&fastDraft.key===fastAnswerKey())input.value=fastDraft.value;
+  const status=document.querySelector('.mic-status');if(status)status.textContent=fastMicError||(fastMicMuted?'Microphone off. Type your answer or tap to turn it on.':state.inputLocked?'Mic stays on. Listen to the host; his words are ignored.':fastDraft.value?'Review your answer, then press Submit.':'Listening… say your answer, then press Submit.');
+}
 function startMicrophone(selector,button){
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!Recognition)return toast('Voice input is not supported in this browser. You can still type your answer.');

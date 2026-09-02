@@ -23,8 +23,12 @@ app.get('/api/room/:code/announcement', async (req, res) => {
   const room = rooms.get(req.params.code.toUpperCase());
   if (!room?.families?.length || !process.env.OPENAI_API_KEY) return res.status(204).end();
   try {
-    if (!room.announcementAudio) room.announcementAudio = await createAnnouncement(room);
-    res.type('audio/mpeg').send(room.announcementAudio);
+    const family = Number(req.query.family), part = req.query.part;
+    if (![0, 1].includes(family) || !['name', 'members'].includes(part)) return res.status(400).end();
+    room.announcementAudio ||= new Map();
+    const key = `${family}-${part}`;
+    if (!room.announcementAudio.has(key)) room.announcementAudio.set(key, createAnnouncement(room, family, part));
+    res.type('audio/mpeg').send(await room.announcementAudio.get(key));
   } catch (error) {
     console.error('AI announcer unavailable:', error.message);
     res.status(204).end();
@@ -81,9 +85,9 @@ function publicRoom(room) {
     players: room.players.map(({ familyName, kissConsent, ...p }) => p),
     game: room.game && room.phase !== 'lobby' && room.phase !== 'generating' ? {
       rounds: [...room.game.rounds, room.game.suddenDeath].map((r, i) => ({ answers: r.answers.map((a, ai) => ({ text: room.revealed.includes(ai) && i === room.round ? a.text : null, points: room.revealed.includes(ai) && i === room.round ? a.points : null })) })),
-      fastMoney: room.game.fastMoney.map((q, i) => ({ question: canRevealFast(room, room.fastRevealIndex ?? 0, i) ? q.question : null }))
+      fastMoney: room.game.fastMoney.map((q, i) => ({ question: canRevealFast(room, room.fastRevealIndex ?? 0, i, 'question') ? q.question : null }))
     } : null,
-    fastAnswers: room.fastAnswers.map((answers, i) => answers?.map((answer, qi) => canRevealFast(room, i, qi) ? answer : null) ?? null),
+    fastAnswers: room.fastAnswers.map((answers, i) => answers?.map((answer, qi) => canRevealFast(room, i, qi, 'answer') ? answer : null) ?? null),
     fastScores: room.fastScores.map((scores, i) => scores?.map((score, qi) => canRevealFast(room, i, qi) ? score : null) ?? null),
     fastTopAnswers: room.game ? room.game.fastMoney.map((q, qi) => canRevealFast(room, 1, qi) ? q.answers[0].text : null) : null
   };
@@ -102,7 +106,15 @@ function samplePhoto(index) {
 function familyOf(room, id) { return room.families.findIndex(f => f.playerIds.includes(id)); }
 function familyPlayers(room, fi) { return room.families[fi]?.playerIds.map(id => player(room, id)).filter(Boolean) || []; }
 function boardFor(room, index = room.round) { return index === 4 ? room.game.suddenDeath : room.game.rounds[index]; }
-function canRevealFast(room, index, questionIndex = 0) { return room.phase === 'fast_results' || ((room.phase === 'fast_reveal' || room.phase === 'fast_reveal_done') && (index < room.fastRevealIndex || (index === room.fastRevealIndex && questionIndex < room.fastRevealCount))); }
+function canRevealFast(room, index, questionIndex = 0, part = 'points') {
+  if (room.phase === 'fast_results') return true;
+  if (!['fast_reveal', 'fast_reveal_done'].includes(room.phase)) return false;
+  if (index < room.fastRevealIndex) return true;
+  if (index !== room.fastRevealIndex) return false;
+  if (questionIndex < room.fastRevealCount) return true;
+  if (questionIndex !== room.fastRevealCount) return false;
+  return (part === 'question' && ['question', 'answer_pending', 'answer', 'survey'].includes(room.fastRevealStep)) || (part === 'answer' && ['answer', 'survey'].includes(room.fastRevealStep));
+}
 function emitCue(room, text, sound, speak = true, requiresAck = false) {
   const cueId = ++room.cueCounter;
   if (speak) {
@@ -284,8 +296,8 @@ io.on('connection', socket => {
     const kissTask = prepareKissImage(room);
     room.game = await generateGamePackage();
     // Warm only the five shared Fast Money questions; both contestants reuse them.
-    if (process.env.OPENAI_API_KEY) room.fastSpeech = new Map(room.game.fastMoney.map((q, i) => {
-      const text = `Question ${i + 1}. ${q.question}`;
+    if (process.env.OPENAI_API_KEY) room.fastSpeech = new Map(room.game.fastMoney.map(q => {
+      const text = q.question;
       return [text, createHostSpeech(text).catch(() => null)];
     }));
     const shuffled = [...room.players].sort(() => Math.random() - .5);
@@ -363,7 +375,7 @@ io.on('connection', socket => {
 
   socket.on('fastTimeout', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
-    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || room.judging || Date.now() < room.fastDeadline) return;
+    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || room.judging || !room.fastDeadline || Date.now() < room.fastDeadline) return;
     while (room.fastDraftAnswers.length < 5) room.fastDraftAnswers.push('');
     finishFastPlayer(room);
   });
@@ -514,13 +526,12 @@ function awardSuddenDeath(room, familyIndex) {
 }
 
 function startFastPlayer(room, index) {
-  clearTimeout(room.fastTimer);
+  clearTimeout(room.fastTimer); room.fastTimer = null; room.fastRevealStep = null;
   room.phase = 'host_wait'; room.fastIndex = index; room.fastRevealIndex = null; room.fastRevealCount = 0; room.fastQuestionIndex = 0; room.fastDraftAnswers = []; room.fastDeadline = null; room.turnPlayerId = room.fastPlayers[index];
   const seconds = index === 0 ? 45 : 60; const name = player(room, room.turnPlayerId).name;
   room.message = `${name} is getting ready for Fast Money.`;
-  runHostedCue(room, `${name}, you have ${seconds} seconds. Listen carefully and answer each question as quickly as you can.`, 'fast', () => {
-    room.phase = 'fast_play'; room.fastDeadline = Date.now() + seconds * 1000;
-    room.fastTimer = setTimeout(() => void finishFastPlayer(room), seconds * 1000);
+  runHostedCue(room, `We need everyone to be quiet for Fast Money. ${name}, your microphone will stay on. You have ${seconds} seconds. The clock starts after I finish reading the first question. Listen carefully and answer each question as quickly as you can.`, 'fast', () => {
+    room.phase = 'fast_play';
     askFastQuestion(room);
   });
 }
@@ -529,8 +540,13 @@ function askFastQuestion(room) {
   if (room.phase !== 'fast_play') return;
   const question = room.game.fastMoney[room.fastQuestionIndex].question;
   room.message = `Fast Money question ${room.fastQuestionIndex + 1} of 5. Listen to the host.`;
-  runHostedCue(room, `Question ${room.fastQuestionIndex + 1}. ${question}`, 'fast', () => {
+  runHostedCue(room, question, null, () => {
     if (room.phase !== 'fast_play') return;
+    if (room.fastQuestionIndex === 0 && !room.fastDeadline) {
+      const duration = (room.fastIndex === 0 ? 45 : 60) * 1000;
+      room.fastDeadline = Date.now() + duration;
+      room.fastTimer = setTimeout(() => void finishFastPlayer(room), duration);
+    }
     room.inputLocked = false; emit(room);
   });
 }
@@ -568,12 +584,24 @@ function revealNextFastAnswer(room) {
     room.phase = 'fast_reveal_done'; room.inputLocked = false;
     room.message = `${player(room, room.fastPlayers[room.fastRevealIndex]).name}'s reveal is complete.`; emit(room); return;
   }
-  const i = room.fastRevealCount++; const idx = room.fastRevealIndex; const q = room.game.fastMoney[i];
+  const i = room.fastRevealCount; const idx = room.fastRevealIndex; const q = room.game.fastMoney[i];
   const guess = room.fastAnswers[idx][i] || 'no answer'; const points = room.fastScores[idx][i] || 0;
   const top = idx === 1 ? ` The number one answer was ${q.answers[0].text}.` : '';
-  room.message = `${guess} — ${points} points`;
-  runHostedCue(room, `Question ${i + 1}. ${q.question} ${player(room, room.fastPlayers[idx]).name} said ${guess}. That scored ${points} points.${top}`, null, () => revealNextFastAnswer(room));
-  io.to(room.code).emit('boardReveal', { fastIndex: idx, index: i });
+  room.fastRevealStep = 'question'; room.message = q.question;
+  runHostedCue(room, q.question, null, () => {
+    room.fastRevealStep = 'answer_pending';
+    runHostedCue(room, `You said ${guess}.`, null, () => {
+      room.fastRevealStep = 'survey'; room.message = 'Survey says…';
+      runHostedCue(room, 'Survey says…', null, () => {
+        room.fastRevealCount++; room.fastRevealStep = 'points';
+        room.message = `${guess} — ${points} points`;
+        runHostedCue(room, `${points} ${points === 1 ? 'point' : 'points'}.${top}`, null, () => revealNextFastAnswer(room));
+        io.to(room.code).emit('boardReveal', { fastIndex: idx, index: i, points });
+      });
+    }, () => {
+      room.fastRevealStep = 'answer'; room.message = `You said ${guess}.`; emit(room);
+    });
+  });
 }
 
 function multiplier(round) { return round < 2 ? 1 : round === 2 ? 2 : 3; }
@@ -610,8 +638,9 @@ function disposeRoom(room) {
   clearAnswerClock(room); clearTimeout(room.fastTimer); cancelHostedCue(room); rooms.delete(room.code);
 }
 
-async function createAnnouncement(room) {
-  const lines = room.families.map(f => `Introducing the ${f.name} family! ${f.playerIds.map(id => player(room, id).name).join(', ')}!`).join(' And now, ');
+async function createAnnouncement(room, index, part) {
+  const family = room.families[index];
+  const lines = part === 'name' ? `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!` : `${family.playerIds.map(id => player(room, id).name).join(', ')}!`;
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
@@ -630,7 +659,7 @@ async function createHostSpeech(input) {
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts', voice: 'onyx', input, response_format: 'mp3',
-      instructions: 'Act as a warm, quick-witted 1970s television game-show host. Speak energetically and naturally, with crisp pacing and short dramatic pauses around survey reveals. When the script contains numbered Fast Money questions, read them especially quickly with only a very short pause between questions. Do not imitate any real person and do not add words that are not in the script.'
+      instructions: 'Act as a warm, quick-witted 1970s television game-show host. Speak energetically and naturally, with crisp pacing and short dramatic pauses around survey reveals. Read questions briskly and clearly, without adding question numbers. Do not imitate any real person and do not add words that are not in the script.'
     })
   });
   if (!response.ok) throw new Error(`OpenAI speech ${response.status}: ${await response.text()}`);

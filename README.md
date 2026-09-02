@@ -12,6 +12,10 @@ The introduction test plays the normal opening sequence, runs one full round inc
 
 Tests use fixed built-in surveys in separate rooms, without generating a new survey package or changing real games. The normal host audio, OpenAI judging, microphone input, and timers remain active. Optional: upload your own photo and explicitly consent to test the introduction souvenir too; otherwise sample avatars are used and no image edit is requested. API audio/judging/image usage still applies when configured. This is a solo rehearsal of the shared game flow, not a simulation of multiplayer network latency.
 
+Fast Money automatically enables the active contestant's microphone (with browser permission) and keeps it running through that half. Host speech and late transcripts from earlier questions are ignored. Players review the transcript and press **Submit**, or type instead; the mic can be muted or retried. The 45/60-second clock starts after the first question finishes, then continues through later questions. Questions are read without numbers. Each reveal rereads the question, shows the answer as “You said…” starts, then waits until “Survey says…” finishes before showing points with a ding for positive scores or the normal strike buzzer for zero.
+
+Family introductions show one family at a time behind a gold oval name panel with surrounding bulbs. After the announcer says the family name, the panel slides aside to show the contestant photos and their names are announced before the next family appears.
+
 ## Run locally
 
 ```bash

@@ -89,17 +89,44 @@ test('remaining answers reveal one at a time, and next round is unavailable unti
 async function playFast(f, indices) {
   const { room, clients, finish } = f;
   await finish(); // Preparation -> first question.
+  assert.equal(room.fastDeadline, null, 'First question must finish before the clock starts');
+  assert.equal(room.fastTimer, null);
+  let deadline;
   for (let q = 0; q < 5; q++) {
-    assert.equal(room.inputLocked, true); await finish();
+    assert.equal(room.inputLocked, true);
+    assert.equal(room.speechCues.get(room.pendingCue.cueId).text, room.game.fastMoney[q].question);
+    await finish();
+    if (q === 0) { deadline = room.fastDeadline; assert.ok(deadline > Date.now()); }
+    else assert.equal(room.fastDeadline, deadline, 'Later questions use the same running clock');
     const answer = room.game.fastMoney[q].answers[indices[q]].text;
     const result = await clients[0].emitWithAck('submitFastAnswer', { code: room.code, answer, questionIndex: q, fastIndex: room.fastIndex });
     assert.equal(result.ok, true);
     await until(() => room.pendingCue || room.phase === 'fast_reveal');
   }
   await until(() => room.phase === 'fast_reveal');
-  assert.equal(room.fastRevealCount, 1);
+  assert.equal(room.fastRevealCount, 0);
   assert.equal(publicRoom(room).fastScores[room.fastIndex][1], null, 'No future score leakage');
-  for (let q = 0; q < 5; q++) await finish();
+  for (let q = 0; q < 5; q++) {
+    const idx = room.fastIndex;
+    assert.equal(room.fastRevealStep, 'question');
+    assert.equal(room.speechCues.get(room.pendingCue.cueId).text, room.game.fastMoney[q].question);
+    assert.equal(publicRoom(room).fastAnswers[idx][q], null);
+    assert.equal(publicRoom(room).fastScores[idx][q], null);
+    await finish(); // Question -> answer readback.
+    assert.match(room.speechCues.get(room.pendingCue.cueId).text, /^You said /);
+    assert.equal(publicRoom(room).fastAnswers[idx][q], null, 'Answer waits for readback playback to start');
+    clients[0].emit('cueStarted', { code: room.code, cueId: room.pendingCue.cueId });
+    await until(() => room.fastRevealStep === 'answer');
+    assert.equal(publicRoom(room).fastAnswers[idx][q], room.fastAnswers[idx][q]);
+    assert.equal(publicRoom(room).fastScores[idx][q], null);
+    await finish(); // Answer -> Survey says.
+    assert.equal(room.speechCues.get(room.pendingCue.cueId).text, 'Survey says…');
+    assert.equal(publicRoom(room).fastScores[idx][q], null);
+    await finish(); // Survey says -> points and effect.
+    assert.equal(publicRoom(room).fastScores[idx][q], room.fastScores[idx][q]);
+    if(q < 4) assert.equal(publicRoom(room).game.fastMoney[q+1].question, null);
+    await finish(); // Points -> next question.
+  }
   assert.equal(room.phase, 'fast_reveal_done');
 }
 
@@ -118,10 +145,11 @@ test('both Fast Money players progress through real reveals to $10,000; question
 
 test('server can end Fast Money during an unfinished spoken question and score unanswered entries', async t => {
   const f = await fixture(t), { room, finish } = f;
-  room.round = 3; room.scores = [350, 100]; beginFastMoney(room); await finish();
+  room.round = 3; room.scores = [350, 100]; beginFastMoney(room); await finish(); await finish();
+  await f.clients[0].emitWithAck('submitFastAnswer', { code: room.code, answer: 'xyzzy', questionIndex: 0, fastIndex: 0 });
   assert.ok(room.fastTimer); assert.ok(room.pendingCue); assert.equal(room.inputLocked, true);
   await finishFastPlayer(room);
-  assert.equal(room.phase, 'fast_reveal'); assert.deepEqual(room.fastAnswers[0], ['', '', '', '', '']);
+  assert.equal(room.phase, 'fast_reveal'); assert.deepEqual(room.fastAnswers[0], ['xyzzy', '', '', '', '']);
   assert.deepEqual(room.fastScores[0], [0, 0, 0, 0, 0]);
 });
 

@@ -43,11 +43,23 @@ function dawsonFastStage() {
   const contestant = state.players.find(p => p.id === state.fastPlayers[idx]);
   const total = state.fastScores.flat().reduce((sum, value) => sum + (Number(value) || 0), 0);
   const rows = column => Array.from({ length: 5 }, (_, i) => {
-    const shown = reveal && (state.phase === 'fast_results' || column < idx || (column === idx && i < state.fastRevealCount));
-    return `<div class="dawson-fast-row ${shown ? 'shown' : ''}" data-fast-slot="${column}-${i}"><span>${shown ? escapeHtml(state.fastAnswers[column]?.[i] || '—') : ''}</span><b>${shown ? state.fastScores[column]?.[i] ?? 0 : ''}</b></div>`;
+    const answer = state.fastAnswers[column]?.[i], points = state.fastScores[column]?.[i];
+    const shown = reveal && answer != null;
+    return `<div class="dawson-fast-row ${shown ? 'shown' : ''}" data-fast-slot="${column}-${i}"><span>${shown ? escapeHtml(answer || 'NO ANSWER') : ''}</span><b>${reveal && points != null ? points : ''}</b></div>`;
   }).join('');
   const portrait = contestant ? `<div class="fast-portrait"><img src="${contestant.photo}" alt="${escapeHtml(contestant.name)}"><strong>${escapeHtml(contestant.name)}</strong></div>` : '<div class="fast-portrait"><strong>FAST MONEY</strong></div>';
   const remaining = state.fastDeadline ? Math.max(0, Math.ceil((state.fastDeadline - serverTime()) / 1000)) : state.fastIndex === 1 ? 60 : 45;
   const currentTop = reveal && idx === 1 && state.fastRevealCount ? state.fastTopAnswers?.[state.fastRevealCount - 1] : null;
   return `<section class="dawson-fast-shell"><div class="fast-bank">${dotNumber(total)}</div><div class="fast-split"><div class="fast-answer-panel">${rows(0)}</div><div class="fast-answer-panel">${reveal && idx === 1 ? rows(1) : portrait}</div></div><div class="fast-clock" data-fast-clock>${dotNumber(remaining, 2)}</div>${currentTop ? `<div class="fast-top-answer">NUMBER ONE: ${escapeHtml(currentTop)}</div>` : ''}${state.phase === 'fast_results' ? `<div class="fast-payout">${total >= 200 ? '$10,000' : '$' + Number(state.fastPrize || 0).toLocaleString()}<small>${total} POINTS</small></div>` : ''}</section>`;
+}
+
+function dawsonFamilyIntroduction(family) {
+  const bulbs = Array.from({length:48},(_,i)=>{
+    const angle=i/48*Math.PI*2;
+    return `<circle cx="${500+473*Math.cos(angle)}" cy="${300+272*Math.sin(angle)}" r="7"/>`;
+  }).join('');
+  return `<section class="family-introduction" aria-label="Introducing the ${escapeHtml(family.name)} family"><div class="family-reveal-window"><div class="intro-family-lineup">${family.playerIds.map(id=>{
+    const p=state.players.find(p=>p.id===id);
+    return `<article class="intro-family-member"><img src="${p.photo}" alt="${escapeHtml(p.name)}"><strong>${escapeHtml(p.name)}</strong></article>`;
+  }).join('')}</div><div class="intro-family-rail">${escapeHtml(family.name)} FAMILY</div><div class="family-name-door"><span class="oval-flourish flourish-top" aria-hidden="true">✦ ❧ ✦</span><h1 style="--name-size:${family.name.length>16?'6.5':family.name.length>10?'8':'11'}cqw">${escapeHtml(family.name)}</h1><span class="oval-flourish flourish-bottom" aria-hidden="true">✦ ❧ ✦</span></div></div><svg class="intro-oval-bulbs" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">${bulbs}</svg></section>`;
 }
