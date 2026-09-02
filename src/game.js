@@ -114,13 +114,13 @@ function validAnswer(a) { return typeof a.text === 'string' && Number.isInteger(
 function total(answers) { return answers.reduce((sum, answer) => sum + answer.points, 0); }
 function descending(answers) { return answers.every((answer, i) => i === 0 || answers[i - 1].points > answer.points); }
 
-async function judgeAnswer(guess, answers, revealed = []) {
+async function judgeAnswer(guess, answers, revealed = [], { timeoutMs = 15000 } = {}) {
   const local = matchAnswer(guess, answers, revealed);
   if (!String(guess || '').trim() || !process.env.OPENAI_API_KEY) return local;
   try {
     const candidates = answers.map((a, index) => ({ index, answer: a.text, aliases: a.aliases })).filter(x => !revealed.includes(x.index));
     const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
+      method: 'POST', signal: AbortSignal.timeout(timeoutMs),
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: process.env.OPENAI_JUDGE_MODEL || process.env.OPENAI_MODEL || 'gpt-5-mini',

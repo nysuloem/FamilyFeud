@@ -42,6 +42,7 @@ test('early buzz cancels speech; second contestant hears full question; answer s
   const { room, clients, finish } = await fixture(t);
   beginRound(room, 0);
   assert.match(room.speechCues.get(room.pendingCue.cueId).text, /Let's have Alice.*Let's have Bob/);
+  assert.equal(room.speechCues.get(room.pendingCue.cueId).sound, 'faceoff_walkup');
   const invitation = room.pendingCue.cueId;
   clients[1].emit('cueFinished', { code: room.code, cueId: invitation }); await pause(10);
   assert.equal(room.pendingCue.cueId, invitation, 'Only the host audio controller can advance');
@@ -89,6 +90,7 @@ test('remaining answers reveal one at a time, and next round is unavailable unti
   awardRound(room, 0); assert.equal(room.phase, 'round_reveal'); assert.deepEqual(room.revealed, [0]);
   for (let i = 1; i < 7; i++) { await finish(); assert.equal(room.revealed.length, i + 1); assert.equal(room.phase, 'round_reveal'); }
   await finish(); assert.equal(room.phase, 'round_end'); assert.equal(room.scores[0], 31);
+  await until(()=>room.round===1,4000);assert.equal(room.phase,'faceoff');
 });
 
 async function playFast(f, indices) {
@@ -141,11 +143,11 @@ test('both Fast Money players progress through real reveals to $10,000; question
   assert.equal(room.round, -1, 'Fast Money must not render the old main board');
   assert.ok(publicRoom(room).game.fastMoney.every(q => q.question === null));
   await playFast(f, [0, 0, 0, 0, 0]);
-  clients[0].emit('continueFastMoney', { code: room.code }); await until(() => room.fastIndex === 1);
+  await until(() => room.fastIndex === 1, 4000);
   await playFast(f, [1, 1, 1, 1, 1]);
   assert.equal(room.fastPrize, 10000);
   assert.ok(publicRoom(room).fastTopAnswers.every(Boolean));
-  clients[0].emit('continueFastMoney', { code: room.code }); await until(() => room.phase === 'fast_results');
+  await until(() => room.phase === 'fast_results', 4000);
 });
 
 test('server can end Fast Money during an unfinished spoken question and score unanswered entries', async t => {
@@ -158,14 +160,60 @@ test('server can end Fast Money during an unfinished spoken question and score u
   assert.deepEqual(room.fastScores[0], [0, 0, 0, 0, 0]);
 });
 
-test('repeated second-player Fast Money answers score zero and under-200 payouts are five times the score', async t => {
-  const f = await fixture(t), { room, clients } = f;
+test('second-player duplicates buzz and retry the same question without resetting the clock', async t => {
+  const f = await fixture(t), { room, clients, finish } = f;
   room.round = 3; room.scores = [350, 100]; beginFastMoney(room);
   await playFast(f, [0, 0, 0, 0, 0]);
   clients[0].emit('continueFastMoney', { code: room.code }); await until(() => room.fastIndex === 1);
-  await playFast(f, [0, 0, 0, 0, 0]);
-  assert.deepEqual(room.fastScores[1], [0, 0, 0, 0, 0]);
-  assert.equal(room.fastPrize, room.fastScores[0].reduce((a, b) => a + b, 0) * 5);
+  await finish();await finish();
+  const deadline=room.fastDeadline;
+  const first=room.game.fastMoney[0].answers[0];
+  const give=(answer,attempt)=>clients[0].emitWithAck('submitFastAnswer',{code:room.code,answer,questionIndex:0,fastIndex:1,attempt});
+  for(const [attempt,answer] of [first.text,first.aliases[0]].entries()){
+    assert.equal((await give(answer,attempt)).ok,true);
+    await until(()=>room.pendingCue);
+    const cue=room.speechCues.get(room.pendingCue.cueId);
+    assert.equal(cue.text,'Try again!');assert.equal(cue.sound,'strike');
+    assert.equal(room.fastQuestionIndex,0);assert.equal(room.fastAttempt,attempt+1);
+    assert.equal(room.fastDeadline,deadline);assert.deepEqual(room.fastDraftAnswers,[]);
+    assert.ok(publicRoom(room).fastAnswers[0].every(a=>a===null));
+    await finish();assert.equal(room.inputLocked,false);
+    assert.equal((await give('a stale packet',attempt)).ok,false);
+  }
+  const alternate=room.game.fastMoney[0].answers[1];
+  assert.equal((await give(alternate.text,2)).ok,true);
+  await until(()=>room.fastQuestionIndex===1);
+  assert.equal(room.fastDraftAnswers[0],alternate.text);assert.equal(room.fastDeadline,deadline);
+  await finishFastPlayer(room);
+  assert.equal(room.fastScores[1][0],alternate.points);
+  assert.deepEqual(room.fastScores[1].slice(1),[0,0,0,0]);
+  const total=room.fastScores.flat().reduce((a,b)=>a+b,0);
+  assert.equal(room.fastPrize,total>=200?10000:total*5);
+});
+
+test('the deadline can interrupt a duplicate retry without accepting it',async t=>{
+  const {room,clients,finish}=await fixture(t);
+  room.scores=[350,100];beginFastMoney(room);
+  await finish();await finish();
+  room.fastIndex=1;room.fastAnswers[0]=['pizza','','','',''];room.fastMatches[0]=[0,-1,-1,-1,-1];room.fastScores[0]=[0,0,0,0,0];
+  assert.equal((await clients[0].emitWithAck('submitFastAnswer',{code:room.code,answer:'pizza',questionIndex:0,fastIndex:1})).ok,true);
+  await until(()=>room.pendingCue);
+  const retryCue=room.pendingCue.cueId;
+  await finishFastPlayer(room);
+  clients[0].emit('cueFinished',{code:room.code,cueId:retryCue});await pause(20);
+  assert.equal(room.phase,'fast_reveal');assert.deepEqual(room.fastAnswers[1],['','','','','']);
+  assert.deepEqual(room.fastScores[1],[0,0,0,0,0]);assert.equal(room.fastPrize,0);
+});
+
+test('automatic progression routes round four through Sudden Death when needed and into Fast Money',async t=>{
+  for(const [round,scores,nextRound] of [[3,[150,100],4],[3,[350,100],-1],[4,[350,100],-1]]){
+    const {room,finish}=await fixture(t);
+    room.round=round;room.scores=scores;room.revealed=Array.from({length:round===4?1:4},(_,i)=>i);room.bank=0;
+    awardRound(room,0);await finish();
+    assert.equal(room.phase,'round_end');assert.ok(room.transitionTimer);
+    await until(()=>room.round===nextRound,4000);
+    assert.equal(room.phase,nextRound===4?'faceoff':'host_wait');
+  }
 });
 
 async function rehearsal(t, part) {
@@ -209,6 +257,7 @@ test('solo introduction test controls the opponent and ends after the first roun
     assert.equal((await client.emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'xyzzy' })).ok, true);
     await until(() => room.pendingCue); await finish(); await finish();
     if (i === 1) { assert.match(room.speechCues.get(room.pendingCue.cueId).text, /get ready to steal/); await finish(); }
+    if(i===2){assert.ok(room.speechCues.get(room.pendingCue.cueId).text.includes(room.game.rounds[0].question));assert.match(room.speechCues.get(room.pendingCue.cueId).text,/Shout out some possible answers/);assert.equal(room.answerDeadline,null);}
     if (i < 3) await finish();
   }
   assert.equal(room.phase, 'round_reveal');
@@ -391,4 +440,22 @@ test('competing faceoff buzzer presses produce only one winning buzz cue',async 
   clients[1].emit('buzz',{code:room.code});await pause(10);
   assert.equal(buzzes.length,1);assert.equal(room.faceoff.buzzedBy,first);
   beginRound(room,1);assert.equal(room.faceoff.buzzedBy,null);
+});
+
+test('an answer submitted before Fast Money expires is judged once even if its check finishes afterward',async t=>{
+  const {room,clients,finish}=await fixture(t);
+  room.scores=[350,100];beginFastMoney(room);await finish();await finish();
+  room.fastIndex=1;room.fastAnswers[0]=['pizza','','','',''];room.fastMatches[0]=[0,-1,-1,-1,-1];room.fastScores[0]=[0,0,0,0,0];
+  const originalFetch=global.fetch,originalKey=process.env.OPENAI_API_KEY;
+  let complete;
+  global.fetch=()=>new Promise(resolve=>{complete=()=>resolve({ok:true,json:async()=>({output_text:JSON.stringify({index:1,accepted:true,reason:'same concept'})})})});
+  process.env.OPENAI_API_KEY='test';
+  t.after(()=>{global.fetch=originalFetch;if(originalKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=originalKey});
+  const answer='an unusual paraphrase';
+  assert.equal((await clients[0].emitWithAck('submitFastAnswer',{code:room.code,answer,questionIndex:0,fastIndex:1})).ok,true);
+  await until(()=>complete);assert.ok(room.fastPendingAnswer);assert.equal(publicRoom(room).fastPendingAnswer,undefined);
+  const finishing=finishFastPlayer(room);assert.equal(room.phase,'fast_judging');
+  complete();await finishing;
+  assert.equal(room.phase,'fast_reveal');assert.equal(room.fastAnswers[1][0],answer);
+  assert.equal(room.fastScores[1][0],room.game.fastMoney[0].answers[1].points);
 });

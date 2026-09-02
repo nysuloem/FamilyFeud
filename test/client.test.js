@@ -206,3 +206,63 @@ test('accepted faceoff buzzer cue plays the supplied recording',()=>{
   assert.equal(b.audioInstances.length,1);
   assert.equal(b.audioInstances[0].src,'/assets/faceoff-buzzer.mp3');
 });
+
+test('faceoff music starts with actual invitation playback and stops before the next cue',async()=>{
+  let loaded;
+  const b=browser(()=>new Promise(resolve=>loaded=resolve));
+  const playing=vm.runInContext("playHostSpeech('/invite','Come on down',30,'faceoff_walkup')",b.context);
+  assert.equal(b.audioInstances.length,0,'No music while host audio is loading');
+  loaded({ok:true,status:200,blob:async()=>({})});
+  await new Promise(resolve=>setImmediate(resolve));
+  const [voice,music]=b.audioInstances;
+  assert.equal(music.src,'/assets/faceoff-walkup.mp3');assert.equal(music.volume,.3);
+  voice.onplaying();assert.equal(b.audioInstances.length,2,'Buffering must not restart music');
+  voice.onended();await playing;assert.equal(music.paused,true);
+});
+
+test('Fast Money cameras show the host, hide the reveal clock, and make room for both answers',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={phase:'fast_play',fastIndex:0,fastRevealIndex:null,fastRevealCount:0,fastPlayers:['P','Q'],players:[{id:'P',name:'Pat',photo:'pat.png'},{id:'Q',name:'Sam',photo:'sam.png'}],fastAnswers:[null,null],fastScores:[null,null]}",b.context);
+  let html=vm.runInContext('dawsonFastStage()',b.context);
+  assert.match(html,/timed-pair/);assert.match(html,/alt="Richard Dawson"/);assert.match(html,/alt="Pat"/);assert.match(html,/data-fast-clock/);
+  vm.runInContext("state.phase='fast_reveal';state.fastRevealIndex=0;state.fastAnswers=[['coffee'],null];state.fastScores=[[42],null]",b.context);
+  html=vm.runInContext('dawsonFastStage()',b.context);
+  assert.match(html,/reveal-pair/);assert.match(html,/fast-reveal-arm/);assert.doesNotMatch(html,/data-fast-clock/);
+  vm.runInContext("state.fastIndex=1;state.fastRevealIndex=1;state.fastAnswers[1]=['tea'];state.fastScores[1]=[12]",b.context);
+  html=vm.runInContext('dawsonFastStage()',b.context);
+  assert.match(html,/coffee/);assert.match(html,/tea/);assert.equal((html.match(/data-fast-slot/g)||[]).length,10);
+  assert.doesNotMatch(html,/data-fast-clock|fast-host-pair|<img/);
+  vm.runInContext("state.phase='fast_results'",b.context);
+  assert.doesNotMatch(vm.runInContext('dawsonFastStage()',b.context),/data-fast-clock|fast-host-pair/);
+});
+
+test('only the playing family sees its strike count on phones',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={round:0,phase:'answer',controlFamily:0,strikes:2,isSteal:false,families:[{playerIds:['P','Q']},{playerIds:['R']}]}",b.context);
+  assert.match(vm.runInContext('phoneStrikes()',b.context),/aria-label="2 of 3 strikes"/);
+  for(const change of ["myPlayerId='R'","myPlayerId='P';isDisplay=true","isDisplay=false;state.isSteal=true","state.isSteal=false;state.phase='round_end'","state.phase='host_wait';state.round=-1"]){
+    vm.runInContext(change,b.context);assert.equal(vm.runInContext('phoneStrikes()',b.context),'');
+  }
+});
+
+test('ordinary round and Fast Money reveal endings do not require a continue button',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={phase:'round_end',adminId:'P',fastSelectorId:'P',fastPlayers:['P','Q']}",b.context);
+  assert.doesNotMatch(vm.runInContext('controls()',b.context),/<button/);
+  vm.runInContext("state.phase='fast_reveal_done'",b.context);
+  assert.doesNotMatch(vm.runInContext('controls()',b.context),/<button/);
+});
+
+test('a duplicate retry clears the old transcript and starts a fresh microphone session',()=>{
+  const b=browser(async()=>({})),microphones=[];
+  b.context.document.querySelector=()=>null;
+  b.context.window.SpeechRecognition=class{constructor(){microphones.push(this)}start(){}abort(){this.aborted=true}};
+  vm.runInContext("state={code:'TEST',phase:'fast_play',turnPlayerId:'P',fastPlayers:['Q','P'],fastIndex:1,fastQuestionIndex:0,fastAttempt:0,inputLocked:false};syncFastMicrophone();fastDraft.value='coffee';state.inputLocked=true;state.fastAttempt=1;syncFastMicrophone()",b.context);
+  assert.equal(vm.runInContext('fastDraft.value',b.context),'');assert.equal(microphones[0].aborted,true);
+  vm.runInContext('state.inputLocked=false;syncFastMicrophone()',b.context);
+  assert.equal(microphones.length,2);
+  microphones[0].onresult({resultIndex:0,results:[[{transcript:'old coffee'}]]});
+  assert.equal(vm.runInContext('fastDraft.value',b.context),'');
+  microphones[1].onresult({resultIndex:0,results:[[{transcript:'tea'}]]});
+  assert.equal(vm.runInContext('fastDraft.value',b.context),'tea');
+});

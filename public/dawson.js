@@ -54,18 +54,25 @@ function faceoffPodiumLights() {
 
 function dawsonFastStage() {
   const reveal = ['fast_reveal', 'fast_reveal_done', 'fast_results'].includes(state.phase);
-  const idx = state.fastRevealIndex ?? state.fastIndex ?? 0;
+  const idx = (reveal ? state.fastRevealIndex : state.fastIndex) ?? 0;
+  const both = reveal && (idx === 1 || state.phase === 'fast_results');
   const contestant = state.players.find(p => p.id === state.fastPlayers[idx]);
   const total = state.fastScores.flat().reduce((sum, value) => sum + (Number(value) || 0), 0);
   const rows = column => Array.from({ length: 5 }, (_, i) => {
     const answer = state.fastAnswers[column]?.[i], points = state.fastScores[column]?.[i];
     const shown = reveal && answer != null;
-    return `<div class="dawson-fast-row ${shown ? 'shown' : ''}" data-fast-slot="${column}-${i}"><span>${shown ? escapeHtml(answer || 'NO ANSWER') : ''}</span><b>${reveal && points != null ? points : ''}</b></div>`;
+    return `<div class="dawson-fast-row ${shown ? 'shown' : 'covered'}" data-fast-slot="${column}-${i}"><span>${shown ? escapeHtml(answer || 'NO ANSWER') : ''}</span><b>${reveal && points != null ? points : ''}</b></div>`;
   }).join('');
-  const portrait = contestant ? `<div class="fast-portrait"><img src="${contestant.photo}" alt="${escapeHtml(contestant.name)}"><strong>${escapeHtml(contestant.name)}</strong></div>` : '<div class="fast-portrait"><strong>FAST MONEY</strong></div>';
+  const portraits = contestant ? fastHostAndContestant(contestant, reveal) : '';
+  const clockVisible = !!contestant && ['fast_play','host_wait'].includes(state.phase);
   const remaining = state.fastDeadline ? Math.max(0, Math.ceil((state.fastDeadline - serverTime()) / 1000)) : state.fastIndex === 1 ? 60 : 45;
   const currentTop = reveal && idx === 1 && state.fastRevealCount ? state.fastTopAnswers?.[state.fastRevealCount - 1] : null;
-  return `<section class="dawson-fast-shell"><div class="fast-bank">${dotNumber(total)}</div><div class="fast-split"><div class="fast-answer-panel">${rows(0)}</div><div class="fast-answer-panel">${reveal && idx === 1 ? rows(1) : portrait}</div></div><div class="fast-clock" data-fast-clock>${dotNumber(remaining, 2)}</div>${currentTop ? `<div class="fast-top-answer">NUMBER ONE: ${escapeHtml(currentTop)}</div>` : ''}${state.phase === 'fast_results' ? `<div class="fast-payout">${total >= 200 ? '$10,000' : '$' + Number(state.fastPrize || 0).toLocaleString()}<small>${total} POINTS</small></div>` : ''}</section>`;
+  return `<section class="dawson-fast-shell ${both ? 'fast-both' : reveal ? 'fast-first-reveal' : 'fast-timed'}" aria-label="Fast Money"><div class="fast-split"><div class="fast-answer-panel">${rows(0)}</div><div class="fast-answer-panel">${both ? rows(1) : reveal ? portraits : rows(1)}</div><div class="fast-total">${dotNumber(total)}<span>TOTAL</span></div></div>${!reveal ? portraits : ''}${clockVisible ? `<div class="fast-clock" data-fast-clock>${dotNumber(remaining, 2)}</div>` : ''}${currentTop ? `<div class="fast-top-answer">NUMBER ONE: ${escapeHtml(currentTop)}</div>` : ''}${state.phase === 'fast_results' ? `<div class="fast-payout">${total >= 200 ? '$10,000' : '$' + Number(state.fastPrize || 0).toLocaleString()}<small>${total} POINTS</small></div>` : ''}</section>`;
+}
+
+function fastHostAndContestant(contestant, reveal){
+  if(reveal)return `<div class="fast-host-pair reveal-pair" aria-label="Richard Dawson beside ${escapeHtml(contestant.name)}"><img class="fast-reveal-host" src="/assets/dawson-fast-reveal.png" alt="Richard Dawson"><img class="fast-guest" src="${escapeHtml(contestant.photo)}" alt="${escapeHtml(contestant.name)}"><img class="fast-reveal-arm" src="/assets/dawson-fast-reveal.png" alt="" aria-hidden="true"><strong>${escapeHtml(contestant.name)}</strong></div>`;
+  return `<div class="fast-host-pair timed-pair"><img class="fast-timed-host" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><img class="fast-guest" src="${escapeHtml(contestant.photo)}" alt="${escapeHtml(contestant.name)}"><strong>${escapeHtml(contestant.name)}</strong></div>`;
 }
 
 function dawsonFamilyIntroduction(family) {
