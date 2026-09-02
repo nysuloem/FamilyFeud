@@ -2,7 +2,7 @@
 """Extract tonal Dawson effects from the original broadcast clips.
 
 Requires Python/numpy/scipy and ffmpeg. Run from any directory. Original assets
-stay intact; output is used only in Dawson games. No generated oscillator audio.
+stay intact; output is used in both game eras. No generated oscillator audio.
 """
 from pathlib import Path
 import subprocess

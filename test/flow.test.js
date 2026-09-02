@@ -468,7 +468,7 @@ test('the chosen era persists across public state, rounds and reconnecting',asyn
   await new Promise(resolve=>client.once('connect',resolve));
   assert.equal((await client.emitWithAck('rejoin',{code:room.code,playerId:oldId})).ok,true);
   beginRound(room,1);assert.equal(publicRoom(room).era,'harvey');
-  assert.equal(room.speechCues.get(room.pendingCue.cueId).sound,'round');
+  assert.equal(room.speechCues.get(room.pendingCue.cueId).sound,'faceoff_walkup');
 });
 
 test('test mode accepts either era and Harvey never creates the Dawson souvenir',async t=>{

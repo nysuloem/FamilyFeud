@@ -17,3 +17,9 @@ Use case: precise-object-edit. Image 1 is the EDIT TARGET, Steve Harvey at the m
 
 
 - `public/assets/harvey-intro-portrait.png`: the user-supplied smiling Steve Harvey photo, used directly and shown without cropping at both desktop and mobile sizes.
+
+## Faceoff walkup music
+
+- `public/assets/harvey-faceoff-walkup.mp3`: user-supplied “Screen Recording 2026-09-02 100648.mp3,” retaining source audio from 0.11 through 5.60 seconds (5.49 seconds). This removes leading silence and the roughly 2.59 seconds of blank padding at the end. Added 10 ms/60 ms edge fades; encoded as stereo 48 kHz/192 kbps MP3.
+- Starts at 30% volume when the host actually begins calling the contestants. Stops when that invitation finishes or is cancelled, before the question begins. Works with API speech and browser speech fallback. Dawson invitations keep their own music.
+- Both eras use the filtered ding, strike/duplicate buzzer, and faceoff buzzer documented in `DAWSON_AUDIO_NOTES.md`.

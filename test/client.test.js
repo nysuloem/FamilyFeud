@@ -202,7 +202,7 @@ test('podium lights follow the first buzz through handoffs and reset for a new f
   assert.doesNotMatch(vm.runInContext('faceoffPodiumLights()',b.context),/panel lit/);
 });
 
-test('Dawson effects use cleaned recordings and Harvey retains its existing recordings',()=>{
+test('both eras use cleaned recordings for every recorded sound effect',()=>{
   const b=browser(async()=>({}));
   b.handlers.cue({sound:'buzz'});
   assert.equal(b.audioInstances.length,1);
@@ -211,7 +211,7 @@ test('Dawson effects use cleaned recordings and Harvey retains its existing reco
     vm.runInContext(`state.era='${era}'`,b.context);
     for(const [type,name] of Object.entries({ding:'answer-ding',strike:'strike-buzzer',buzz:'faceoff-buzzer'})){
       vm.runInContext(`playEffect('${type}')`,b.context);
-      const expected=`/assets/${era==='dawson'?`dawson-${name}-clean`:name}.mp3`;
+      const expected=`/assets/dawson-${name}-clean.mp3`;
       assert.equal(b.audioInstances.at(-1).src,expected);
       assert.ok(fs.existsSync(path.join(__dirname,'../public',expected)));
     }
@@ -221,17 +221,27 @@ test('Dawson effects use cleaned recordings and Harvey retains its existing reco
   assert.equal(b.audioInstances.length,before,'Muted effects stay muted');
 });
 
-test('faceoff music starts with actual invitation playback and stops before the next cue',async()=>{
+for(const era of ['dawson','harvey'])test(`${era} faceoff music starts with invitation playback and stops on completion or cancellation`,async()=>{
   let loaded;
   const b=browser(()=>new Promise(resolve=>loaded=resolve));
+  vm.runInContext(`state.era='${era}'`,b.context);
   const playing=vm.runInContext("playHostSpeech('/invite','Come on down',30,'faceoff_walkup')",b.context);
   assert.equal(b.audioInstances.length,0,'No music while host audio is loading');
   loaded({ok:true,status:200,blob:async()=>({})});
   await new Promise(resolve=>setImmediate(resolve));
   const [voice,music]=b.audioInstances;
-  assert.equal(music.src,'/assets/faceoff-walkup.mp3');assert.equal(music.volume,.3);
+  const expected=era==='harvey'?'/assets/harvey-faceoff-walkup.mp3':'/assets/faceoff-walkup.mp3';
+  assert.equal(music.src,expected);assert.equal(music.volume,.3);
+  assert.ok(fs.existsSync(path.join(__dirname,'../public',expected)));
   voice.onplaying();assert.equal(b.audioInstances.length,2,'Buffering must not restart music');
   voice.onended();await playing;assert.equal(music.paused,true);
+  const cancelled=vm.runInContext("playHostSpeech('/next','Next players',31,'faceoff_walkup')",b.context);
+  loaded({ok:true,status:200,blob:async()=>({})});
+  await new Promise(resolve=>setImmediate(resolve));
+  const nextMusic=b.audioInstances.at(-1);
+  assert.equal(nextMusic.src,expected);
+  vm.runInContext('cancelHostCue(31)',b.context);
+  await cancelled;assert.equal(nextMusic.paused,true,'Cancelled invitations cannot leave music playing');
 });
 
 test('Fast Money cameras show the host, hide the reveal clock, and make room for both answers',()=>{

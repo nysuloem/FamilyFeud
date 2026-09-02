@@ -1,10 +1,11 @@
 # Dawson sound-effect cleanup
 
 The three `public/assets/dawson-*-clean.mp3` files are filtered extractions from
-the existing user-supplied broadcast recordings. They are used for Dawson games,
+the existing user-supplied broadcast recordings. Both eras now use these cleaned clips,
 including correct answers, strikes/zero-point reveals, duplicate-answer retries,
-and the faceoff button. The original assets are retained for Harvey games and
-as the source for future adjustments.
+and the faceoff button. The original unfiltered assets are retained only
+as source material for future adjustments. The other effects (round, reveal,
+Fast Money cue, and win) are synthesized tones and contain no recorded audience.
 
 | Source | Clean output | Source interval |
 | --- | --- | --- |

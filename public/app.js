@@ -341,7 +341,7 @@ async function playHostSpeech(url,text,cueId,sound){
   let didStart=false;
   const started=()=>{
     if(signal.aborted||didStart)return;didStart=true;
-    if(sound==='faceoff_walkup'){session.music=new Audio('/assets/faceoff-walkup.mp3');session.music.volume=.3;session.music.play().catch(()=>{});}
+    if(sound==='faceoff_walkup'){session.music=new Audio(isHarvey()?'/assets/harvey-faceoff-walkup.mp3':'/assets/faceoff-walkup.mp3');session.music.volume=.3;session.music.play().catch(()=>{});}
     if(isAudioController())socket.emit('cueStarted',{code:roomCode,cueId});
   };
   let objectUrl;
@@ -424,7 +424,7 @@ function startMicrophone(selector,button){
 }
 function effectAudioSource(type){
   const filename={ding:'answer-ding',strike:'strike-buzzer',buzz:'faceoff-buzzer'}[type];
-  return `/assets/${isHarvey()?filename:`dawson-${filename}-clean`}.mp3`;
+  return `/assets/dawson-${filename}-clean.mp3`;
 }
 function playEffect(type){if(!audioEnabled)return;if(['ding','strike','buzz'].includes(type)){new Audio(effectAudioSource(type)).play().catch(()=>{});return}const ctx=window.feudAudio||(window.feudAudio=new(window.AudioContext||window.webkitAudioContext)());const now=ctx.currentTime;const tones={buzz:[440,.16],reveal:[660,.12],strike:[120,.42],win:[523,.7],round:[330,.25],fast:[780,.2]}[type]||[440,.1];for(let i=0;i<(type==='win'?4:1);i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g).connect(ctx.destination);o.frequency.value=tones[0]*(type==='win'?1+i*.25:1);g.gain.setValueAtTime(.18,now+i*.12);g.gain.exponentialRampToValueAtTime(.001,now+i*.12+tones[1]);o.start(now+i*.12);o.stop(now+i*.12+tones[1])}}
 

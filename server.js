@@ -438,7 +438,7 @@ function beginRound(room, index) {
   room.phase = 'faceoff'; room.turnPlayerId = null;
   const opening = index === 4 ? 'Sudden Death.' : `Round ${index + 1}.`;
   room.message = `${opening} The host is calling the faceoff players.`;
-  runHostedCue(room, `${opening} Let's have ${p0.name}. Let's have ${p1.name}.`, room.era === 'harvey' ? 'round' : 'faceoff_walkup', () => readFaceoffQuestion(room));
+  runHostedCue(room, `${opening} Let's have ${p0.name}. Let's have ${p1.name}.`, 'faceoff_walkup', () => readFaceoffQuestion(room));
 }
 
 function readFaceoffQuestion(room) {
