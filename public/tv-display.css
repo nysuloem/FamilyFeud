@@ -1,0 +1,61 @@
+/* Shared host screen only. 1920 × 1080 scales as one frame to 720p, 1080p or 4K. */
+body.tv-display{height:100dvh;min-height:0;overflow:hidden;background:#08090d}
+.tv-display #app{position:fixed;left:50%;top:50%;width:1920px;height:1080px;min-height:0;transform:translate(-50%,-50%) scale(var(--tv-scale,1));transform-origin:center;overflow:hidden;background:#100d09}
+.tv-display .game-shell{width:100%;height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;padding:36px 48px;gap:12px}
+.tv-display .game-shell>.controls{display:none}
+.tv-display .stage{container-type:size;min-width:0;min-height:0;padding:12px;display:grid;place-items:center}
+.tv-display .stage>:is(.dawson-stage,.dawson-faceoff,.dawson-fast-shell,.harvey-stage,.harvey-faceoff,.harvey-fast-shell){width:min(100cqw,calc(100cqh * var(--scene-ratio)));height:auto;min-height:0;max-width:none;max-height:none;aspect-ratio:var(--scene-ratio);margin:0}
+.tv-display .dawson-stage{--scene-ratio:805 / 591}
+.tv-display .dawson-faceoff{--scene-ratio:585 / 445}
+.tv-display .dawson-fast-shell{--scene-ratio:4 / 3}
+.tv-display .harvey-stage{--scene-ratio:1840 / 855}
+.tv-display .harvey-faceoff{--scene-ratio:1740 / 904}
+.tv-display .harvey-fast-shell{--scene-ratio:16 / 9}
+/* The modern Fast Money clock extends below its board; reserve that space. */
+.tv-display .stage:has(.harvey-fast-shell){padding-bottom:60px}
+.tv-display .status-banner{justify-self:center;width:100%;max-width:1660px;margin:0;padding:12px 24px;font-size:30px;line-height:1.25;overflow-wrap:anywhere}
+.tv-display .stage-round{font-size:22px}
+.tv-display .dawson-label{font-size:24px}
+.tv-display .dawson-points{font-size:28px}
+.tv-display .board-rail{font-size:22px}
+.tv-display .stage-podium{font-size:28px}
+.tv-display .faceoff-contestant span{font-size:20px}
+.tv-display .faceoff-podium-label{font-size:24px}
+.tv-display .sound-unlock{top:18px;right:28px;font-size:20px;padding:8px 16px}
+
+/* Lobby and introduction content stay inside the same broadcast safe area. */
+.tv-display .page{height:100%;min-height:0;padding:60px 80px}
+.tv-display .lobby{width:100%;height:100%}
+.tv-display .lobby-layout{height:100%;grid-template-columns:720px minmax(0,1fr);gap:32px}
+.tv-display .lobby .panel{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:30px;text-align:center;font-size:26px}
+.tv-display .lobby .panel :is(h1,h2,p){margin:0}
+.tv-display .lobby h1,.tv-display .lobby h2{font-size:38px}
+.tv-display .join-code{font-size:64px;margin:0}
+.tv-display .qr{width:280px;height:280px;flex:none}
+.tv-display .share-url{max-width:100%;font-size:23px;overflow-wrap:anywhere}
+.tv-display .lobby .secondary{font-size:24px}
+.tv-display .private-lobby{font-size:32px}
+.tv-display .player-count{font-size:110px}
+.tv-display .intro-overlay{position:absolute;inset:0;padding:48px 64px}
+.tv-display .intro-content{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.tv-display .intro-title{font-size:112px}
+.tv-display .intro-content>:is(p,.kiss,.kiss-disclosure){margin:0}
+.tv-display .family-introduction{width:1500px;aspect-ratio:5 / 3}
+.tv-display .harvey-family-intro{width:1600px;aspect-ratio:16 / 9}
+.tv-display .host-card{width:1500px;grid-template-columns:600px 1fr;gap:60px}
+.tv-display .host-card img.host-isolated{height:780px;max-height:780px;width:auto;max-width:100%}
+.tv-display .harvey-host-card{width:1600px;height:800px;max-height:none;grid-template-columns:1fr 1fr;text-align:left}
+.tv-display .harvey-host-card h1{font-size:110px}
+.tv-display .harvey-host-card h1 br{display:block}
+.tv-display .harvey-host-card :is(p,span){font-size:28px}
+.tv-display .kiss-souvenir{max-width:1400px;max-height:700px;object-fit:contain}
+.tv-display .kiss{font-size:44px}
+.tv-display .kiss-disclosure{font-size:24px}
+
+/* Body-level overlays use the same scale as the broadcast frame. */
+.tv-fullscreen{position:fixed;z-index:100;left:18px;top:12px;font-size:14px;padding:8px 14px;opacity:.65}
+.tv-fullscreen:hover,.tv-fullscreen:focus-visible{opacity:1}
+.tv-display .strike-frame{width:calc(235px * var(--tv-scale));height:calc(315px * var(--tv-scale));border-width:calc(24px * var(--tv-scale))}
+.tv-display .good-answer-shout{top:calc(24px * var(--tv-scale));max-width:90vw}
+.tv-display .good-answer-shout strong{font-size:calc(42px * var(--tv-scale))}
+.tv-display .good-answer-shout span{font-size:calc(24px * var(--tv-scale))}

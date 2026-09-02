@@ -26,6 +26,7 @@ function browser(fetchImpl) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/contestant-badges.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/dawson.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/harvey.js'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/tv-display.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8'), context);
   vm.runInContext("state={mode:'remote',adminId:'P'};myPlayerId='P';roomCode='TEST';audioEnabled=true", context);
   return { context, events, handlers, audioInstances };
@@ -355,6 +356,39 @@ test('long badge names fit inside the oval without clipping or shortening their 
   label.getComputedTextLength=()=>70;
   vm.runInContext('fitContestantBadges()',b.context);
   assert.deepEqual(attrs,{},'Short names retain natural lettering');
+});
+
+test('TV frame fits 720p, 1080p, 4K and a browser window with chrome without distortion',()=>{
+  const b=browser(async()=>({}));
+  for(const [width,height] of [[1280,720],[1920,1080],[3840,2160],[1920,950],[2560,1080]]){
+    const scale=vm.runInContext(`tvDisplayScale(${width},${height})`,b.context);
+    const renderedWidth=1920*scale,renderedHeight=1080*scale;
+    assert.ok(renderedWidth<=width+.001 && renderedHeight<=height+.001,'Entire frame fits');
+    assert.ok(Math.abs(renderedWidth-width)<.001 || Math.abs(renderedHeight-height)<.001,'Use the available screen');
+    assert.ok(Math.abs(renderedWidth/renderedHeight-16/9)<1e-12);
+  }
+});
+
+test('TV sizing and fullscreen controls belong only to the shared host display',async()=>{
+  const b=browser(async()=>({})),classes={},properties={};let button=null,entered=0,exited=0;
+  const doc=b.context.document;
+  doc.body={classList:{toggle:(name,on)=>classes[name]=on},append:element=>button=element};
+  doc.documentElement={style:{setProperty:(key,value)=>properties[key]=value,removeProperty:key=>delete properties[key]},
+    requestFullscreen:async()=>{entered++;doc.fullscreenElement=doc.documentElement}};
+  doc.exitFullscreen=async()=>{exited++;doc.fullscreenElement=null};
+  doc.createElement=()=>({remove:()=>button=null});
+  doc.querySelector=selector=>selector==='#tvFullscreen'?button:null;
+  b.context.window.innerWidth=1280;b.context.window.innerHeight=720;
+  vm.runInContext("state.mode='host';isDisplay=true;updateTVDisplay()",b.context);
+  assert.equal(classes['tv-display'],true);assert.equal(properties['--tv-scale'],2/3);
+  assert.equal(button.textContent,'Full screen');assert.equal(entered,0,'Fullscreen requires a user click');
+  await button.onclick();vm.runInContext('updateTVDisplay()',b.context);
+  assert.equal(entered,1);assert.equal(button.textContent,'Exit full screen');
+  await button.onclick();assert.equal(exited,1);
+  vm.runInContext('isDisplay=false;updateTVDisplay()',b.context);
+  assert.equal(classes['tv-display'],false);assert.equal(button,null);assert.deepEqual(properties,{});
+  vm.runInContext("state.mode='remote';isDisplay=true;updateTVDisplay()",b.context);
+  assert.equal(classes['tv-display'],false,'Remote screens retain their own responsive layout');
 });
 
 test('Harvey boards preserve answer secrecy and use both columns only for the second reveal',()=>{

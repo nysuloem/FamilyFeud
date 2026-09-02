@@ -2,6 +2,8 @@
 
 A phone-controlled Family Feud game with Richard Dawson and Steve Harvey era presentations. It supports a shared-TV host display and fully remote play.
 
+**Host on this screen** uses a 16:9 television frame. It scales uniformly to the available viewport (including 720p, 1080p, and 4K), with safe margins for captions and scene edges. Lobby, introductions, rounds, faceoffs, and Fast Money fit within that frame; scene images retain their original proportions. The modern Fast Money clock has reserved space below the board. Use **Full screen** on the host display to hide browser chrome. Only the shared display uses this layout; player phones and remote games keep their existing responsive layout.
+
 Games support 2–10 players. If a one-player family reaches Fast Money, that player completes both timed halves.
 
 ## Solo Test Mode

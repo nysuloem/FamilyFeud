@@ -112,6 +112,7 @@ function showJoin(code) {
 function render() {
   if (!state) return; clearInterval(clockInterval);
   document.body?.classList?.toggle('harvey-era', isHarvey());
+  updateTVDisplay();
   syncFastMicrophone();
   if (state.testPart && state.phase === 'generating') {
     app.innerHTML = `${testToolbar()}<main class="page"><section class="panel"><h1>Preparing your test…</h1><p>${state.kissStatus === 'preparing' ? 'Creating your optional souvenir. This can take up to 90 seconds.' : 'Setting up the sample families.'}</p></section></main>`; return;
