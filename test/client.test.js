@@ -23,6 +23,7 @@ function browser(fetchImpl) {
     }
   });
   context.speechSynthesis = context.window.speechSynthesis;
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/contestant-badges.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/dawson.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/harvey.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8'), context);
@@ -309,6 +310,41 @@ test('board labels shrink to fit and recover full size after a wider resize',()=
   label.clientWidth=240;
   vm.runInContext('fitBoardLabels()',b.context);
   assert.equal(label.style.fontSize,'','Reset font size when the board grows');
+});
+
+test('both eras put escaped contestant names on portrait badges in every camera',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext(`state={phase:'fast_play',round:0,bank:0,scores:[0,0],turnPlayerId:'P',
+    players:[{id:'P',name:'Pat & Sam <3',photo:'portrait.png'},{id:'Q',name:'Alex',photo:'other.png'}],
+    families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}],
+    faceoff:{players:['P','Q'],buzzedBy:null},fastIndex:0,fastPlayers:['P','Q'],
+    fastAnswers:[null,null],fastScores:[null,null]}`,b.context);
+  for(const era of ['dawson','harvey']){
+    const calls=era==='dawson'
+      ? ['dawsonTeam(0)','dawsonFamilyIntroduction(state.families[0])','dawsonFaceoff()',
+         'fastHostAndContestant(state.players[0],false)','fastHostAndContestant(state.players[0],true)']
+      : ['harveyFamily(0)','harveyFamilyIntroduction(state.families[0])','harveyFaceoff()','harveyFastStage()'];
+    for(const call of calls){
+      const html=vm.runInContext(call,b.context);
+      assert.match(html,new RegExp(`contestant-portrait[^]*<img[^]*contestant-name-badge badge-${era}`));
+      assert.match(html,/<text[^>]*>Pat &amp; Sam &lt;3<\/text>/);
+      assert.doesNotMatch(html,/<(?:strong|span)>Pat/,'Old name strip is gone');
+    }
+  }
+});
+
+test('long badge names fit inside the oval without clipping or shortening their text',()=>{
+  const b=browser(async()=>({}));
+  const attrs={};
+  const label={textContent:'ALEXANDRA-JOSEPHINE',getComputedTextLength:()=>280,
+    removeAttribute:key=>delete attrs[key],setAttribute:(key,value)=>attrs[key]=value};
+  b.context.document.querySelectorAll=()=>[label];
+  vm.runInContext('fitContestantBadges()',b.context);
+  assert.deepEqual(attrs,{textLength:'158',lengthAdjust:'spacingAndGlyphs'});
+  assert.equal(label.textContent,'ALEXANDRA-JOSEPHINE');
+  label.getComputedTextLength=()=>70;
+  vm.runInContext('fitContestantBadges()',b.context);
+  assert.deepEqual(attrs,{},'Short names retain natural lettering');
 });
 
 test('Harvey boards preserve answer secrecy and use both columns only for the second reveal',()=>{

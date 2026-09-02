@@ -16,6 +16,8 @@ Fast Money automatically enables the active contestant's microphone (with browse
 
 Richard Dawson family introductions show one family at a time behind a gold oval name panel with surrounding bulbs. After the announcer says the family name, the panel slides aside to show the contestant photos and their names are announced before the next family appears.
 
+Contestant names appear as oval badges over the chest area of their photos in the lobby, family introductions, main rounds, faceoffs, and Fast Money. Dawson badges are pale cream with dark lettering; Harvey badges are blue with gold trim and lettering. Names fit inside the badge without truncation, including after fonts load or the screen resizes. Badges are display overlays, so uploaded photos remain intact. Second-player Fast Money reveals still devote both columns to answers, without contestant portraits or badges.
+
 ## Prepared surveys and repeat protection
 
 `data/survey-seeds.json` contains 240 original synthetic surveys (24 complete games: the original 12 plus 12 additional games), separate from the deliberately repeated test fixtures. Scores simulate survey counts for this home game; they are not collected survey results. The source prompts and ranked answers (short display label first, followed by accepted alternatives) are in `data/survey-seeds.txt`.

@@ -20,7 +20,7 @@ function dawsonTeam(index) {
   const family = state.families[index];
   return `<section class="stage-family family-${index}" aria-label="${escapeHtml(family.name)} family"><div class="stage-contestants">${family.playerIds.map(id => {
     const p = state.players.find(x => x.id === id);
-    return `<div class="stage-player ${state.turnPlayerId === id ? 'active' : ''}"><img src="${p.photo}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name)}</span></div>`;
+    return `<div class="stage-player ${state.turnPlayerId === id ? 'active' : ''}">${contestantPortrait(p, 'dawson')}</div>`;
   }).join('')}</div><div class="stage-podium">${escapeHtml(family.name)}<small>FAMILY</small></div></section>`;
 }
 
@@ -32,7 +32,7 @@ function dawsonFaceoff() {
   const contestants = state.faceoff.players.map((id, side) => {
     const p = state.players.find(p => p.id === id);
     const family = state.families.find(f => f.playerIds.includes(id));
-    return `<article class="faceoff-contestant faceoff-side-${side} ${state.turnPlayerId === id ? 'active' : ''}"><img src="${p.photo}" alt="${escapeHtml(p.name)}"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(family.name)} FAMILY</span></article>`;
+    return `<article class="faceoff-contestant faceoff-side-${side} ${state.turnPlayerId === id ? 'active' : ''}">${contestantPortrait(p, 'dawson')}<span>${escapeHtml(family.name)} FAMILY</span></article>`;
   }).join('');
   return `<section class="dawson-faceoff" aria-label="Richard Dawson faceoff podium"><div class="stage-round">${state.round === 4 ? 'SUDDEN DEATH' : `ROUND ${state.round + 1}`} · FACE-OFF</div>${faceoffPodiumLights()}${contestants}${state.faceoff.buzzedBy ? '' : '<div class="faceoff-podium-label">FAMILY FEUD</div>'}</section>`;
 }
@@ -71,8 +71,8 @@ function dawsonFastStage() {
 }
 
 function fastHostAndContestant(contestant, reveal){
-  if(reveal)return `<div class="fast-host-pair reveal-pair" aria-label="Richard Dawson beside ${escapeHtml(contestant.name)}"><img class="fast-reveal-host" src="/assets/dawson-fast-reveal.png" alt="Richard Dawson"><img class="fast-guest" src="${escapeHtml(contestant.photo)}" alt="${escapeHtml(contestant.name)}"><img class="fast-reveal-arm" src="/assets/dawson-fast-reveal.png" alt="" aria-hidden="true"><strong>${escapeHtml(contestant.name)}</strong></div>`;
-  return `<div class="fast-host-pair timed-pair"><img class="fast-timed-host" src="/assets/dawson-fast-reading.png" alt="Richard Dawson"><img class="fast-guest" src="${escapeHtml(contestant.photo)}" alt="${escapeHtml(contestant.name)}"><strong>${escapeHtml(contestant.name)}</strong></div>`;
+  if(reveal)return `<div class="fast-host-pair reveal-pair" aria-label="Richard Dawson beside ${escapeHtml(contestant.name)}"><img class="fast-reveal-host" src="/assets/dawson-fast-reveal.png" alt="Richard Dawson">${contestantPortrait(contestant, 'dawson', 'fast-guest')}<img class="fast-reveal-arm" src="/assets/dawson-fast-reveal.png" alt="" aria-hidden="true"></div>`;
+  return `<div class="fast-host-pair timed-pair"><img class="fast-timed-host" src="/assets/dawson-fast-reading.png" alt="Richard Dawson">${contestantPortrait(contestant, 'dawson', 'fast-guest')}</div>`;
 }
 
 function dawsonFamilyIntroduction(family) {
@@ -82,7 +82,7 @@ function dawsonFamilyIntroduction(family) {
   }).join('');
   return `<section class="family-introduction" aria-label="Introducing the ${escapeHtml(family.name)} family"><div class="family-reveal-window"><div class="intro-family-lineup">${family.playerIds.map(id=>{
     const p=state.players.find(p=>p.id===id);
-    return `<article class="intro-family-member"><img src="${p.photo}" alt="${escapeHtml(p.name)}"><strong>${escapeHtml(p.name)}</strong></article>`;
+    return `<article class="intro-family-member">${contestantPortrait(p, 'dawson')}</article>`;
   }).join('')}</div><div class="intro-family-rail">${escapeHtml(family.name)} FAMILY</div><div class="family-name-door"><span class="oval-flourish flourish-top" aria-hidden="true">✦ ❧ ✦</span><h1 style="--name-size:${family.name.length>16?'6.5':family.name.length>10?'8':'11'}cqw">${escapeHtml(family.name)}</h1><span class="oval-flourish flourish-bottom" aria-hidden="true">✦ ❧ ✦</span></div></div><svg class="intro-oval-bulbs" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">${bulbs}</svg></section>`;
 }
 

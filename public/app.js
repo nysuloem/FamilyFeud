@@ -129,6 +129,7 @@ function renderLobby() {
   const url = `${location.origin}/join/${state.code}`;
   const roster = admin ? `<div class="players">${state.players.map(playerCard).join('') || '<p>No players yet</p>'}</div>` : `<div class="private-lobby"><div class="player-count">${state.players.length}/10</div><p>${isDisplay ? 'Players have joined.' : 'You’re in!'} Only the player who created the game can see the lobby roster.</p></div>`;
   app.innerHTML = `<main class="page"><section class="lobby"><div class="lobby-layout"><article class="panel"><h2>${state.mode === 'host' ? 'SCAN TO JOIN' : 'SHARE THIS GAME'}</h2><div class="join-code">${state.code}</div>${state.mode === 'host' ? `<img class="qr" src="/api/room/${state.code}/qr" alt="Join QR code">` : ''}<p class="share-url">${escapeHtml(url)}</p><button class="secondary" id="share">Share link</button><p class="era-label">${isHarvey() ? "STEVE HARVEY ERA" : "RICHARD DAWSON ERA"}</p><p><small>The dynamic announcer is an AI-generated voice.</small></p></article><article class="panel"><h1>${state.phase === 'generating' ? 'Preparing the surveys…' : admin ? `Who’s playing? (${state.players.length}/10)` : 'Waiting for the game to start'}</h1>${roster}${admin && state.phase === 'lobby' ? `<p>You’re the first player, so you start the game.</p><button class="primary" id="start" ${state.players.length < 2 ? 'disabled' : ''}>Start the Game</button>${state.players.length < 2 ? '<p><small>At least two players are needed.</small></p>' : ''}` : state.phase === 'lobby' ? '<p>Waiting for the first player to start…</p>' : ''}</article></div></section></main>`;
+  refreshContestantBadges();
   document.querySelector('#share').onclick = () => share(url);
   const start = document.querySelector('#start'); if (start) start.onclick = () => { unlockAudio(); socket.emit('startGame', { code: state.code }, r => { if (!r?.ok) toast(r.error); }); };
 }
@@ -159,6 +160,7 @@ async function runIntro() {
     for (let index = 0; index < state.families.length; index++) {
       if (state.phase !== 'intro') return;
       if (introContent) introContent.innerHTML = dawsonFamilyIntroduction(state.families[index]);
+      refreshContestantBadges();
       fitFamilyName();
       document.fonts?.ready.then(fitFamilyName);
       await playFamilyAnnouncement(index, 'name');
@@ -196,6 +198,7 @@ function renderGame() {
   const faceoffScene = showFaceoffScene();
   app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${isHarvey() ? (faceoffScene ? harveyFaceoff() : round ? harveyStage(round) : harveyFastStage()) : (faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage())}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${goodAnswerControl()}</section></main>`;
   wireControls();
+  refreshContestantBadges();
   fitBoardLabels();
   document.fonts?.ready.then(fitBoardLabels);
   const answer=document.querySelector('#answer');
@@ -314,7 +317,7 @@ function wireControls() {
 
 function submitFast(form) { const answer=form.querySelector('#fastAnswer').value.trim();if(!answer||state.inputLocked)return;const button=form.querySelector('button[type="submit"],button.primary');button.disabled=true;socket.emit('submitFastAnswer',{code:state.code,answer,questionIndex:state.fastQuestionIndex,fastIndex:state.fastIndex,attempt:state.fastAttempt||0},result=>{if(!result?.ok)button.disabled=false}); }
 function scoreCard(i,right=false){const f=state.families[i];return `<div class="family-score ${right?'right':''}"><div>${f?`${escapeHtml(f.name)}<br><small>FAMILY</small>`:'FAMILY'}</div><div class="score-number">${state.scores[i]||0}</div></div>`}
-function playerCard(p){return `<div class="player-card"><img src="${p.photo}" alt=""><strong>${escapeHtml(p.name)}</strong>${p.connected?'':'<small>Reconnecting…</small>'}</div>`}
+function playerCard(p){return `<div class="player-card">${contestantPortrait(p, isHarvey()?'harvey':'dawson')}${p.connected?'':'<small>Reconnecting…</small>'}</div>`}
 function familyPanel(f){return `<article class="family-panel"><h2>${escapeHtml(f.name)} FAMILY</h2><div class="family-list">${f.playerIds.map(id=>playerCard(state.players.find(p=>p.id===id))).join('')}</div></article>`}
 function familyIndex(){return state.families.findIndex(f=>f.playerIds.includes(myPlayerId))}
 function names(f){return f.playerIds.map(id=>state.players.find(p=>p.id===id)?.name).filter(Boolean).join(', ')}
