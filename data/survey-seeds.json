@@ -1,0 +1,4829 @@
+[
+  {
+    "id": "starter-1",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something that might interrupt a backyard barbecue.",
+        "answers": [
+          {
+            "text": "RAIN",
+            "points": 28,
+            "aliases": [
+              "rain"
+            ]
+          },
+          {
+            "text": "WASPS / BEES",
+            "points": 22,
+            "aliases": [
+              "wasps",
+              "bees"
+            ]
+          },
+          {
+            "text": "RUNNING OUT OF GAS / EMPTY PROPANE TANK",
+            "points": 17,
+            "aliases": [
+              "running out of gas",
+              "empty propane tank"
+            ]
+          },
+          {
+            "text": "BURNT FOOD",
+            "points": 13,
+            "aliases": [
+              "burnt food"
+            ]
+          },
+          {
+            "text": "A NEIGHBOUR COMPLAINING / NOISE COMPLAINT",
+            "points": 9,
+            "aliases": [
+              "a neighbour complaining",
+              "noise complaint"
+            ]
+          },
+          {
+            "text": "A DOG STEALING FOOD",
+            "points": 7,
+            "aliases": [
+              "a dog stealing food"
+            ]
+          },
+          {
+            "text": "A PHONE CALL",
+            "points": 4,
+            "aliases": [
+              "a phone call"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something a hotel guest might ask the front desk for.",
+        "answers": [
+          {
+            "text": "EXTRA TOWELS",
+            "points": 30,
+            "aliases": [
+              "extra towels"
+            ]
+          },
+          {
+            "text": "WI-FI PASSWORD",
+            "points": 24,
+            "aliases": [
+              "wi-fi password"
+            ]
+          },
+          {
+            "text": "DIRECTIONS",
+            "points": 18,
+            "aliases": [
+              "directions"
+            ]
+          },
+          {
+            "text": "WAKE-UP CALL",
+            "points": 13,
+            "aliases": [
+              "wake-up call"
+            ]
+          },
+          {
+            "text": "EXTRA PILLOW",
+            "points": 9,
+            "aliases": [
+              "extra pillow"
+            ]
+          },
+          {
+            "text": "LATE CHECKOUT",
+            "points": 6,
+            "aliases": [
+              "late checkout"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people do when the power goes out.",
+        "answers": [
+          {
+            "text": "FIND A FLASHLIGHT / TORCH",
+            "points": 35,
+            "aliases": [
+              "find a flashlight",
+              "torch"
+            ]
+          },
+          {
+            "text": "LIGHT CANDLES",
+            "points": 26,
+            "aliases": [
+              "light candles"
+            ]
+          },
+          {
+            "text": "CHECK THE BREAKER / FUSE BOX",
+            "points": 19,
+            "aliases": [
+              "check the breaker",
+              "fuse box"
+            ]
+          },
+          {
+            "text": "CALL THE POWER COMPANY",
+            "points": 12,
+            "aliases": [
+              "call the power company"
+            ]
+          },
+          {
+            "text": "LOOK OUTSIDE / CHECK NEIGHBOURS",
+            "points": 8,
+            "aliases": [
+              "look outside",
+              "check neighbours"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you hope a birthday cake has.",
+        "answers": [
+          {
+            "text": "ICING / FROSTING",
+            "points": 42,
+            "aliases": [
+              "icing",
+              "frosting"
+            ]
+          },
+          {
+            "text": "CANDLES",
+            "points": 28,
+            "aliases": [
+              "candles"
+            ]
+          },
+          {
+            "text": "CHOCOLATE",
+            "points": 19,
+            "aliases": [
+              "chocolate"
+            ]
+          },
+          {
+            "text": "YOUR NAME / A MESSAGE",
+            "points": 11,
+            "aliases": [
+              "your name",
+              "a message"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name a sport played on ice.",
+      "answers": [
+        {
+          "text": "HOCKEY / ICE HOCKEY",
+          "points": 44,
+          "aliases": [
+            "hockey",
+            "ice hockey"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a fruit with a peel people usually remove.",
+        "answers": [
+          {
+            "text": "BANANA",
+            "points": 35,
+            "aliases": [
+              "banana"
+            ]
+          },
+          {
+            "text": "ORANGE",
+            "points": 26,
+            "aliases": [
+              "orange"
+            ]
+          },
+          {
+            "text": "GRAPEFRUIT",
+            "points": 19,
+            "aliases": [
+              "grapefruit"
+            ]
+          },
+          {
+            "text": "MANDARIN / TANGERINE",
+            "points": 12,
+            "aliases": [
+              "mandarin",
+              "tangerine"
+            ]
+          },
+          {
+            "text": "KIWI",
+            "points": 8,
+            "aliases": [
+              "kiwi"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a place where you have to whisper.",
+        "answers": [
+          {
+            "text": "LIBRARY",
+            "points": 35,
+            "aliases": [
+              "library"
+            ]
+          },
+          {
+            "text": "CHURCH",
+            "points": 26,
+            "aliases": [
+              "church"
+            ]
+          },
+          {
+            "text": "MOVIE THEATRE / CINEMA",
+            "points": 19,
+            "aliases": [
+              "movie theatre",
+              "cinema"
+            ]
+          },
+          {
+            "text": "HOSPITAL",
+            "points": 12,
+            "aliases": [
+              "hospital"
+            ]
+          },
+          {
+            "text": "CLASSROOM",
+            "points": 8,
+            "aliases": [
+              "classroom"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name an animal known for moving slowly.",
+        "answers": [
+          {
+            "text": "TURTLE / TORTOISE",
+            "points": 35,
+            "aliases": [
+              "turtle",
+              "tortoise"
+            ]
+          },
+          {
+            "text": "SNAIL",
+            "points": 26,
+            "aliases": [
+              "snail"
+            ]
+          },
+          {
+            "text": "SLOTH",
+            "points": 19,
+            "aliases": [
+              "sloth"
+            ]
+          },
+          {
+            "text": "SLUG",
+            "points": 12,
+            "aliases": [
+              "slug"
+            ]
+          },
+          {
+            "text": "STARFISH",
+            "points": 8,
+            "aliases": [
+              "starfish"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something inflated with air.",
+        "answers": [
+          {
+            "text": "BALLOON",
+            "points": 35,
+            "aliases": [
+              "balloon"
+            ]
+          },
+          {
+            "text": "TIRE / TYRE",
+            "points": 26,
+            "aliases": [
+              "tire",
+              "tyre"
+            ]
+          },
+          {
+            "text": "BEACH BALL",
+            "points": 19,
+            "aliases": [
+              "beach ball"
+            ]
+          },
+          {
+            "text": "AIR MATTRESS",
+            "points": 12,
+            "aliases": [
+              "air mattress"
+            ]
+          },
+          {
+            "text": "BOUNCY CASTLE",
+            "points": 8,
+            "aliases": [
+              "bouncy castle"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something that comes in pairs.",
+        "answers": [
+          {
+            "text": "SHOES",
+            "points": 35,
+            "aliases": [
+              "shoes"
+            ]
+          },
+          {
+            "text": "SOCKS",
+            "points": 26,
+            "aliases": [
+              "socks"
+            ]
+          },
+          {
+            "text": "GLOVES",
+            "points": 19,
+            "aliases": [
+              "gloves"
+            ]
+          },
+          {
+            "text": "EARRINGS",
+            "points": 12,
+            "aliases": [
+              "earrings"
+            ]
+          },
+          {
+            "text": "SKATES",
+            "points": 8,
+            "aliases": [
+              "skates"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-2",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something people check before buying a used car.",
+        "answers": [
+          {
+            "text": "MILEAGE / ODOMETER",
+            "points": 28,
+            "aliases": [
+              "mileage",
+              "odometer"
+            ]
+          },
+          {
+            "text": "PRICE",
+            "points": 22,
+            "aliases": [
+              "price"
+            ]
+          },
+          {
+            "text": "ACCIDENT HISTORY",
+            "points": 17,
+            "aliases": [
+              "accident history"
+            ]
+          },
+          {
+            "text": "ENGINE",
+            "points": 13,
+            "aliases": [
+              "engine"
+            ]
+          },
+          {
+            "text": "TIRES / TYRES",
+            "points": 9,
+            "aliases": [
+              "tires",
+              "tyres"
+            ]
+          },
+          {
+            "text": "RUST / BODY DAMAGE",
+            "points": 7,
+            "aliases": [
+              "rust",
+              "body damage"
+            ]
+          },
+          {
+            "text": "SERVICE RECORDS",
+            "points": 4,
+            "aliases": [
+              "service records"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something children build with sand.",
+        "answers": [
+          {
+            "text": "CASTLE / SANDCASTLE",
+            "points": 30,
+            "aliases": [
+              "castle",
+              "sandcastle"
+            ]
+          },
+          {
+            "text": "MOAT / TRENCH",
+            "points": 24,
+            "aliases": [
+              "moat",
+              "trench"
+            ]
+          },
+          {
+            "text": "TUNNEL",
+            "points": 18,
+            "aliases": [
+              "tunnel"
+            ]
+          },
+          {
+            "text": "MOUNTAIN / PILE",
+            "points": 13,
+            "aliases": [
+              "mountain",
+              "pile"
+            ]
+          },
+          {
+            "text": "ROAD",
+            "points": 9,
+            "aliases": [
+              "road"
+            ]
+          },
+          {
+            "text": "ANIMAL",
+            "points": 6,
+            "aliases": [
+              "animal"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something a restaurant server might forget.",
+        "answers": [
+          {
+            "text": "DRINKS",
+            "points": 35,
+            "aliases": [
+              "drinks"
+            ]
+          },
+          {
+            "text": "CUTLERY / FORK / KNIFE",
+            "points": 26,
+            "aliases": [
+              "cutlery",
+              "fork",
+              "knife"
+            ]
+          },
+          {
+            "text": "NAPKINS",
+            "points": 19,
+            "aliases": [
+              "napkins"
+            ]
+          },
+          {
+            "text": "CONDIMENTS / KETCHUP",
+            "points": 12,
+            "aliases": [
+              "condiments",
+              "ketchup"
+            ]
+          },
+          {
+            "text": "THE BILL / CHEQUE",
+            "points": 8,
+            "aliases": [
+              "the bill",
+              "cheque"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something a dog might chase.",
+        "answers": [
+          {
+            "text": "BALL",
+            "points": 42,
+            "aliases": [
+              "ball"
+            ]
+          },
+          {
+            "text": "CAT",
+            "points": 28,
+            "aliases": [
+              "cat"
+            ]
+          },
+          {
+            "text": "SQUIRREL",
+            "points": 19,
+            "aliases": [
+              "squirrel"
+            ]
+          },
+          {
+            "text": "ITS TAIL",
+            "points": 11,
+            "aliases": [
+              "its tail"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name something people collect in an album.",
+      "answers": [
+        {
+          "text": "STAMPS / POSTAGE STAMPS",
+          "points": 44,
+          "aliases": [
+            "stamps",
+            "postage stamps"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a vegetable used in a salad.",
+        "answers": [
+          {
+            "text": "LETTUCE",
+            "points": 35,
+            "aliases": [
+              "lettuce"
+            ]
+          },
+          {
+            "text": "TOMATO",
+            "points": 26,
+            "aliases": [
+              "tomato"
+            ]
+          },
+          {
+            "text": "CUCUMBER",
+            "points": 19,
+            "aliases": [
+              "cucumber"
+            ]
+          },
+          {
+            "text": "CARROT",
+            "points": 12,
+            "aliases": [
+              "carrot"
+            ]
+          },
+          {
+            "text": "RADISH",
+            "points": 8,
+            "aliases": [
+              "radish"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a musical instrument you blow into.",
+        "answers": [
+          {
+            "text": "TRUMPET",
+            "points": 35,
+            "aliases": [
+              "trumpet"
+            ]
+          },
+          {
+            "text": "FLUTE",
+            "points": 26,
+            "aliases": [
+              "flute"
+            ]
+          },
+          {
+            "text": "SAXOPHONE",
+            "points": 19,
+            "aliases": [
+              "saxophone"
+            ]
+          },
+          {
+            "text": "CLARINET",
+            "points": 12,
+            "aliases": [
+              "clarinet"
+            ]
+          },
+          {
+            "text": "TROMBONE",
+            "points": 8,
+            "aliases": [
+              "trombone"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you plug into a wall outlet.",
+        "answers": [
+          {
+            "text": "PHONE CHARGER",
+            "points": 35,
+            "aliases": [
+              "phone charger"
+            ]
+          },
+          {
+            "text": "LAMP",
+            "points": 26,
+            "aliases": [
+              "lamp"
+            ]
+          },
+          {
+            "text": "TELEVISION / TV",
+            "points": 19,
+            "aliases": [
+              "television",
+              "tv"
+            ]
+          },
+          {
+            "text": "VACUUM CLEANER",
+            "points": 12,
+            "aliases": [
+              "vacuum cleaner"
+            ]
+          },
+          {
+            "text": "TOASTER",
+            "points": 8,
+            "aliases": [
+              "toaster"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a wild animal with stripes.",
+        "answers": [
+          {
+            "text": "ZEBRA",
+            "points": 35,
+            "aliases": [
+              "zebra"
+            ]
+          },
+          {
+            "text": "TIGER",
+            "points": 26,
+            "aliases": [
+              "tiger"
+            ]
+          },
+          {
+            "text": "SKUNK",
+            "points": 19,
+            "aliases": [
+              "skunk"
+            ]
+          },
+          {
+            "text": "CHIPMUNK",
+            "points": 12,
+            "aliases": [
+              "chipmunk"
+            ]
+          },
+          {
+            "text": "OKAPI",
+            "points": 8,
+            "aliases": [
+              "okapi"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you might rent for a day.",
+        "answers": [
+          {
+            "text": "CAR",
+            "points": 35,
+            "aliases": [
+              "car"
+            ]
+          },
+          {
+            "text": "BICYCLE",
+            "points": 26,
+            "aliases": [
+              "bicycle"
+            ]
+          },
+          {
+            "text": "BOAT",
+            "points": 19,
+            "aliases": [
+              "boat"
+            ]
+          },
+          {
+            "text": "POWER TOOL",
+            "points": 12,
+            "aliases": [
+              "power tool"
+            ]
+          },
+          {
+            "text": "SKIS",
+            "points": 8,
+            "aliases": [
+              "skis"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-3",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something people forget to pack for a camping trip.",
+        "answers": [
+          {
+            "text": "BUG SPRAY / INSECT REPELLENT",
+            "points": 28,
+            "aliases": [
+              "bug spray",
+              "insect repellent"
+            ]
+          },
+          {
+            "text": "MATCHES / LIGHTER",
+            "points": 22,
+            "aliases": [
+              "matches",
+              "lighter"
+            ]
+          },
+          {
+            "text": "FLASHLIGHT / TORCH",
+            "points": 17,
+            "aliases": [
+              "flashlight",
+              "torch"
+            ]
+          },
+          {
+            "text": "SLEEPING BAG",
+            "points": 13,
+            "aliases": [
+              "sleeping bag"
+            ]
+          },
+          {
+            "text": "TOILET PAPER",
+            "points": 9,
+            "aliases": [
+              "toilet paper"
+            ]
+          },
+          {
+            "text": "CAN OPENER",
+            "points": 7,
+            "aliases": [
+              "can opener"
+            ]
+          },
+          {
+            "text": "TENT PEGS / STAKES",
+            "points": 4,
+            "aliases": [
+              "tent pegs",
+              "stakes"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something someone might complain about in a movie theatre.",
+        "answers": [
+          {
+            "text": "TALKING",
+            "points": 30,
+            "aliases": [
+              "talking"
+            ]
+          },
+          {
+            "text": "CELL PHONES / PHONES",
+            "points": 24,
+            "aliases": [
+              "cell phones",
+              "phones"
+            ]
+          },
+          {
+            "text": "LOUD CHEWING / EATING NOISES",
+            "points": 18,
+            "aliases": [
+              "loud chewing",
+              "eating noises"
+            ]
+          },
+          {
+            "text": "UNCOMFORTABLE SEATS",
+            "points": 13,
+            "aliases": [
+              "uncomfortable seats"
+            ]
+          },
+          {
+            "text": "EXPENSIVE SNACKS",
+            "points": 9,
+            "aliases": [
+              "expensive snacks"
+            ]
+          },
+          {
+            "text": "POOR TEMPERATURE / TOO COLD / TOO HOT",
+            "points": 6,
+            "aliases": [
+              "poor temperature",
+              "too cold",
+              "too hot"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people decorate for a celebration.",
+        "answers": [
+          {
+            "text": "CAKE",
+            "points": 35,
+            "aliases": [
+              "cake"
+            ]
+          },
+          {
+            "text": "ROOM / HOUSE",
+            "points": 26,
+            "aliases": [
+              "room",
+              "house"
+            ]
+          },
+          {
+            "text": "TABLE",
+            "points": 19,
+            "aliases": [
+              "table"
+            ]
+          },
+          {
+            "text": "CAR",
+            "points": 12,
+            "aliases": [
+              "car"
+            ]
+          },
+          {
+            "text": "TREE",
+            "points": 8,
+            "aliases": [
+              "tree"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something that can ruin a snowman.",
+        "answers": [
+          {
+            "text": "SUN / WARM WEATHER",
+            "points": 42,
+            "aliases": [
+              "sun",
+              "warm weather"
+            ]
+          },
+          {
+            "text": "RAIN",
+            "points": 28,
+            "aliases": [
+              "rain"
+            ]
+          },
+          {
+            "text": "DOG",
+            "points": 19,
+            "aliases": [
+              "dog"
+            ]
+          },
+          {
+            "text": "SOMEONE KNOCKING IT OVER",
+            "points": 11,
+            "aliases": [
+              "someone knocking it over"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name something people wave at a parade.",
+      "answers": [
+        {
+          "text": "FLAG",
+          "points": 44,
+          "aliases": [
+            "flag"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a food often served in a bowl.",
+        "answers": [
+          {
+            "text": "SOUP",
+            "points": 35,
+            "aliases": [
+              "soup"
+            ]
+          },
+          {
+            "text": "CEREAL",
+            "points": 26,
+            "aliases": [
+              "cereal"
+            ]
+          },
+          {
+            "text": "SALAD",
+            "points": 19,
+            "aliases": [
+              "salad"
+            ]
+          },
+          {
+            "text": "ICE CREAM",
+            "points": 12,
+            "aliases": [
+              "ice cream"
+            ]
+          },
+          {
+            "text": "RICE",
+            "points": 8,
+            "aliases": [
+              "rice"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a tool used for cutting.",
+        "answers": [
+          {
+            "text": "SCISSORS",
+            "points": 35,
+            "aliases": [
+              "scissors"
+            ]
+          },
+          {
+            "text": "KNIFE",
+            "points": 26,
+            "aliases": [
+              "knife"
+            ]
+          },
+          {
+            "text": "SAW",
+            "points": 19,
+            "aliases": [
+              "saw"
+            ]
+          },
+          {
+            "text": "AXE / AX",
+            "points": 12,
+            "aliases": [
+              "axe",
+              "ax"
+            ]
+          },
+          {
+            "text": "SHEARS",
+            "points": 8,
+            "aliases": [
+              "shears"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something with a zipper.",
+        "answers": [
+          {
+            "text": "JACKET / COAT",
+            "points": 35,
+            "aliases": [
+              "jacket",
+              "coat"
+            ]
+          },
+          {
+            "text": "TROUSERS / PANTS / JEANS",
+            "points": 26,
+            "aliases": [
+              "trousers",
+              "pants",
+              "jeans"
+            ]
+          },
+          {
+            "text": "BAG / BACKPACK",
+            "points": 19,
+            "aliases": [
+              "bag",
+              "backpack"
+            ]
+          },
+          {
+            "text": "SUITCASE",
+            "points": 12,
+            "aliases": [
+              "suitcase"
+            ]
+          },
+          {
+            "text": "TENT",
+            "points": 8,
+            "aliases": [
+              "tent"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a place where people wear a helmet.",
+        "answers": [
+          {
+            "text": "CONSTRUCTION SITE",
+            "points": 35,
+            "aliases": [
+              "construction site"
+            ]
+          },
+          {
+            "text": "HOCKEY RINK",
+            "points": 26,
+            "aliases": [
+              "hockey rink"
+            ]
+          },
+          {
+            "text": "SKI HILL",
+            "points": 19,
+            "aliases": [
+              "ski hill"
+            ]
+          },
+          {
+            "text": "BIKE PATH",
+            "points": 12,
+            "aliases": [
+              "bike path"
+            ]
+          },
+          {
+            "text": "MOTORCYCLE TRACK",
+            "points": 8,
+            "aliases": [
+              "motorcycle track"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something found in a pencil case.",
+        "answers": [
+          {
+            "text": "PENCIL",
+            "points": 35,
+            "aliases": [
+              "pencil"
+            ]
+          },
+          {
+            "text": "PEN",
+            "points": 26,
+            "aliases": [
+              "pen"
+            ]
+          },
+          {
+            "text": "ERASER",
+            "points": 19,
+            "aliases": [
+              "eraser"
+            ]
+          },
+          {
+            "text": "RULER",
+            "points": 12,
+            "aliases": [
+              "ruler"
+            ]
+          },
+          {
+            "text": "SHARPENER",
+            "points": 8,
+            "aliases": [
+              "sharpener"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-4",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something people do to welcome a new neighbour.",
+        "answers": [
+          {
+            "text": "INTRODUCE THEMSELVES",
+            "points": 28,
+            "aliases": [
+              "introduce themselves"
+            ]
+          },
+          {
+            "text": "BRING FOOD / BAKING",
+            "points": 22,
+            "aliases": [
+              "bring food",
+              "baking"
+            ]
+          },
+          {
+            "text": "INVITE THEM OVER",
+            "points": 17,
+            "aliases": [
+              "invite them over"
+            ]
+          },
+          {
+            "text": "GIVE A GIFT",
+            "points": 13,
+            "aliases": [
+              "give a gift"
+            ]
+          },
+          {
+            "text": "OFFER HELP MOVING",
+            "points": 9,
+            "aliases": [
+              "offer help moving"
+            ]
+          },
+          {
+            "text": "EXPLAIN THE NEIGHBOURHOOD",
+            "points": 7,
+            "aliases": [
+              "explain the neighbourhood"
+            ]
+          },
+          {
+            "text": "SEND A CARD / NOTE",
+            "points": 4,
+            "aliases": [
+              "send a card",
+              "note"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a reason a washing machine might make a terrible noise.",
+        "answers": [
+          {
+            "text": "UNBALANCED LOAD",
+            "points": 30,
+            "aliases": [
+              "unbalanced load"
+            ]
+          },
+          {
+            "text": "COINS IN POCKETS",
+            "points": 24,
+            "aliases": [
+              "coins in pockets"
+            ]
+          },
+          {
+            "text": "OVERLOADED",
+            "points": 18,
+            "aliases": [
+              "overloaded"
+            ]
+          },
+          {
+            "text": "BROKEN PART",
+            "points": 13,
+            "aliases": [
+              "broken part"
+            ]
+          },
+          {
+            "text": "SHOES INSIDE",
+            "points": 9,
+            "aliases": [
+              "shoes inside"
+            ]
+          },
+          {
+            "text": "NOT LEVEL",
+            "points": 6,
+            "aliases": [
+              "not level"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people do at a picnic besides eat.",
+        "answers": [
+          {
+            "text": "PLAY GAMES",
+            "points": 35,
+            "aliases": [
+              "play games"
+            ]
+          },
+          {
+            "text": "TALK",
+            "points": 26,
+            "aliases": [
+              "talk"
+            ]
+          },
+          {
+            "text": "RELAX / NAP",
+            "points": 19,
+            "aliases": [
+              "relax",
+              "nap"
+            ]
+          },
+          {
+            "text": "WALK",
+            "points": 12,
+            "aliases": [
+              "walk"
+            ]
+          },
+          {
+            "text": "TAKE PHOTOS",
+            "points": 8,
+            "aliases": [
+              "take photos"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people hang on a front door.",
+        "answers": [
+          {
+            "text": "WREATH",
+            "points": 42,
+            "aliases": [
+              "wreath"
+            ]
+          },
+          {
+            "text": "WELCOME SIGN",
+            "points": 28,
+            "aliases": [
+              "welcome sign"
+            ]
+          },
+          {
+            "text": "DOOR KNOCKER",
+            "points": 19,
+            "aliases": [
+              "door knocker"
+            ]
+          },
+          {
+            "text": "DECORATIONS / RIBBONS",
+            "points": 11,
+            "aliases": [
+              "decorations",
+              "ribbons"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name something a magician might pull out of a hat.",
+      "answers": [
+        {
+          "text": "RABBIT / BUNNY",
+          "points": 44,
+          "aliases": [
+            "rabbit",
+            "bunny"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a bird that people keep as a pet.",
+        "answers": [
+          {
+            "text": "PARROT",
+            "points": 35,
+            "aliases": [
+              "parrot"
+            ]
+          },
+          {
+            "text": "BUDGIE / PARAKEET",
+            "points": 26,
+            "aliases": [
+              "budgie",
+              "parakeet"
+            ]
+          },
+          {
+            "text": "CANARY",
+            "points": 19,
+            "aliases": [
+              "canary"
+            ]
+          },
+          {
+            "text": "COCKATIEL",
+            "points": 12,
+            "aliases": [
+              "cockatiel"
+            ]
+          },
+          {
+            "text": "FINCH",
+            "points": 8,
+            "aliases": [
+              "finch"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something served at a wedding reception.",
+        "answers": [
+          {
+            "text": "CAKE",
+            "points": 35,
+            "aliases": [
+              "cake"
+            ]
+          },
+          {
+            "text": "CHAMPAGNE",
+            "points": 26,
+            "aliases": [
+              "champagne"
+            ]
+          },
+          {
+            "text": "CHICKEN",
+            "points": 19,
+            "aliases": [
+              "chicken"
+            ]
+          },
+          {
+            "text": "BEEF",
+            "points": 12,
+            "aliases": [
+              "beef"
+            ]
+          },
+          {
+            "text": "SALAD",
+            "points": 8,
+            "aliases": [
+              "salad"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a place you might see a fountain.",
+        "answers": [
+          {
+            "text": "PARK",
+            "points": 35,
+            "aliases": [
+              "park"
+            ]
+          },
+          {
+            "text": "SHOPPING MALL",
+            "points": 26,
+            "aliases": [
+              "shopping mall"
+            ]
+          },
+          {
+            "text": "TOWN SQUARE",
+            "points": 19,
+            "aliases": [
+              "town square"
+            ]
+          },
+          {
+            "text": "HOTEL",
+            "points": 12,
+            "aliases": [
+              "hotel"
+            ]
+          },
+          {
+            "text": "GARDEN",
+            "points": 8,
+            "aliases": [
+              "garden"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something made from wool.",
+        "answers": [
+          {
+            "text": "SWEATER / JUMPER",
+            "points": 35,
+            "aliases": [
+              "sweater",
+              "jumper"
+            ]
+          },
+          {
+            "text": "SCARF",
+            "points": 26,
+            "aliases": [
+              "scarf"
+            ]
+          },
+          {
+            "text": "HAT",
+            "points": 19,
+            "aliases": [
+              "hat"
+            ]
+          },
+          {
+            "text": "SOCKS",
+            "points": 12,
+            "aliases": [
+              "socks"
+            ]
+          },
+          {
+            "text": "BLANKET",
+            "points": 8,
+            "aliases": [
+              "blanket"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a game that uses dice.",
+        "answers": [
+          {
+            "text": "MONOPOLY",
+            "points": 35,
+            "aliases": [
+              "monopoly"
+            ]
+          },
+          {
+            "text": "YAHTZEE",
+            "points": 26,
+            "aliases": [
+              "yahtzee"
+            ]
+          },
+          {
+            "text": "BACKGAMMON",
+            "points": 19,
+            "aliases": [
+              "backgammon"
+            ]
+          },
+          {
+            "text": "SNAKES AND LADDERS / CHUTES AND LADDERS",
+            "points": 12,
+            "aliases": [
+              "snakes and ladders",
+              "chutes and ladders"
+            ]
+          },
+          {
+            "text": "RISK",
+            "points": 8,
+            "aliases": [
+              "risk"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-5",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something that might go wrong during a school play.",
+        "answers": [
+          {
+            "text": "FORGOTTEN LINES",
+            "points": 28,
+            "aliases": [
+              "forgotten lines"
+            ]
+          },
+          {
+            "text": "COSTUME PROBLEM",
+            "points": 22,
+            "aliases": [
+              "costume problem"
+            ]
+          },
+          {
+            "text": "BROKEN PROP",
+            "points": 17,
+            "aliases": [
+              "broken prop"
+            ]
+          },
+          {
+            "text": "MICROPHONE FAILURE",
+            "points": 13,
+            "aliases": [
+              "microphone failure"
+            ]
+          },
+          {
+            "text": "MISSED ENTRANCE",
+            "points": 9,
+            "aliases": [
+              "missed entrance"
+            ]
+          },
+          {
+            "text": "FALLING SCENERY",
+            "points": 7,
+            "aliases": [
+              "falling scenery"
+            ]
+          },
+          {
+            "text": "STAGE FRIGHT",
+            "points": 4,
+            "aliases": [
+              "stage fright"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people take to a swimming pool.",
+        "answers": [
+          {
+            "text": "TOWEL",
+            "points": 30,
+            "aliases": [
+              "towel"
+            ]
+          },
+          {
+            "text": "SWIMSUIT / BATHING SUIT",
+            "points": 24,
+            "aliases": [
+              "swimsuit",
+              "bathing suit"
+            ]
+          },
+          {
+            "text": "GOGGLES",
+            "points": 18,
+            "aliases": [
+              "goggles"
+            ]
+          },
+          {
+            "text": "SANDALS / FLIP FLOPS",
+            "points": 13,
+            "aliases": [
+              "sandals",
+              "flip flops"
+            ]
+          },
+          {
+            "text": "SUNSCREEN",
+            "points": 9,
+            "aliases": [
+              "sunscreen"
+            ]
+          },
+          {
+            "text": "SWIM CAP",
+            "points": 6,
+            "aliases": [
+              "swim cap"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something that makes a house feel cosy.",
+        "answers": [
+          {
+            "text": "FIREPLACE / FIRE",
+            "points": 35,
+            "aliases": [
+              "fireplace",
+              "fire"
+            ]
+          },
+          {
+            "text": "SOFT BLANKETS",
+            "points": 26,
+            "aliases": [
+              "soft blankets"
+            ]
+          },
+          {
+            "text": "WARM LIGHTING",
+            "points": 19,
+            "aliases": [
+              "warm lighting"
+            ]
+          },
+          {
+            "text": "COMFORTABLE FURNITURE",
+            "points": 12,
+            "aliases": [
+              "comfortable furniture"
+            ]
+          },
+          {
+            "text": "HOME COOKING / BAKING",
+            "points": 8,
+            "aliases": [
+              "home cooking",
+              "baking"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people use to keep a door open.",
+        "answers": [
+          {
+            "text": "DOORSTOP",
+            "points": 42,
+            "aliases": [
+              "doorstop"
+            ]
+          },
+          {
+            "text": "CHAIR",
+            "points": 28,
+            "aliases": [
+              "chair"
+            ]
+          },
+          {
+            "text": "HEAVY BOOK",
+            "points": 19,
+            "aliases": [
+              "heavy book"
+            ]
+          },
+          {
+            "text": "BRICK / ROCK",
+            "points": 11,
+            "aliases": [
+              "brick",
+              "rock"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name an animal with a very long neck.",
+      "answers": [
+        {
+          "text": "GIRAFFE",
+          "points": 44,
+          "aliases": [
+            "giraffe"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a food often sold by the dozen.",
+        "answers": [
+          {
+            "text": "EGGS",
+            "points": 35,
+            "aliases": [
+              "eggs"
+            ]
+          },
+          {
+            "text": "DOUGHNUTS / DONUTS",
+            "points": 26,
+            "aliases": [
+              "doughnuts",
+              "donuts"
+            ]
+          },
+          {
+            "text": "BAGELS",
+            "points": 19,
+            "aliases": [
+              "bagels"
+            ]
+          },
+          {
+            "text": "CUPCAKES",
+            "points": 12,
+            "aliases": [
+              "cupcakes"
+            ]
+          },
+          {
+            "text": "OYSTERS",
+            "points": 8,
+            "aliases": [
+              "oysters"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you can fold.",
+        "answers": [
+          {
+            "text": "PAPER",
+            "points": 35,
+            "aliases": [
+              "paper"
+            ]
+          },
+          {
+            "text": "CLOTHES",
+            "points": 26,
+            "aliases": [
+              "clothes"
+            ]
+          },
+          {
+            "text": "CHAIR",
+            "points": 19,
+            "aliases": [
+              "chair"
+            ]
+          },
+          {
+            "text": "BLANKET",
+            "points": 12,
+            "aliases": [
+              "blanket"
+            ]
+          },
+          {
+            "text": "MAP",
+            "points": 8,
+            "aliases": [
+              "map"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a colour people paint a front door.",
+        "answers": [
+          {
+            "text": "RED",
+            "points": 35,
+            "aliases": [
+              "red"
+            ]
+          },
+          {
+            "text": "BLACK",
+            "points": 26,
+            "aliases": [
+              "black"
+            ]
+          },
+          {
+            "text": "WHITE",
+            "points": 19,
+            "aliases": [
+              "white"
+            ]
+          },
+          {
+            "text": "BLUE",
+            "points": 12,
+            "aliases": [
+              "blue"
+            ]
+          },
+          {
+            "text": "GREEN",
+            "points": 8,
+            "aliases": [
+              "green"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a place that sells tickets.",
+        "answers": [
+          {
+            "text": "CINEMA / MOVIE THEATRE",
+            "points": 35,
+            "aliases": [
+              "cinema",
+              "movie theatre"
+            ]
+          },
+          {
+            "text": "TRAIN STATION",
+            "points": 26,
+            "aliases": [
+              "train station"
+            ]
+          },
+          {
+            "text": "STADIUM",
+            "points": 19,
+            "aliases": [
+              "stadium"
+            ]
+          },
+          {
+            "text": "AMUSEMENT PARK",
+            "points": 12,
+            "aliases": [
+              "amusement park"
+            ]
+          },
+          {
+            "text": "CONCERT HALL",
+            "points": 8,
+            "aliases": [
+              "concert hall"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something children might put stickers on.",
+        "answers": [
+          {
+            "text": "NOTEBOOK",
+            "points": 35,
+            "aliases": [
+              "notebook"
+            ]
+          },
+          {
+            "text": "WATER BOTTLE",
+            "points": 26,
+            "aliases": [
+              "water bottle"
+            ]
+          },
+          {
+            "text": "LUNCHBOX",
+            "points": 19,
+            "aliases": [
+              "lunchbox"
+            ]
+          },
+          {
+            "text": "LAPTOP",
+            "points": 12,
+            "aliases": [
+              "laptop"
+            ]
+          },
+          {
+            "text": "BEDROOM WALL",
+            "points": 8,
+            "aliases": [
+              "bedroom wall"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-6",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something you would find in a gardener's shed.",
+        "answers": [
+          {
+            "text": "SHOVEL / SPADE",
+            "points": 28,
+            "aliases": [
+              "shovel",
+              "spade"
+            ]
+          },
+          {
+            "text": "RAKE",
+            "points": 22,
+            "aliases": [
+              "rake"
+            ]
+          },
+          {
+            "text": "HOSE",
+            "points": 17,
+            "aliases": [
+              "hose"
+            ]
+          },
+          {
+            "text": "PLANT POTS",
+            "points": 13,
+            "aliases": [
+              "plant pots"
+            ]
+          },
+          {
+            "text": "FERTILIZER",
+            "points": 9,
+            "aliases": [
+              "fertilizer"
+            ]
+          },
+          {
+            "text": "SEEDS",
+            "points": 7,
+            "aliases": [
+              "seeds"
+            ]
+          },
+          {
+            "text": "GARDEN GLOVES",
+            "points": 4,
+            "aliases": [
+              "garden gloves"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something that might delay a flight.",
+        "answers": [
+          {
+            "text": "BAD WEATHER",
+            "points": 30,
+            "aliases": [
+              "bad weather"
+            ]
+          },
+          {
+            "text": "MECHANICAL PROBLEM",
+            "points": 24,
+            "aliases": [
+              "mechanical problem"
+            ]
+          },
+          {
+            "text": "LATE INCOMING PLANE",
+            "points": 18,
+            "aliases": [
+              "late incoming plane"
+            ]
+          },
+          {
+            "text": "AIR TRAFFIC",
+            "points": 13,
+            "aliases": [
+              "air traffic"
+            ]
+          },
+          {
+            "text": "MISSING CREW",
+            "points": 9,
+            "aliases": [
+              "missing crew"
+            ]
+          },
+          {
+            "text": "LATE PASSENGER",
+            "points": 6,
+            "aliases": [
+              "late passenger"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people like about a small town.",
+        "answers": [
+          {
+            "text": "FRIENDLY PEOPLE",
+            "points": 35,
+            "aliases": [
+              "friendly people"
+            ]
+          },
+          {
+            "text": "QUIET",
+            "points": 26,
+            "aliases": [
+              "quiet"
+            ]
+          },
+          {
+            "text": "LESS TRAFFIC",
+            "points": 19,
+            "aliases": [
+              "less traffic"
+            ]
+          },
+          {
+            "text": "SENSE OF COMMUNITY",
+            "points": 12,
+            "aliases": [
+              "sense of community"
+            ]
+          },
+          {
+            "text": "LOWER COST OF LIVING",
+            "points": 8,
+            "aliases": [
+              "lower cost of living"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people put in a bird feeder.",
+        "answers": [
+          {
+            "text": "SEEDS / BIRDSEED",
+            "points": 42,
+            "aliases": [
+              "seeds",
+              "birdseed"
+            ]
+          },
+          {
+            "text": "NUTS / PEANUTS",
+            "points": 28,
+            "aliases": [
+              "nuts",
+              "peanuts"
+            ]
+          },
+          {
+            "text": "SUET",
+            "points": 19,
+            "aliases": [
+              "suet"
+            ]
+          },
+          {
+            "text": "FRUIT",
+            "points": 11,
+            "aliases": [
+              "fruit"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name something you use to measure temperature.",
+      "answers": [
+        {
+          "text": "THERMOMETER",
+          "points": 44,
+          "aliases": [
+            "thermometer"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a food you might roast over a campfire.",
+        "answers": [
+          {
+            "text": "MARSHMALLOW",
+            "points": 35,
+            "aliases": [
+              "marshmallow"
+            ]
+          },
+          {
+            "text": "HOT DOG / WIENER",
+            "points": 26,
+            "aliases": [
+              "hot dog",
+              "wiener"
+            ]
+          },
+          {
+            "text": "CORN",
+            "points": 19,
+            "aliases": [
+              "corn"
+            ]
+          },
+          {
+            "text": "POTATO",
+            "points": 12,
+            "aliases": [
+              "potato"
+            ]
+          },
+          {
+            "text": "SAUSAGE",
+            "points": 8,
+            "aliases": [
+              "sausage"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something that has a handle.",
+        "answers": [
+          {
+            "text": "DOOR",
+            "points": 35,
+            "aliases": [
+              "door"
+            ]
+          },
+          {
+            "text": "MUG / CUP",
+            "points": 26,
+            "aliases": [
+              "mug",
+              "cup"
+            ]
+          },
+          {
+            "text": "SUITCASE",
+            "points": 19,
+            "aliases": [
+              "suitcase"
+            ]
+          },
+          {
+            "text": "FRYING PAN",
+            "points": 12,
+            "aliases": [
+              "frying pan"
+            ]
+          },
+          {
+            "text": "UMBRELLA",
+            "points": 8,
+            "aliases": [
+              "umbrella"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name an animal with a shell.",
+        "answers": [
+          {
+            "text": "TURTLE / TORTOISE",
+            "points": 35,
+            "aliases": [
+              "turtle",
+              "tortoise"
+            ]
+          },
+          {
+            "text": "SNAIL",
+            "points": 26,
+            "aliases": [
+              "snail"
+            ]
+          },
+          {
+            "text": "CRAB",
+            "points": 19,
+            "aliases": [
+              "crab"
+            ]
+          },
+          {
+            "text": "CLAM",
+            "points": 12,
+            "aliases": [
+              "clam"
+            ]
+          },
+          {
+            "text": "LOBSTER",
+            "points": 8,
+            "aliases": [
+              "lobster"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a place where people wait in a line.",
+        "answers": [
+          {
+            "text": "GROCERY STORE",
+            "points": 35,
+            "aliases": [
+              "grocery store"
+            ]
+          },
+          {
+            "text": "BANK",
+            "points": 26,
+            "aliases": [
+              "bank"
+            ]
+          },
+          {
+            "text": "AMUSEMENT PARK",
+            "points": 19,
+            "aliases": [
+              "amusement park"
+            ]
+          },
+          {
+            "text": "AIRPORT",
+            "points": 12,
+            "aliases": [
+              "airport"
+            ]
+          },
+          {
+            "text": "COFFEE SHOP",
+            "points": 8,
+            "aliases": [
+              "coffee shop"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something kept in a freezer.",
+        "answers": [
+          {
+            "text": "ICE CREAM",
+            "points": 35,
+            "aliases": [
+              "ice cream"
+            ]
+          },
+          {
+            "text": "MEAT",
+            "points": 26,
+            "aliases": [
+              "meat"
+            ]
+          },
+          {
+            "text": "VEGETABLES",
+            "points": 19,
+            "aliases": [
+              "vegetables"
+            ]
+          },
+          {
+            "text": "ICE",
+            "points": 12,
+            "aliases": [
+              "ice"
+            ]
+          },
+          {
+            "text": "BREAD",
+            "points": 8,
+            "aliases": [
+              "bread"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-7",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something you might find under a child's bed.",
+        "answers": [
+          {
+            "text": "TOYS",
+            "points": 28,
+            "aliases": [
+              "toys"
+            ]
+          },
+          {
+            "text": "DIRTY CLOTHES",
+            "points": 22,
+            "aliases": [
+              "dirty clothes"
+            ]
+          },
+          {
+            "text": "SHOES",
+            "points": 17,
+            "aliases": [
+              "shoes"
+            ]
+          },
+          {
+            "text": "BOOKS",
+            "points": 13,
+            "aliases": [
+              "books"
+            ]
+          },
+          {
+            "text": "DUST / DUST BUNNIES",
+            "points": 9,
+            "aliases": [
+              "dust",
+              "dust bunnies"
+            ]
+          },
+          {
+            "text": "FOOD WRAPPERS",
+            "points": 7,
+            "aliases": [
+              "food wrappers"
+            ]
+          },
+          {
+            "text": "LOST SOCKS",
+            "points": 4,
+            "aliases": [
+              "lost socks"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people do to prepare for a houseguest.",
+        "answers": [
+          {
+            "text": "CLEAN",
+            "points": 30,
+            "aliases": [
+              "clean"
+            ]
+          },
+          {
+            "text": "CHANGE BED SHEETS",
+            "points": 24,
+            "aliases": [
+              "change bed sheets"
+            ]
+          },
+          {
+            "text": "BUY FOOD",
+            "points": 18,
+            "aliases": [
+              "buy food"
+            ]
+          },
+          {
+            "text": "PUT OUT TOWELS",
+            "points": 13,
+            "aliases": [
+              "put out towels"
+            ]
+          },
+          {
+            "text": "MAKE SPACE",
+            "points": 9,
+            "aliases": [
+              "make space"
+            ]
+          },
+          {
+            "text": "PLAN ACTIVITIES",
+            "points": 6,
+            "aliases": [
+              "plan activities"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a reason someone might return a gift.",
+        "answers": [
+          {
+            "text": "WRONG SIZE",
+            "points": 35,
+            "aliases": [
+              "wrong size"
+            ]
+          },
+          {
+            "text": "ALREADY HAVE ONE",
+            "points": 26,
+            "aliases": [
+              "already have one"
+            ]
+          },
+          {
+            "text": "DO NOT LIKE IT",
+            "points": 19,
+            "aliases": [
+              "do not like it"
+            ]
+          },
+          {
+            "text": "BROKEN / DAMAGED",
+            "points": 12,
+            "aliases": [
+              "broken",
+              "damaged"
+            ]
+          },
+          {
+            "text": "NEED MONEY",
+            "points": 8,
+            "aliases": [
+              "need money"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people polish.",
+        "answers": [
+          {
+            "text": "SHOES",
+            "points": 42,
+            "aliases": [
+              "shoes"
+            ]
+          },
+          {
+            "text": "SILVER",
+            "points": 28,
+            "aliases": [
+              "silver"
+            ]
+          },
+          {
+            "text": "FURNITURE",
+            "points": 19,
+            "aliases": [
+              "furniture"
+            ]
+          },
+          {
+            "text": "CAR",
+            "points": 11,
+            "aliases": [
+              "car"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name a food traditionally eaten at a baseball game.",
+      "answers": [
+        {
+          "text": "HOT DOG",
+          "points": 44,
+          "aliases": [
+            "hot dog"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name an object that floats in a bathtub.",
+        "answers": [
+          {
+            "text": "RUBBER DUCK",
+            "points": 35,
+            "aliases": [
+              "rubber duck"
+            ]
+          },
+          {
+            "text": "BOAT / TOY BOAT",
+            "points": 26,
+            "aliases": [
+              "boat",
+              "toy boat"
+            ]
+          },
+          {
+            "text": "SPONGE",
+            "points": 19,
+            "aliases": [
+              "sponge"
+            ]
+          },
+          {
+            "text": "SOAP",
+            "points": 12,
+            "aliases": [
+              "soap"
+            ]
+          },
+          {
+            "text": "BATH TOY",
+            "points": 8,
+            "aliases": [
+              "bath toy"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you stir with a spoon.",
+        "answers": [
+          {
+            "text": "SOUP",
+            "points": 35,
+            "aliases": [
+              "soup"
+            ]
+          },
+          {
+            "text": "COFFEE",
+            "points": 26,
+            "aliases": [
+              "coffee"
+            ]
+          },
+          {
+            "text": "TEA",
+            "points": 19,
+            "aliases": [
+              "tea"
+            ]
+          },
+          {
+            "text": "SAUCE",
+            "points": 12,
+            "aliases": [
+              "sauce"
+            ]
+          },
+          {
+            "text": "PORRIDGE / OATMEAL",
+            "points": 8,
+            "aliases": [
+              "porridge",
+              "oatmeal"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a vehicle with only two wheels.",
+        "answers": [
+          {
+            "text": "BICYCLE / BIKE",
+            "points": 35,
+            "aliases": [
+              "bicycle",
+              "bike"
+            ]
+          },
+          {
+            "text": "MOTORCYCLE",
+            "points": 26,
+            "aliases": [
+              "motorcycle"
+            ]
+          },
+          {
+            "text": "SCOOTER",
+            "points": 19,
+            "aliases": [
+              "scooter"
+            ]
+          },
+          {
+            "text": "MOPED",
+            "points": 12,
+            "aliases": [
+              "moped"
+            ]
+          },
+          {
+            "text": "SEGWAY",
+            "points": 8,
+            "aliases": [
+              "segway"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a food that is crunchy.",
+        "answers": [
+          {
+            "text": "CHIPS / CRISPS",
+            "points": 35,
+            "aliases": [
+              "chips",
+              "crisps"
+            ]
+          },
+          {
+            "text": "CARROT",
+            "points": 26,
+            "aliases": [
+              "carrot"
+            ]
+          },
+          {
+            "text": "APPLE",
+            "points": 19,
+            "aliases": [
+              "apple"
+            ]
+          },
+          {
+            "text": "CRACKERS",
+            "points": 12,
+            "aliases": [
+              "crackers"
+            ]
+          },
+          {
+            "text": "NUTS",
+            "points": 8,
+            "aliases": [
+              "nuts"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something found on a desk.",
+        "answers": [
+          {
+            "text": "COMPUTER",
+            "points": 35,
+            "aliases": [
+              "computer"
+            ]
+          },
+          {
+            "text": "PEN",
+            "points": 26,
+            "aliases": [
+              "pen"
+            ]
+          },
+          {
+            "text": "PAPER",
+            "points": 19,
+            "aliases": [
+              "paper"
+            ]
+          },
+          {
+            "text": "LAMP",
+            "points": 12,
+            "aliases": [
+              "lamp"
+            ]
+          },
+          {
+            "text": "CALENDAR",
+            "points": 8,
+            "aliases": [
+              "calendar"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-8",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name a reason people might stop during a hike.",
+        "answers": [
+          {
+            "text": "REST / TIRED",
+            "points": 28,
+            "aliases": [
+              "rest",
+              "tired"
+            ]
+          },
+          {
+            "text": "TAKE A PHOTO",
+            "points": 22,
+            "aliases": [
+              "take a photo"
+            ]
+          },
+          {
+            "text": "DRINK WATER",
+            "points": 17,
+            "aliases": [
+              "drink water"
+            ]
+          },
+          {
+            "text": "EAT",
+            "points": 13,
+            "aliases": [
+              "eat"
+            ]
+          },
+          {
+            "text": "LOOK AT WILDLIFE",
+            "points": 9,
+            "aliases": [
+              "look at wildlife"
+            ]
+          },
+          {
+            "text": "CHECK THE MAP",
+            "points": 7,
+            "aliases": [
+              "check the map"
+            ]
+          },
+          {
+            "text": "TIE A SHOE",
+            "points": 4,
+            "aliases": [
+              "tie a shoe"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something a babysitter might ask the parents.",
+        "answers": [
+          {
+            "text": "BEDTIME",
+            "points": 30,
+            "aliases": [
+              "bedtime"
+            ]
+          },
+          {
+            "text": "EMERGENCY NUMBER",
+            "points": 24,
+            "aliases": [
+              "emergency number"
+            ]
+          },
+          {
+            "text": "FOOD INSTRUCTIONS",
+            "points": 18,
+            "aliases": [
+              "food instructions"
+            ]
+          },
+          {
+            "text": "WHEN THEY WILL RETURN",
+            "points": 13,
+            "aliases": [
+              "when they will return"
+            ]
+          },
+          {
+            "text": "HOUSE RULES",
+            "points": 9,
+            "aliases": [
+              "house rules"
+            ]
+          },
+          {
+            "text": "PAY",
+            "points": 6,
+            "aliases": [
+              "pay"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people put on a refrigerator door.",
+        "answers": [
+          {
+            "text": "MAGNETS",
+            "points": 35,
+            "aliases": [
+              "magnets"
+            ]
+          },
+          {
+            "text": "PHOTOS",
+            "points": 26,
+            "aliases": [
+              "photos"
+            ]
+          },
+          {
+            "text": "CHILDREN'S ART",
+            "points": 19,
+            "aliases": [
+              "children's art"
+            ]
+          },
+          {
+            "text": "SHOPPING LIST",
+            "points": 12,
+            "aliases": [
+              "shopping list"
+            ]
+          },
+          {
+            "text": "CALENDAR",
+            "points": 8,
+            "aliases": [
+              "calendar"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something that makes a squeaking noise.",
+        "answers": [
+          {
+            "text": "DOOR",
+            "points": 42,
+            "aliases": [
+              "door"
+            ]
+          },
+          {
+            "text": "MOUSE",
+            "points": 28,
+            "aliases": [
+              "mouse"
+            ]
+          },
+          {
+            "text": "SHOE",
+            "points": 19,
+            "aliases": [
+              "shoe"
+            ]
+          },
+          {
+            "text": "SWING",
+            "points": 11,
+            "aliases": [
+              "swing"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name something people throw at a dartboard.",
+      "answers": [
+        {
+          "text": "DART",
+          "points": 44,
+          "aliases": [
+            "dart"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name something you might buy at a florist.",
+        "answers": [
+          {
+            "text": "BOUQUET / FLOWERS",
+            "points": 35,
+            "aliases": [
+              "bouquet",
+              "flowers"
+            ]
+          },
+          {
+            "text": "POTTED PLANT",
+            "points": 26,
+            "aliases": [
+              "potted plant"
+            ]
+          },
+          {
+            "text": "VASE",
+            "points": 19,
+            "aliases": [
+              "vase"
+            ]
+          },
+          {
+            "text": "CARD",
+            "points": 12,
+            "aliases": [
+              "card"
+            ]
+          },
+          {
+            "text": "BALLOON",
+            "points": 8,
+            "aliases": [
+              "balloon"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a sport that uses a net.",
+        "answers": [
+          {
+            "text": "TENNIS",
+            "points": 35,
+            "aliases": [
+              "tennis"
+            ]
+          },
+          {
+            "text": "VOLLEYBALL",
+            "points": 26,
+            "aliases": [
+              "volleyball"
+            ]
+          },
+          {
+            "text": "BADMINTON",
+            "points": 19,
+            "aliases": [
+              "badminton"
+            ]
+          },
+          {
+            "text": "SOCCER / FOOTBALL",
+            "points": 12,
+            "aliases": [
+              "soccer",
+              "football"
+            ]
+          },
+          {
+            "text": "HOCKEY",
+            "points": 8,
+            "aliases": [
+              "hockey"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a food people eat at breakfast.",
+        "answers": [
+          {
+            "text": "EGGS",
+            "points": 35,
+            "aliases": [
+              "eggs"
+            ]
+          },
+          {
+            "text": "CEREAL",
+            "points": 26,
+            "aliases": [
+              "cereal"
+            ]
+          },
+          {
+            "text": "TOAST",
+            "points": 19,
+            "aliases": [
+              "toast"
+            ]
+          },
+          {
+            "text": "PANCAKES",
+            "points": 12,
+            "aliases": [
+              "pancakes"
+            ]
+          },
+          {
+            "text": "YOGURT",
+            "points": 8,
+            "aliases": [
+              "yogurt"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something that needs batteries.",
+        "answers": [
+          {
+            "text": "REMOTE CONTROL",
+            "points": 35,
+            "aliases": [
+              "remote control"
+            ]
+          },
+          {
+            "text": "FLASHLIGHT / TORCH",
+            "points": 26,
+            "aliases": [
+              "flashlight",
+              "torch"
+            ]
+          },
+          {
+            "text": "TOY",
+            "points": 19,
+            "aliases": [
+              "toy"
+            ]
+          },
+          {
+            "text": "CLOCK",
+            "points": 12,
+            "aliases": [
+              "clock"
+            ]
+          },
+          {
+            "text": "SMOKE DETECTOR",
+            "points": 8,
+            "aliases": [
+              "smoke detector"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a place you might see a costume.",
+        "answers": [
+          {
+            "text": "HALLOWEEN PARTY",
+            "points": 35,
+            "aliases": [
+              "halloween party"
+            ]
+          },
+          {
+            "text": "THEATRE / PLAY",
+            "points": 26,
+            "aliases": [
+              "theatre",
+              "play"
+            ]
+          },
+          {
+            "text": "PARADE",
+            "points": 19,
+            "aliases": [
+              "parade"
+            ]
+          },
+          {
+            "text": "CONVENTION",
+            "points": 12,
+            "aliases": [
+              "convention"
+            ]
+          },
+          {
+            "text": "AMUSEMENT PARK",
+            "points": 8,
+            "aliases": [
+              "amusement park"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-9",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something people do when they cannot find their glasses.",
+        "answers": [
+          {
+            "text": "RETRACE THEIR STEPS",
+            "points": 28,
+            "aliases": [
+              "retrace their steps"
+            ]
+          },
+          {
+            "text": "ASK SOMEONE",
+            "points": 22,
+            "aliases": [
+              "ask someone"
+            ]
+          },
+          {
+            "text": "CHECK THEIR HEAD",
+            "points": 17,
+            "aliases": [
+              "check their head"
+            ]
+          },
+          {
+            "text": "LOOK UNDER FURNITURE",
+            "points": 13,
+            "aliases": [
+              "look under furniture"
+            ]
+          },
+          {
+            "text": "USE A SPARE PAIR",
+            "points": 9,
+            "aliases": [
+              "use a spare pair"
+            ]
+          },
+          {
+            "text": "SQUINT",
+            "points": 7,
+            "aliases": [
+              "squint"
+            ]
+          },
+          {
+            "text": "FEEL AROUND",
+            "points": 4,
+            "aliases": [
+              "feel around"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something a family might do on a rainy Sunday.",
+        "answers": [
+          {
+            "text": "WATCH A FILM / MOVIE",
+            "points": 30,
+            "aliases": [
+              "watch a film",
+              "movie"
+            ]
+          },
+          {
+            "text": "PLAY BOARD GAMES",
+            "points": 24,
+            "aliases": [
+              "play board games"
+            ]
+          },
+          {
+            "text": "BAKE",
+            "points": 18,
+            "aliases": [
+              "bake"
+            ]
+          },
+          {
+            "text": "READ",
+            "points": 13,
+            "aliases": [
+              "read"
+            ]
+          },
+          {
+            "text": "DO CRAFTS",
+            "points": 9,
+            "aliases": [
+              "do crafts"
+            ]
+          },
+          {
+            "text": "VISIT A MUSEUM",
+            "points": 6,
+            "aliases": [
+              "visit a museum"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people save in a scrapbook.",
+        "answers": [
+          {
+            "text": "PHOTOS",
+            "points": 35,
+            "aliases": [
+              "photos"
+            ]
+          },
+          {
+            "text": "TICKET STUBS",
+            "points": 26,
+            "aliases": [
+              "ticket stubs"
+            ]
+          },
+          {
+            "text": "CARDS",
+            "points": 19,
+            "aliases": [
+              "cards"
+            ]
+          },
+          {
+            "text": "NEWSPAPER CLIPPINGS",
+            "points": 12,
+            "aliases": [
+              "newspaper clippings"
+            ]
+          },
+          {
+            "text": "PRESSED FLOWERS",
+            "points": 8,
+            "aliases": [
+              "pressed flowers"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you might see from a train window.",
+        "answers": [
+          {
+            "text": "TREES / FOREST",
+            "points": 42,
+            "aliases": [
+              "trees",
+              "forest"
+            ]
+          },
+          {
+            "text": "FIELDS",
+            "points": 28,
+            "aliases": [
+              "fields"
+            ]
+          },
+          {
+            "text": "HOUSES",
+            "points": 19,
+            "aliases": [
+              "houses"
+            ]
+          },
+          {
+            "text": "WATER / LAKE / RIVER",
+            "points": 11,
+            "aliases": [
+              "water",
+              "lake",
+              "river"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name a utensil used to drain pasta.",
+      "answers": [
+        {
+          "text": "COLANDER / STRAINER",
+          "points": 44,
+          "aliases": [
+            "colander",
+            "strainer"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a topping for a baked potato.",
+        "answers": [
+          {
+            "text": "BUTTER",
+            "points": 35,
+            "aliases": [
+              "butter"
+            ]
+          },
+          {
+            "text": "SOUR CREAM",
+            "points": 26,
+            "aliases": [
+              "sour cream"
+            ]
+          },
+          {
+            "text": "CHEESE",
+            "points": 19,
+            "aliases": [
+              "cheese"
+            ]
+          },
+          {
+            "text": "BACON",
+            "points": 12,
+            "aliases": [
+              "bacon"
+            ]
+          },
+          {
+            "text": "CHIVES",
+            "points": 8,
+            "aliases": [
+              "chives"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something a painter uses.",
+        "answers": [
+          {
+            "text": "BRUSH",
+            "points": 35,
+            "aliases": [
+              "brush"
+            ]
+          },
+          {
+            "text": "PAINT",
+            "points": 26,
+            "aliases": [
+              "paint"
+            ]
+          },
+          {
+            "text": "CANVAS",
+            "points": 19,
+            "aliases": [
+              "canvas"
+            ]
+          },
+          {
+            "text": "EASEL",
+            "points": 12,
+            "aliases": [
+              "easel"
+            ]
+          },
+          {
+            "text": "PALETTE",
+            "points": 8,
+            "aliases": [
+              "palette"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a place that has lockers.",
+        "answers": [
+          {
+            "text": "SCHOOL",
+            "points": 35,
+            "aliases": [
+              "school"
+            ]
+          },
+          {
+            "text": "GYM",
+            "points": 26,
+            "aliases": [
+              "gym"
+            ]
+          },
+          {
+            "text": "SWIMMING POOL",
+            "points": 19,
+            "aliases": [
+              "swimming pool"
+            ]
+          },
+          {
+            "text": "SKATING RINK",
+            "points": 12,
+            "aliases": [
+              "skating rink"
+            ]
+          },
+          {
+            "text": "TRAIN STATION",
+            "points": 8,
+            "aliases": [
+              "train station"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a type of footwear for bad weather.",
+        "answers": [
+          {
+            "text": "RAIN BOOTS / WELLIES",
+            "points": 35,
+            "aliases": [
+              "rain boots",
+              "wellies"
+            ]
+          },
+          {
+            "text": "SNOW BOOTS",
+            "points": 26,
+            "aliases": [
+              "snow boots"
+            ]
+          },
+          {
+            "text": "HIKING BOOTS",
+            "points": 19,
+            "aliases": [
+              "hiking boots"
+            ]
+          },
+          {
+            "text": "OVERSHOES / GALOSHES",
+            "points": 12,
+            "aliases": [
+              "overshoes",
+              "galoshes"
+            ]
+          },
+          {
+            "text": "WATERPROOF SHOES",
+            "points": 8,
+            "aliases": [
+              "waterproof shoes"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you keep in a first-aid kit.",
+        "answers": [
+          {
+            "text": "BANDAGES / PLASTERS",
+            "points": 35,
+            "aliases": [
+              "bandages",
+              "plasters"
+            ]
+          },
+          {
+            "text": "ANTISEPTIC",
+            "points": 26,
+            "aliases": [
+              "antiseptic"
+            ]
+          },
+          {
+            "text": "GAUZE",
+            "points": 19,
+            "aliases": [
+              "gauze"
+            ]
+          },
+          {
+            "text": "TAPE",
+            "points": 12,
+            "aliases": [
+              "tape"
+            ]
+          },
+          {
+            "text": "SCISSORS",
+            "points": 8,
+            "aliases": [
+              "scissors"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-10",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something a child might want to be in a school talent show.",
+        "answers": [
+          {
+            "text": "SINGER",
+            "points": 28,
+            "aliases": [
+              "singer"
+            ]
+          },
+          {
+            "text": "DANCER",
+            "points": 22,
+            "aliases": [
+              "dancer"
+            ]
+          },
+          {
+            "text": "MAGICIAN",
+            "points": 17,
+            "aliases": [
+              "magician"
+            ]
+          },
+          {
+            "text": "COMEDIAN",
+            "points": 13,
+            "aliases": [
+              "comedian"
+            ]
+          },
+          {
+            "text": "PIANIST",
+            "points": 9,
+            "aliases": [
+              "pianist"
+            ]
+          },
+          {
+            "text": "JUGGLER",
+            "points": 7,
+            "aliases": [
+              "juggler"
+            ]
+          },
+          {
+            "text": "ACTOR",
+            "points": 4,
+            "aliases": [
+              "actor"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you check before sending a parcel.",
+        "answers": [
+          {
+            "text": "ADDRESS",
+            "points": 30,
+            "aliases": [
+              "address"
+            ]
+          },
+          {
+            "text": "POSTAGE",
+            "points": 24,
+            "aliases": [
+              "postage"
+            ]
+          },
+          {
+            "text": "PACKAGING",
+            "points": 18,
+            "aliases": [
+              "packaging"
+            ]
+          },
+          {
+            "text": "RECIPIENT'S NAME",
+            "points": 13,
+            "aliases": [
+              "recipient's name"
+            ]
+          },
+          {
+            "text": "WEIGHT",
+            "points": 9,
+            "aliases": [
+              "weight"
+            ]
+          },
+          {
+            "text": "DELIVERY DATE",
+            "points": 6,
+            "aliases": [
+              "delivery date"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something a new puppy might chew.",
+        "answers": [
+          {
+            "text": "SHOES",
+            "points": 35,
+            "aliases": [
+              "shoes"
+            ]
+          },
+          {
+            "text": "FURNITURE",
+            "points": 26,
+            "aliases": [
+              "furniture"
+            ]
+          },
+          {
+            "text": "TOYS",
+            "points": 19,
+            "aliases": [
+              "toys"
+            ]
+          },
+          {
+            "text": "CLOTHING",
+            "points": 12,
+            "aliases": [
+              "clothing"
+            ]
+          },
+          {
+            "text": "CABLES / WIRES",
+            "points": 8,
+            "aliases": [
+              "cables",
+              "wires"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people do to cool down on a hot day.",
+        "answers": [
+          {
+            "text": "SWIM",
+            "points": 42,
+            "aliases": [
+              "swim"
+            ]
+          },
+          {
+            "text": "DRINK SOMETHING COLD",
+            "points": 28,
+            "aliases": [
+              "drink something cold"
+            ]
+          },
+          {
+            "text": "USE A FAN / AIR CONDITIONING",
+            "points": 19,
+            "aliases": [
+              "use a fan",
+              "air conditioning"
+            ]
+          },
+          {
+            "text": "SIT IN THE SHADE",
+            "points": 11,
+            "aliases": [
+              "sit in the shade"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name an animal that builds a dam.",
+      "answers": [
+        {
+          "text": "BEAVER",
+          "points": 44,
+          "aliases": [
+            "beaver"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a food sold at a bakery.",
+        "answers": [
+          {
+            "text": "BREAD",
+            "points": 35,
+            "aliases": [
+              "bread"
+            ]
+          },
+          {
+            "text": "CAKE",
+            "points": 26,
+            "aliases": [
+              "cake"
+            ]
+          },
+          {
+            "text": "COOKIES / BISCUITS",
+            "points": 19,
+            "aliases": [
+              "cookies",
+              "biscuits"
+            ]
+          },
+          {
+            "text": "CROISSANT",
+            "points": 12,
+            "aliases": [
+              "croissant"
+            ]
+          },
+          {
+            "text": "MUFFIN",
+            "points": 8,
+            "aliases": [
+              "muffin"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something found at a playground.",
+        "answers": [
+          {
+            "text": "SWING",
+            "points": 35,
+            "aliases": [
+              "swing"
+            ]
+          },
+          {
+            "text": "SLIDE",
+            "points": 26,
+            "aliases": [
+              "slide"
+            ]
+          },
+          {
+            "text": "SEESAW / TEETER TOTTER",
+            "points": 19,
+            "aliases": [
+              "seesaw",
+              "teeter totter"
+            ]
+          },
+          {
+            "text": "CLIMBING FRAME / JUNGLE GYM",
+            "points": 12,
+            "aliases": [
+              "climbing frame",
+              "jungle gym"
+            ]
+          },
+          {
+            "text": "SANDBOX",
+            "points": 8,
+            "aliases": [
+              "sandbox"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a reason people set an alarm.",
+        "answers": [
+          {
+            "text": "WAKE UP",
+            "points": 35,
+            "aliases": [
+              "wake up"
+            ]
+          },
+          {
+            "text": "COOKING TIMER",
+            "points": 26,
+            "aliases": [
+              "cooking timer"
+            ]
+          },
+          {
+            "text": "TAKE MEDICINE",
+            "points": 19,
+            "aliases": [
+              "take medicine"
+            ]
+          },
+          {
+            "text": "APPOINTMENT",
+            "points": 12,
+            "aliases": [
+              "appointment"
+            ]
+          },
+          {
+            "text": "REMINDER TO LEAVE",
+            "points": 8,
+            "aliases": [
+              "reminder to leave"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something with a lid.",
+        "answers": [
+          {
+            "text": "JAR",
+            "points": 35,
+            "aliases": [
+              "jar"
+            ]
+          },
+          {
+            "text": "POT / SAUCEPAN",
+            "points": 26,
+            "aliases": [
+              "pot",
+              "saucepan"
+            ]
+          },
+          {
+            "text": "BIN / GARBAGE CAN",
+            "points": 19,
+            "aliases": [
+              "bin",
+              "garbage can"
+            ]
+          },
+          {
+            "text": "BOX",
+            "points": 12,
+            "aliases": [
+              "box"
+            ]
+          },
+          {
+            "text": "COFFEE CUP",
+            "points": 8,
+            "aliases": [
+              "coffee cup"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you can tie in a knot.",
+        "answers": [
+          {
+            "text": "ROPE",
+            "points": 35,
+            "aliases": [
+              "rope"
+            ]
+          },
+          {
+            "text": "SHOELACE",
+            "points": 26,
+            "aliases": [
+              "shoelace"
+            ]
+          },
+          {
+            "text": "RIBBON",
+            "points": 19,
+            "aliases": [
+              "ribbon"
+            ]
+          },
+          {
+            "text": "TIE / NECKTIE",
+            "points": 12,
+            "aliases": [
+              "tie",
+              "necktie"
+            ]
+          },
+          {
+            "text": "STRING",
+            "points": 8,
+            "aliases": [
+              "string"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-11",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something that might be missing from a flat-pack furniture box.",
+        "answers": [
+          {
+            "text": "SCREWS",
+            "points": 28,
+            "aliases": [
+              "screws"
+            ]
+          },
+          {
+            "text": "INSTRUCTIONS",
+            "points": 22,
+            "aliases": [
+              "instructions"
+            ]
+          },
+          {
+            "text": "WOODEN PANEL",
+            "points": 17,
+            "aliases": [
+              "wooden panel"
+            ]
+          },
+          {
+            "text": "DOWELS",
+            "points": 13,
+            "aliases": [
+              "dowels"
+            ]
+          },
+          {
+            "text": "ALLEN KEY / HEX KEY",
+            "points": 9,
+            "aliases": [
+              "allen key",
+              "hex key"
+            ]
+          },
+          {
+            "text": "WASHERS",
+            "points": 7,
+            "aliases": [
+              "washers"
+            ]
+          },
+          {
+            "text": "HINGE",
+            "points": 4,
+            "aliases": [
+              "hinge"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people do at a family reunion.",
+        "answers": [
+          {
+            "text": "EAT",
+            "points": 30,
+            "aliases": [
+              "eat"
+            ]
+          },
+          {
+            "text": "TAKE PHOTOS",
+            "points": 24,
+            "aliases": [
+              "take photos"
+            ]
+          },
+          {
+            "text": "TELL STORIES",
+            "points": 18,
+            "aliases": [
+              "tell stories"
+            ]
+          },
+          {
+            "text": "PLAY GAMES",
+            "points": 13,
+            "aliases": [
+              "play games"
+            ]
+          },
+          {
+            "text": "HUG",
+            "points": 9,
+            "aliases": [
+              "hug"
+            ]
+          },
+          {
+            "text": "LOOK AT OLD PHOTOS",
+            "points": 6,
+            "aliases": [
+              "look at old photos"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you might put in a time capsule.",
+        "answers": [
+          {
+            "text": "NEWSPAPER",
+            "points": 35,
+            "aliases": [
+              "newspaper"
+            ]
+          },
+          {
+            "text": "LETTER",
+            "points": 26,
+            "aliases": [
+              "letter"
+            ]
+          },
+          {
+            "text": "PHOTOS",
+            "points": 19,
+            "aliases": [
+              "photos"
+            ]
+          },
+          {
+            "text": "COINS",
+            "points": 12,
+            "aliases": [
+              "coins"
+            ]
+          },
+          {
+            "text": "TOY",
+            "points": 8,
+            "aliases": [
+              "toy"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people use to carry groceries.",
+        "answers": [
+          {
+            "text": "BAG",
+            "points": 42,
+            "aliases": [
+              "bag"
+            ]
+          },
+          {
+            "text": "CART / TROLLEY",
+            "points": 28,
+            "aliases": [
+              "cart",
+              "trolley"
+            ]
+          },
+          {
+            "text": "BASKET",
+            "points": 19,
+            "aliases": [
+              "basket"
+            ]
+          },
+          {
+            "text": "BOX",
+            "points": 11,
+            "aliases": [
+              "box"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name something that a clock tells you.",
+      "answers": [
+        {
+          "text": "TIME",
+          "points": 44,
+          "aliases": [
+            "time"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a dessert usually served cold.",
+        "answers": [
+          {
+            "text": "ICE CREAM",
+            "points": 35,
+            "aliases": [
+              "ice cream"
+            ]
+          },
+          {
+            "text": "CHEESECAKE",
+            "points": 26,
+            "aliases": [
+              "cheesecake"
+            ]
+          },
+          {
+            "text": "JELLY / JELL-O",
+            "points": 19,
+            "aliases": [
+              "jelly",
+              "jell-o"
+            ]
+          },
+          {
+            "text": "MOUSSE",
+            "points": 12,
+            "aliases": [
+              "mousse"
+            ]
+          },
+          {
+            "text": "PUDDING",
+            "points": 8,
+            "aliases": [
+              "pudding"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name an animal that can jump a long way.",
+        "answers": [
+          {
+            "text": "KANGAROO",
+            "points": 35,
+            "aliases": [
+              "kangaroo"
+            ]
+          },
+          {
+            "text": "FROG",
+            "points": 26,
+            "aliases": [
+              "frog"
+            ]
+          },
+          {
+            "text": "RABBIT",
+            "points": 19,
+            "aliases": [
+              "rabbit"
+            ]
+          },
+          {
+            "text": "GRASSHOPPER",
+            "points": 12,
+            "aliases": [
+              "grasshopper"
+            ]
+          },
+          {
+            "text": "FLEA",
+            "points": 8,
+            "aliases": [
+              "flea"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you might see in a harbour.",
+        "answers": [
+          {
+            "text": "BOAT / SHIP",
+            "points": 35,
+            "aliases": [
+              "boat",
+              "ship"
+            ]
+          },
+          {
+            "text": "DOCK / PIER",
+            "points": 26,
+            "aliases": [
+              "dock",
+              "pier"
+            ]
+          },
+          {
+            "text": "SEAGULL",
+            "points": 19,
+            "aliases": [
+              "seagull"
+            ]
+          },
+          {
+            "text": "CRANE",
+            "points": 12,
+            "aliases": [
+              "crane"
+            ]
+          },
+          {
+            "text": "BUOY",
+            "points": 8,
+            "aliases": [
+              "buoy"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something often made of glass.",
+        "answers": [
+          {
+            "text": "WINDOW",
+            "points": 35,
+            "aliases": [
+              "window"
+            ]
+          },
+          {
+            "text": "DRINKING GLASS",
+            "points": 26,
+            "aliases": [
+              "drinking glass"
+            ]
+          },
+          {
+            "text": "BOTTLE",
+            "points": 19,
+            "aliases": [
+              "bottle"
+            ]
+          },
+          {
+            "text": "VASE",
+            "points": 12,
+            "aliases": [
+              "vase"
+            ]
+          },
+          {
+            "text": "MIRROR",
+            "points": 8,
+            "aliases": [
+              "mirror"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a reason someone might carry an umbrella.",
+        "answers": [
+          {
+            "text": "RAIN",
+            "points": 35,
+            "aliases": [
+              "rain"
+            ]
+          },
+          {
+            "text": "SUN / SHADE",
+            "points": 26,
+            "aliases": [
+              "sun",
+              "shade"
+            ]
+          },
+          {
+            "text": "SNOW",
+            "points": 19,
+            "aliases": [
+              "snow"
+            ]
+          },
+          {
+            "text": "COSTUME / PROP",
+            "points": 12,
+            "aliases": [
+              "costume",
+              "prop"
+            ]
+          },
+          {
+            "text": "WIND PROTECTION",
+            "points": 8,
+            "aliases": [
+              "wind protection"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "starter-12",
+    "source": "Original synthetic home-game surveys",
+    "rounds": [
+      {
+        "question": "Name something people photograph on holiday.",
+        "answers": [
+          {
+            "text": "SCENERY",
+            "points": 28,
+            "aliases": [
+              "scenery"
+            ]
+          },
+          {
+            "text": "LANDMARKS",
+            "points": 22,
+            "aliases": [
+              "landmarks"
+            ]
+          },
+          {
+            "text": "FAMILY / FRIENDS",
+            "points": 17,
+            "aliases": [
+              "family",
+              "friends"
+            ]
+          },
+          {
+            "text": "FOOD",
+            "points": 13,
+            "aliases": [
+              "food"
+            ]
+          },
+          {
+            "text": "WILDLIFE",
+            "points": 9,
+            "aliases": [
+              "wildlife"
+            ]
+          },
+          {
+            "text": "HOTEL",
+            "points": 7,
+            "aliases": [
+              "hotel"
+            ]
+          },
+          {
+            "text": "SUNSET",
+            "points": 4,
+            "aliases": [
+              "sunset"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something people do before a garage sale.",
+        "answers": [
+          {
+            "text": "SORT BELONGINGS",
+            "points": 30,
+            "aliases": [
+              "sort belongings"
+            ]
+          },
+          {
+            "text": "PUT PRICES ON ITEMS",
+            "points": 24,
+            "aliases": [
+              "put prices on items"
+            ]
+          },
+          {
+            "text": "MAKE SIGNS",
+            "points": 18,
+            "aliases": [
+              "make signs"
+            ]
+          },
+          {
+            "text": "ADVERTISE",
+            "points": 13,
+            "aliases": [
+              "advertise"
+            ]
+          },
+          {
+            "text": "SET UP TABLES",
+            "points": 9,
+            "aliases": [
+              "set up tables"
+            ]
+          },
+          {
+            "text": "GET CHANGE",
+            "points": 6,
+            "aliases": [
+              "get change"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something that might wake a sleeping cat.",
+        "answers": [
+          {
+            "text": "FOOD / CAN OPENER",
+            "points": 35,
+            "aliases": [
+              "food",
+              "can opener"
+            ]
+          },
+          {
+            "text": "LOUD NOISE",
+            "points": 26,
+            "aliases": [
+              "loud noise"
+            ]
+          },
+          {
+            "text": "DOG",
+            "points": 19,
+            "aliases": [
+              "dog"
+            ]
+          },
+          {
+            "text": "SOMEONE TOUCHING IT",
+            "points": 12,
+            "aliases": [
+              "someone touching it"
+            ]
+          },
+          {
+            "text": "ANOTHER CAT",
+            "points": 8,
+            "aliases": [
+              "another cat"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something children look forward to at a fair.",
+        "answers": [
+          {
+            "text": "RIDES",
+            "points": 42,
+            "aliases": [
+              "rides"
+            ]
+          },
+          {
+            "text": "GAMES",
+            "points": 28,
+            "aliases": [
+              "games"
+            ]
+          },
+          {
+            "text": "TREATS / FOOD",
+            "points": 19,
+            "aliases": [
+              "treats",
+              "food"
+            ]
+          },
+          {
+            "text": "ANIMALS",
+            "points": 11,
+            "aliases": [
+              "animals"
+            ]
+          }
+        ]
+      }
+    ],
+    "suddenDeath": {
+      "question": "Name something that a librarian lends out.",
+      "answers": [
+        {
+          "text": "BOOKS",
+          "points": 44,
+          "aliases": [
+            "books"
+          ]
+        }
+      ]
+    },
+    "fastMoney": [
+      {
+        "question": "Name a food people might buy in a bucket.",
+        "answers": [
+          {
+            "text": "FRIED CHICKEN",
+            "points": 35,
+            "aliases": [
+              "fried chicken"
+            ]
+          },
+          {
+            "text": "POPCORN",
+            "points": 26,
+            "aliases": [
+              "popcorn"
+            ]
+          },
+          {
+            "text": "ICE CREAM",
+            "points": 19,
+            "aliases": [
+              "ice cream"
+            ]
+          },
+          {
+            "text": "CANDY",
+            "points": 12,
+            "aliases": [
+              "candy"
+            ]
+          },
+          {
+            "text": "SEAFOOD",
+            "points": 8,
+            "aliases": [
+              "seafood"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something used to fasten clothes.",
+        "answers": [
+          {
+            "text": "BUTTON",
+            "points": 35,
+            "aliases": [
+              "button"
+            ]
+          },
+          {
+            "text": "ZIPPER",
+            "points": 26,
+            "aliases": [
+              "zipper"
+            ]
+          },
+          {
+            "text": "SNAP / PRESS STUD",
+            "points": 19,
+            "aliases": [
+              "snap",
+              "press stud"
+            ]
+          },
+          {
+            "text": "VELCRO",
+            "points": 12,
+            "aliases": [
+              "velcro"
+            ]
+          },
+          {
+            "text": "HOOK",
+            "points": 8,
+            "aliases": [
+              "hook"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name a place where you would see a stage.",
+        "answers": [
+          {
+            "text": "THEATRE",
+            "points": 35,
+            "aliases": [
+              "theatre"
+            ]
+          },
+          {
+            "text": "CONCERT HALL",
+            "points": 26,
+            "aliases": [
+              "concert hall"
+            ]
+          },
+          {
+            "text": "SCHOOL",
+            "points": 19,
+            "aliases": [
+              "school"
+            ]
+          },
+          {
+            "text": "FESTIVAL",
+            "points": 12,
+            "aliases": [
+              "festival"
+            ]
+          },
+          {
+            "text": "TELEVISION STUDIO",
+            "points": 8,
+            "aliases": [
+              "television studio"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something you might find on a beach.",
+        "answers": [
+          {
+            "text": "SAND",
+            "points": 35,
+            "aliases": [
+              "sand"
+            ]
+          },
+          {
+            "text": "SHELLS",
+            "points": 26,
+            "aliases": [
+              "shells"
+            ]
+          },
+          {
+            "text": "SEAWEED",
+            "points": 19,
+            "aliases": [
+              "seaweed"
+            ]
+          },
+          {
+            "text": "ROCKS",
+            "points": 12,
+            "aliases": [
+              "rocks"
+            ]
+          },
+          {
+            "text": "DRIFTWOOD",
+            "points": 8,
+            "aliases": [
+              "driftwood"
+            ]
+          }
+        ]
+      },
+      {
+        "question": "Name something round in a kitchen.",
+        "answers": [
+          {
+            "text": "PLATE",
+            "points": 35,
+            "aliases": [
+              "plate"
+            ]
+          },
+          {
+            "text": "BOWL",
+            "points": 26,
+            "aliases": [
+              "bowl"
+            ]
+          },
+          {
+            "text": "PAN",
+            "points": 19,
+            "aliases": [
+              "pan"
+            ]
+          },
+          {
+            "text": "ORANGE",
+            "points": 12,
+            "aliases": [
+              "orange"
+            ]
+          },
+          {
+            "text": "CLOCK",
+            "points": 8,
+            "aliases": [
+              "clock"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

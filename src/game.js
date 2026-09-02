@@ -183,8 +183,8 @@ ALIASES
 
 Before returning JSON, silently verify exact answer counts, descending positive integer points, 100-point totals, unique concepts, and non-overlapping aliases.`;
 
-async function generateGamePackage() {
-  if (!process.env.OPENAI_API_KEY) return structuredClone(BUILTIN_GAME);
+async function generateGamePackage({ avoidQuestions = [] } = {}) {
+  if (!process.env.OPENAI_API_KEY) throw new Error('Survey generation requires OPENAI_API_KEY');
   const schema = {
     type: 'object', additionalProperties: false,
     properties: {
@@ -197,11 +197,11 @@ async function generateGamePackage() {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const response = await fetch('https://api.openai.com/v1/responses', {
-        method: 'POST', headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        method: 'POST', signal: AbortSignal.timeout(120000), headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: process.env.OPENAI_MODEL || 'gpt-5-mini',
           instructions: GENERATOR_INSTRUCTIONS,
-          input: `Create one new complete game package. This is validation attempt ${attempt} of 3. Use the exact requested answer counts, strictly descending integer scores, and make every survey total exactly 100.`,
+          input: `Create one new complete game package. Variety seed: ${crypto.randomUUID()}. This is validation attempt ${attempt} of 3. Use the exact requested answer counts, strictly descending integer scores, and make every survey total exactly 100. Choose fresh situations and topics. Do not reuse or paraphrase ANY of these previous/reserved questions:\n${avoidQuestions.join('\n')}`,
           text: { format: { type: 'json_schema', name: 'family_feud_game', strict: true, schema } }
         })
       });
@@ -216,8 +216,7 @@ async function generateGamePackage() {
       console.error(`Board generation attempt ${attempt} failed:`, error.message);
     }
   }
-  console.error('Using built-in boards after three API attempts:', lastError?.message);
-  return structuredClone(BUILTIN_GAME);
+  throw lastError || new Error('Survey generation failed');
 }
 
 function boardSchema(minItems = 4, maxItems = 7) {

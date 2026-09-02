@@ -9,7 +9,7 @@ function browser(fetchImpl) {
   const app = { innerHTML: '', append() {} };
   const context = vm.createContext({
     console, setTimeout, clearTimeout, setInterval, clearInterval, AbortController, Promise, Date,
-    document: { querySelector: () => app },
+    document: { querySelector: selector => selector === '#app' ? app : null },
     location: { pathname: '/join/TEST' },
     localStorage: { getItem: () => '{"code":"TEST","playerId":"P"}' },
     io: () => ({ on: (name, fn) => handlers[name] = fn, emit: (name, value) => events.push({ name, value }) }),
@@ -98,36 +98,33 @@ test('faceoff scene and buzzer coexist remotely, while the TV display never has 
   assert.equal(vm.runInContext('showFaceoffScene()', b.context), false, 'Successful answer reveals use the main board camera');
 });
 
-test('Fast Money microphone stays active across questions, ignores host speech and stale results, and stops after play', async () => {
-  const b = browser(async () => ({})), microphones = [];
-  b.context.document.querySelector = () => null;
-  b.context.window.SpeechRecognition = class {
-    constructor(){ microphones.push(this); }
-    start(){ this.started = true; }
-    abort(){ this.aborted = true; this.onend?.(); }
+test('Fast Money starts listening without speechstart and resets itself after host audio', async () => {
+  const b=browser(async()=>({})), microphones=[];
+  b.context.document.querySelector=()=>null;
+  b.context.window.SpeechRecognition=class {
+    constructor(){microphones.push(this);}
+    start(){this.started=true;this.onstart?.();}
+    abort(){this.aborted=true;this.onend?.();}
   };
-  vm.runInContext("state={code:'TEST',mode:'remote',adminId:'P',phase:'host_wait',turnPlayerId:'P',fastPlayers:['P'],fastIndex:0,fastQuestionIndex:0,inputLocked:true};syncFastMicrophone()", b.context);
-  const mic = microphones[0];
-  assert.equal(mic.started, true); assert.equal(mic.continuous, true);
-  const heard = words => mic.onresult({resultIndex:0,results:[Object.assign([{transcript:words}],{isFinal:true})]});
-  mic.onspeechstart(); heard('The host is speaking');
-  assert.equal(vm.runInContext('fastDraft.value', b.context), '');
-  vm.runInContext("state.phase='fast_play';state.inputLocked=false;syncFastMicrophone()", b.context);
-  heard('Delayed host result');
-  assert.equal(vm.runInContext('fastDraft.value', b.context), '');
-  mic.onspeechstart(); heard('coffee');
-  assert.equal(vm.runInContext('fastDraft.value', b.context), 'coffee');
-  vm.runInContext('state.fastQuestionIndex=1;state.inputLocked=true;syncFastMicrophone()', b.context);
-  assert.equal(microphones.length, 1, 'Question transitions must keep the same microphone');
-  vm.runInContext('state.inputLocked=false', b.context); heard('Late first answer');
-  assert.equal(vm.runInContext('fastDraft.value', b.context), '');
-  mic.onspeechstart(); heard('blue');
-  assert.equal(vm.runInContext('fastDraft.value', b.context), 'blue');
-  mic.onend(); await new Promise(resolve => setTimeout(resolve, 280));
-  assert.equal(microphones.length, 2, 'Browser-ended sessions restart automatically');
-  vm.runInContext("state.phase='fast_reveal';syncFastMicrophone()", b.context);
-  assert.equal(microphones[1].aborted, true);
-  assert.equal(vm.runInContext('fastMic', b.context), null);
+  vm.runInContext("state={code:'TEST',mode:'remote',adminId:'P',phase:'host_wait',turnPlayerId:'P',fastPlayers:['P'],fastIndex:0,fastQuestionIndex:0,inputLocked:true};syncFastMicrophone()",b.context);
+  assert.equal(microphones.length,0,'Do not seed recognition with the host announcement');
+  vm.runInContext("state.phase='fast_play';state.inputLocked=false;syncFastMicrophone()",b.context);
+  const first=microphones[0];assert.equal(first.started,true);assert.equal(first.continuous,true);
+  const heard=(mic,words)=>mic.onresult({resultIndex:0,results:[Object.assign([{transcript:words}],{isFinal:true})]});
+  heard(first,'coffee'); // Reproduces browsers that do not emit another speechstart.
+  assert.equal(vm.runInContext('fastDraft.value',b.context),'coffee');
+  vm.runInContext('state.fastQuestionIndex=1;state.inputLocked=true;syncFastMicrophone()',b.context);
+  assert.equal(first.aborted,true);
+  heard(first,'host words');assert.equal(vm.runInContext('fastDraft.value',b.context),'');
+  vm.runInContext('state.inputLocked=false;syncFastMicrophone()',b.context);
+  const second=microphones[1];
+  heard(first,'late first answer');assert.equal(vm.runInContext('fastDraft.value',b.context),'');
+  heard(second,'blue');assert.equal(vm.runInContext('fastDraft.value',b.context),'blue');
+  second.onend();await new Promise(resolve=>setTimeout(resolve,280));
+  assert.equal(microphones.length,3,'Browser-ended sessions restart automatically');
+  vm.runInContext("state.phase='fast_reveal';syncFastMicrophone()",b.context);
+  assert.equal(microphones[2].aborted,true);
+  assert.equal(vm.runInContext('fastMic',b.context),null);
 });
 
 test('microphone denial permits typing and does not repeatedly request permission', () => {
@@ -162,7 +159,7 @@ test('Fast Money board displays an answer without leaking its score; zero uses t
 test('family announcements and oval reveals finish one family before introducing the other', async () => {
   const b=browser(async()=>({})), scenes=[], stages=[];
   const content={set innerHTML(value){scenes.push(value);},querySelector(){return {classList:{add(){stages.push('slide');}}};}};
-  b.context.document.querySelector=()=>content;
+  b.context.document.querySelector=selector=>selector==='#introContent'?content:null;
   b.context.setTimeout=fn=>{fn();return 1;};
   b.context.stages=stages;
   vm.runInContext("state={code:'TEST',mode:'remote',phase:'intro',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}],kissStatus:'off'};playAudioFile=async()=>{};playFamilyAnnouncement=async(i,part)=>stages.push(i+':'+part)",b.context);
@@ -171,4 +168,18 @@ test('family announcements and oval reveals finish one family before introducing
   assert.match(scenes[0],/Brown/);assert.doesNotMatch(scenes[0],/Smith/);
   assert.match(scenes[1],/Smith/);assert.doesNotMatch(scenes[1],/Brown/);
   assert.equal(b.events.at(-1).name,'introComplete');
+});
+
+test('long family names shrink to the measured available width',()=>{
+  const b=browser(async()=>({}));
+  const label={parentElement:{clientWidth:500},scrollWidth:1000,style:{}};
+  b.context.document.querySelector=()=>label;b.context.getComputedStyle=()=>({fontSize:'100px'});
+  vm.runInContext('fitFamilyName()',b.context);assert.equal(label.style.fontSize,'43px');
+});
+test('Good Answer is available only to teammates who are not giving the answer',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={phase:'answer',turnPlayerId:'Q',families:[{playerIds:['P','Q']},{playerIds:['R']}]}",b.context);
+  assert.match(vm.runInContext('goodAnswerControl()',b.context),/Good Answer/);
+  vm.runInContext("myPlayerId='Q'",b.context);assert.equal(vm.runInContext('goodAnswerControl()',b.context),'');
+  vm.runInContext("myPlayerId='R'",b.context);assert.equal(vm.runInContext('goodAnswerControl()',b.context),'');
 });

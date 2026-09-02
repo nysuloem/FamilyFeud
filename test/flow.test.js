@@ -2,13 +2,18 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { io: connect } = require('socket.io-client');
 const { BUILTIN_GAME } = require('../src/game');
-const { server, io, rooms, makeRoom, beginRound, publicRoom, awardRound, beginFastMoney, finishFastPlayer, disposeRoom } = require('../server');
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+const bankDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'feud-flow-bank-'));
+const previousDirectory = process.env.DATA_DIR;
+process.env.DATA_DIR = bankDirectory;
+const { server, io, rooms, makeRoom, beginRound, publicRoom, awardRound, beginFastMoney, finishFastPlayer, openAnswer, answerClockExpired, disposeRoom } = require('../server');
 
+if (previousDirectory === undefined) delete process.env.DATA_DIR; else process.env.DATA_DIR = previousDirectory;
 const previousKey = process.env.OPENAI_API_KEY;
 delete process.env.OPENAI_API_KEY; // Deterministic offline surveys/judging, never spend API credits in tests.
 let url;
 test.before(async () => { await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); url = `http://127.0.0.1:${server.address().port}`; });
-test.after(async () => { await new Promise(resolve => io.close(resolve)); if (previousKey) process.env.OPENAI_API_KEY = previousKey; });
+test.after(async () => { await new Promise(resolve => io.close(resolve)); fs.rmSync(bankDirectory, {recursive:true,force:true}); if (previousKey) process.env.OPENAI_API_KEY = previousKey; });
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(predicate, timeout = 2500) {
   const deadline = Date.now() + timeout;
@@ -47,7 +52,7 @@ test('early buzz cancels speech; second contestant hears full question; answer s
   clients[0].emit('cueStarted', { code: room.code, cueId: questionCue }); await until(() => room.faceoff.canBuzz);
   const cancelled = []; clients[1].on('cancelCue', data => cancelled.push(data.cueId));
   clients[0].emit('buzz', { code: room.code }); await until(() => room.phase === 'answer');
-  assert.equal(room.pendingCue, null); assert.ok(room.answerDeadline - Date.now() <= 5000);
+  assert.equal(room.pendingCue, null); assert.ok(room.answerDeadline - Date.now() <= 15000);
   await until(() => cancelled.includes(questionCue));
   clients[0].emit('cueFinished', { code: room.code, cueId: questionCue }); await pause(10);
   assert.equal(room.phase, 'answer');
@@ -65,12 +70,12 @@ test('early buzz cancels speech; second contestant hears full question; answer s
   await finish(); assert.equal(room.turnPlayerId, clients[1].id); assert.ok(room.answerDeadline > Date.now());
 });
 
-test('five-second answer deadline produces exactly one strike without a client submission', async t => {
+test('15-second answer deadline produces exactly one strike without a client submission', async t => {
   const { room, clients, finish } = await fixture(t);
   const strikes = []; clients[0].on('answerResult', data => strikes.push(data));
   beginRound(room, 0); await finish(); await finish();
   clients[0].emit('buzz', { code: room.code }); await until(() => room.phase === 'answer');
-  await until(() => room.judging && room.pendingCue, 6500);
+  await until(() => room.judging && room.pendingCue, 16500);
   await until(() => strikes.length === 1);
   assert.equal(strikes[0].timedOut, true); assert.equal(strikes[0].count, 1);
   const late = await clients[0].emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'keys' });
@@ -203,6 +208,7 @@ test('solo introduction test controls the opponent and ends after the first roun
   for (let i = 0; i < 4; i++) {
     assert.equal((await client.emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'xyzzy' })).ok, true);
     await until(() => room.pendingCue); await finish(); await finish();
+    if (i === 1) { assert.match(room.speechCues.get(room.pendingCue.cueId).text, /get ready to steal/); await finish(); }
     if (i < 3) await finish();
   }
   assert.equal(room.phase, 'round_reveal');
@@ -318,4 +324,59 @@ test('continued faceoff wraps uneven families and a number one answer immediatel
   await finish(); await finish();
   assert.equal(room.phase, 'decision'); assert.equal(room.faceoff.winnerFamily, 0);
   assert.equal(room.faceoff.attempts.length, 5, 'No extra opposing guess after number one');
+});
+
+test('steal allows 30 seconds, accepts answers during the warning, and cancels stale warning completion',async t=>{
+  const {room,clients,finish}=await fixture(t);
+  room.round=0;room.controlFamily=0;room.isSteal=true;
+  openAnswer(room,clients[0].id);
+  assert.ok(room.answerDeadline-Date.now()>29000);
+  clearTimeout(room.answerTimer);answerClockExpired(room,room.answerToken);
+  assert.equal(room.answerDeadline,null);assert.equal(room.stealWarning,true);assert.equal(room.inputLocked,false);
+  const warning=room.pendingCue.cueId;
+  assert.equal(room.speechCues.get(warning).text,'I need an answer!');
+  const result=await clients[0].emitWithAck('submitAnswer',{code:room.code,token:room.answerToken,answer:'keys'});
+  assert.equal(result.ok,true);await until(()=>room.pendingCue?.cueId!==warning);
+  clients[0].emit('cueFinished',{code:room.code,cueId:warning});await pause(10);
+  assert.equal(room.answerDeadline,null);assert.equal(room.judging,true);
+  await finish();await finish();assert.equal(room.phase,'round_reveal');
+});
+
+test('steal final three seconds start only after the warning finishes and expire once',async t=>{
+  const {room,clients,finish}=await fixture(t),strikes=[];
+  clients[0].on('answerResult',result=>strikes.push(result));
+  room.round=0;room.controlFamily=0;room.isSteal=true;openAnswer(room,clients[0].id);
+  clearTimeout(room.answerTimer);answerClockExpired(room,room.answerToken);
+  assert.equal(strikes.length,0);assert.equal(room.answerDeadline,null);
+  await finish();assert.ok(room.answerDeadline-Date.now()>2800);assert.ok(room.answerDeadline-Date.now()<=3000);
+  clearTimeout(room.answerTimer);answerClockExpired(room,room.answerToken);answerClockExpired(room,room.answerToken);
+  await until(()=>strikes.length===1);assert.equal(strikes[0].timedOut,true);
+});
+
+test('Good Answer reactions are teammate-only, once per turn, and never alter the answer timer',async t=>{
+  const {room,clients}=await fixture(t),reactions=[];
+  room.round=0;room.controlFamily=0;openAnswer(room,clients[0].id);
+  clients[0].on('goodAnswer',r=>reactions.push(r));
+  clients[0].emit('goodAnswer',{code:room.code});clients[1].emit('goodAnswer',{code:room.code});
+  await pause(15);assert.equal(reactions.length,0,'Answerer and opponent cannot cheer');
+  room.families=[{name:'Team',playerIds:room.players.map(p=>p.id)},{name:'Other',playerIds:[]}];
+  const deadline=room.answerDeadline;
+  clients[1].emit('goodAnswer',{code:room.code});clients[1].emit('goodAnswer',{code:room.code});
+  await until(()=>reactions.length===1);assert.equal(room.answerDeadline,deadline);
+  assert.equal(reactions[0].name,'Bob');
+});
+
+
+test('regular starts immediately load distinct prepared games without consuming test fixtures',async t=>{
+  const first=await fixture(t),second=await fixture(t);
+  const start=Date.now();
+  assert.equal((await first.clients[0].emitWithAck('startGame',{code:first.room.code})).ok,true);
+  await until(()=>first.room.phase==='intro');
+  assert.ok(Date.now()-start<2000,'Starting a prepared game must not wait for survey generation');
+  assert.equal((await second.clients[0].emitWithAck('startGame',{code:second.room.code})).ok,true);
+  await until(()=>second.room.phase==='intro');
+  assert.notEqual(first.room.game.id,second.room.game.id);
+  assert.notEqual(first.room.game.rounds[0].question,BUILTIN_GAME.rounds[0].question);
+  const history=JSON.parse(fs.readFileSync(path.join(bankDirectory,'survey-bank.json'),'utf8'));
+  assert.equal(history.used.length,2);assert.equal(history.available.length,10);
 });

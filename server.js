@@ -4,7 +4,14 @@ const fs = require('node:fs/promises');
 const express = require('express');
 const { Server } = require('socket.io');
 const QRCode = require('qrcode');
-const { BUILTIN_GAME, generateGamePackage, judgeAnswer, matchAnswer, newCode } = require('./src/game');
+const { BUILTIN_GAME, judgeAnswer, matchAnswer, newCode } = require('./src/game');
+const { SurveyBank } = require('./src/survey-bank');
+const surveyBank = new SurveyBank();
+function refillSurveys(){
+  if(!process.env.OPENAI_API_KEY)return;
+  try {void surveyBank.refill().catch(error=>console.error('Survey bank:',error.message));}
+  catch(error){console.error('Survey bank:',error.message);}
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -150,18 +157,34 @@ function finishHostedCue(room, cueId) {
 }
 
 function clearAnswerClock(room) {
-  clearTimeout(room.answerTimer); room.answerTimer = null; room.answerDeadline = null;
+  clearTimeout(room.answerTimer); room.answerTimer = null; room.answerDeadline = null; room.stealWarning = false;
 }
 
 function openAnswer(room, playerId) {
   clearAnswerClock(room);
   room.phase = 'answer'; room.turnPlayerId = playerId; room.inputLocked = false;
-  const contestant = player(room, playerId), token = ++room.answerToken;
-  room.answerDeadline = Date.now() + 5000;
-  room.answerTimer = setTimeout(() => {
-    if (room.phase === 'answer' && room.answerToken === token && !room.judging) void resolveAnswer(room, contestant, '', true);
-  }, 5000);
+  const token = ++room.answerToken;
+  room.goodAnswerPlayers = [];
+  const duration = room.isSteal ? 30000 : 15000;
+  room.answerDeadline = Date.now() + duration;
+  room.answerTimer = setTimeout(() => answerClockExpired(room, token), duration);
   emit(room);
+}
+
+function answerClockExpired(room, token) {
+  if (room.phase !== 'answer' || room.answerToken !== token || room.judging) return;
+  clearTimeout(room.answerTimer);
+  if (!room.isSteal || room.stealWarning) return void resolveAnswer(room, player(room, room.turnPlayerId), '', true);
+  room.answerTimer = null; room.answerDeadline = null; room.stealWarning = true;
+  room.message = 'I need an answer!';
+  runHostedCue(room, room.message, null, () => {
+    if (room.phase !== 'answer' || room.answerToken !== token || room.judging) return;
+    room.answerDeadline = Date.now() + 3000;
+    room.answerTimer = setTimeout(() => answerClockExpired(room, token), 3000);
+    room.inputLocked = false; emit(room);
+  });
+  // A family can submit while the host asks for its answer.
+  room.inputLocked = false; emit(room);
 }
 
 function revealSlot(room, index) {
@@ -172,6 +195,7 @@ function revealSlot(room, index) {
 
 async function resolveAnswer(room, contestant, given, timedOut = false) {
   if (room.judging || room.phase !== 'answer') return;
+  cancelHostedCue(room);
   clearAnswerClock(room); room.judging = true; room.inputLocked = true; emit(room);
   const board = boardFor(room);
   let match;
@@ -292,9 +316,12 @@ io.on('connection', socket => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || socket.id !== room.adminId || room.phase !== 'lobby') return reply?.({ ok: false, error: 'Only the first player can start.' });
     if (room.players.length < 2) return reply?.({ ok: false, error: 'At least two players are needed.' });
-    room.phase = 'generating'; setMessage(room, 'OpenAI is preparing tonight’s surveys…', null, false); emit(room); reply?.({ ok: true });
-    const kissTask = prepareKissImage(room);
-    room.game = await generateGamePackage();
+    room.phase = 'generating';
+    try { room.game = surveyBank.take(); }
+    catch(error){room.phase='lobby';refillSurveys();emit(room);return reply?.({ok:false,error:error.message});}
+    reply?.({ ok: true });refillSurveys();
+    // The optional souvenir can finish during the intro; it must not hold up play.
+    void prepareKissImage(room).then(()=>emit(room));
     // Warm only the five shared Fast Money questions; both contestants reuse them.
     if (process.env.OPENAI_API_KEY) room.fastSpeech = new Map(room.game.fastMoney.map(q => {
       const text = q.question;
@@ -306,7 +333,6 @@ io.on('connection', socket => {
       const suggestions = playerIds.map(id => player(room, id).familyName).filter(Boolean);
       return { name: suggestions[Math.floor(Math.random() * suggestions.length)] || `Family ${fi + 1}`, playerIds };
     });
-    await kissTask;
     room.phase = 'intro'; room.introStartedAt = Date.now(); setMessage(room, 'It’s time for the Family Feud!', null, false); emit(room);
   });
 
@@ -323,7 +349,7 @@ io.on('connection', socket => {
     if (!room || room.phase !== 'faceoff' || !room.faceoff?.canBuzz || room.faceoff.buzzedBy || !room.faceoff.players.includes(contestantId)) return;
     room.faceoff.buzzedBy = contestantId; room.faceoff.canBuzz = false;
     cancelHostedCue(room);
-    room.message = `${player(room, contestantId).name} buzzed in! Five seconds.`;
+    room.message = `${player(room, contestantId).name} buzzed in! Fifteen seconds.`;
     emitCue(room, room.message, 'buzz', false); openAnswer(room, contestantId);
   });
 
@@ -331,7 +357,10 @@ io.on('connection', socket => {
     const room = rooms.get(String(code).toUpperCase());
     const contestantId = room && answeringPlayer(room, socket.id);
     if (!room || room.phase !== 'answer' || room.turnPlayerId !== contestantId || room.judging || room.inputLocked || token !== room.answerToken) return reply?.({ ok: false, error: 'Please wait for your turn.' });
-    if (Date.now() >= room.answerDeadline) { void resolveAnswer(room, player(room, contestantId), '', true); return reply?.({ ok: false, error: 'Time is up.' }); }
+    if (room.answerDeadline && Date.now() >= room.answerDeadline) {
+      answerClockExpired(room, token);
+      if (room.judging) return reply?.({ ok: false, error: 'Time is up.' });
+    }
     const given = String(answer || '').trim().slice(0, 80);
     if (!given) return reply?.({ ok: false, error: 'Enter an answer.' });
     reply?.({ ok: true }); void resolveAnswer(room, player(room, contestantId), given);
@@ -342,6 +371,14 @@ io.on('connection', socket => {
     if (!room || room.phase !== 'decision' || (!testController(room, socket.id) && familyOf(room, socket.id) !== room.faceoff.winnerFamily)) return;
     room.controlFamily = choice === 'pass' ? 1 - room.faceoff.winnerFamily : room.faceoff.winnerFamily;
     startFamilyTurn(room);
+  });
+
+  socket.on('goodAnswer', ({ code }) => {
+    const room = rooms.get(String(code).toUpperCase());
+    const supporter = room && player(room, socket.id);
+    if (!supporter || !supporter.connected || room.phase !== 'answer' || socket.id === room.turnPlayerId || familyOf(room, socket.id) !== familyOf(room, room.turnPlayerId) || room.goodAnswerPlayers?.includes(socket.id)) return;
+    (room.goodAnswerPlayers ||= []).push(socket.id);
+    io.to(room.code).emit('goodAnswer', { name: supporter.name, family: room.families[familyOf(room, socket.id)].name });
   });
 
   socket.on('nextRound', ({ code }) => {
@@ -400,6 +437,7 @@ io.on('connection', socket => {
 function beginRound(room, index) {
   clearAnswerClock(room);
   room.round = index; room.revealed = []; room.strikes = 0; room.bank = 0; room.controlFamily = null;
+  room.isSteal = false;
   const p0 = familyPlayers(room, 0)[index % familyPlayers(room, 0).length];
   const p1 = familyPlayers(room, 1)[index % familyPlayers(room, 1).length];
   room.faceoff = { players: [p0.id, p1.id], buzzedBy: null, attempts: [], pairStart: 0, winnerFamily: null, canBuzz: false, showBoard: false };
@@ -428,7 +466,11 @@ function handleAnswer(room, playerId, answerIndex) {
   if (room.strikes >= 3) {
     room.controlFamily = 1 - room.controlFamily; room.isSteal = true;
     const stealer = familyPlayers(room, room.controlFamily)[0].id;
-    return promptForAnswer(room, stealer, `${room.families[room.controlFamily].name} family can steal. ${player(room, stealer).name}, give one answer.`, 'strike');
+    return promptForAnswer(room, stealer, `${room.families[room.controlFamily].name} family, you can steal. Shout out some possible answers! ${player(room, stealer).name}, give me your family's answer when you are ready.`);
+  }
+  if (answerIndex < 0 && room.strikes === 2) {
+    room.phase = 'host_wait'; room.message = `${room.families[1 - room.controlFamily].name} family, get ready to steal.`;
+    return runHostedCue(room, room.message, null, () => advanceTurn(room));
   }
   advanceTurn(room);
 }
@@ -672,5 +714,10 @@ setInterval(() => {
 }, 30 * 60 * 1000).unref();
 
 const port = process.env.PORT || 3000;
-if (require.main === module) server.listen(port, () => console.log(`Family Feud running on http://localhost:${port}`));
-module.exports = { server, io, rooms, makeRoom, beginRound, publicRoom, finishHostedCue, openAnswer, resolveAnswer, awardRound, beginFastMoney, startFastPlayer, finishFastPlayer, disposeRoom };
+if (require.main === module) {
+  console.log(`Survey bank ready: ${surveyBank.count()} games in ${surveyBank.directory}`);
+  if(process.env.RAILWAY_ENVIRONMENT_ID&&!process.env.RAILWAY_VOLUME_MOUNT_PATH)console.warn('Attach a persistent Railway volume at /data to preserve used-survey history across deployments.');
+  refillSurveys();setInterval(refillSurveys,5*60*1000).unref();
+  server.listen(port, () => console.log(`Family Feud running on http://localhost:${port}`));
+}
+module.exports = { server, io, rooms, makeRoom, beginRound, publicRoom, finishHostedCue, openAnswer, answerClockExpired, resolveAnswer, awardRound, beginFastMoney, startFastPlayer, finishFastPlayer, disposeRoom };

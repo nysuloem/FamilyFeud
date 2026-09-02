@@ -1,0 +1,133 @@
+# Original synthetic home-game surveys; each group contains 4 rounds, sudden death, 5 Fast Money boards.
+# Answers are ranked. Slash-separated alternatives are aliases for one answer, not separate slots.
+Name something that might interrupt a backyard barbecue.|RAIN|WASPS / BEES|RUNNING OUT OF GAS / EMPTY PROPANE TANK|BURNT FOOD|A NEIGHBOUR COMPLAINING / NOISE COMPLAINT|A DOG STEALING FOOD|A PHONE CALL
+Name something a hotel guest might ask the front desk for.|EXTRA TOWELS|WI-FI PASSWORD|DIRECTIONS|WAKE-UP CALL|EXTRA PILLOW|LATE CHECKOUT
+Name something people do when the power goes out.|FIND A FLASHLIGHT / TORCH|LIGHT CANDLES|CHECK THE BREAKER / FUSE BOX|CALL THE POWER COMPANY|LOOK OUTSIDE / CHECK NEIGHBOURS
+Name something you hope a birthday cake has.|ICING / FROSTING|CANDLES|CHOCOLATE|YOUR NAME / A MESSAGE
+Name a sport played on ice.|HOCKEY / ICE HOCKEY
+Name a fruit with a peel people usually remove.|BANANA|ORANGE|GRAPEFRUIT|MANDARIN / TANGERINE|KIWI
+Name a place where you have to whisper.|LIBRARY|CHURCH|MOVIE THEATRE / CINEMA|HOSPITAL|CLASSROOM
+Name an animal known for moving slowly.|TURTLE / TORTOISE|SNAIL|SLOTH|SLUG|STARFISH
+Name something inflated with air.|BALLOON|TIRE / TYRE|BEACH BALL|AIR MATTRESS|BOUNCY CASTLE
+Name something that comes in pairs.|SHOES|SOCKS|GLOVES|EARRINGS|SKATES
+
+Name something people check before buying a used car.|MILEAGE / ODOMETER|PRICE|ACCIDENT HISTORY|ENGINE|TIRES / TYRES|RUST / BODY DAMAGE|SERVICE RECORDS
+Name something children build with sand.|CASTLE / SANDCASTLE|MOAT / TRENCH|TUNNEL|MOUNTAIN / PILE|ROAD|ANIMAL
+Name something a restaurant server might forget.|DRINKS|CUTLERY / FORK / KNIFE|NAPKINS|CONDIMENTS / KETCHUP|THE BILL / CHEQUE
+Name something a dog might chase.|BALL|CAT|SQUIRREL|ITS TAIL
+Name something people collect in an album.|STAMPS / POSTAGE STAMPS
+Name a vegetable used in a salad.|LETTUCE|TOMATO|CUCUMBER|CARROT|RADISH
+Name a musical instrument you blow into.|TRUMPET|FLUTE|SAXOPHONE|CLARINET|TROMBONE
+Name something you plug into a wall outlet.|PHONE CHARGER|LAMP|TELEVISION / TV|VACUUM CLEANER|TOASTER
+Name a wild animal with stripes.|ZEBRA|TIGER|SKUNK|CHIPMUNK|OKAPI
+Name something you might rent for a day.|CAR|BICYCLE|BOAT|POWER TOOL|SKIS
+
+Name something people forget to pack for a camping trip.|BUG SPRAY / INSECT REPELLENT|MATCHES / LIGHTER|FLASHLIGHT / TORCH|SLEEPING BAG|TOILET PAPER|CAN OPENER|TENT PEGS / STAKES
+Name something someone might complain about in a movie theatre.|TALKING|CELL PHONES / PHONES|LOUD CHEWING / EATING NOISES|UNCOMFORTABLE SEATS|EXPENSIVE SNACKS|POOR TEMPERATURE / TOO COLD / TOO HOT
+Name something people decorate for a celebration.|CAKE|ROOM / HOUSE|TABLE|CAR|TREE
+Name something that can ruin a snowman.|SUN / WARM WEATHER|RAIN|DOG|SOMEONE KNOCKING IT OVER
+Name something people wave at a parade.|FLAG
+Name a food often served in a bowl.|SOUP|CEREAL|SALAD|ICE CREAM|RICE
+Name a tool used for cutting.|SCISSORS|KNIFE|SAW|AXE / AX|SHEARS
+Name something with a zipper.|JACKET / COAT|TROUSERS / PANTS / JEANS|BAG / BACKPACK|SUITCASE|TENT
+Name a place where people wear a helmet.|CONSTRUCTION SITE|HOCKEY RINK|SKI HILL|BIKE PATH|MOTORCYCLE TRACK
+Name something found in a pencil case.|PENCIL|PEN|ERASER|RULER|SHARPENER
+
+Name something people do to welcome a new neighbour.|INTRODUCE THEMSELVES|BRING FOOD / BAKING|INVITE THEM OVER|GIVE A GIFT|OFFER HELP MOVING|EXPLAIN THE NEIGHBOURHOOD|SEND A CARD / NOTE
+Name a reason a washing machine might make a terrible noise.|UNBALANCED LOAD|COINS IN POCKETS|OVERLOADED|BROKEN PART|SHOES INSIDE|NOT LEVEL
+Name something people do at a picnic besides eat.|PLAY GAMES|TALK|RELAX / NAP|WALK|TAKE PHOTOS
+Name something people hang on a front door.|WREATH|WELCOME SIGN|DOOR KNOCKER|DECORATIONS / RIBBONS
+Name something a magician might pull out of a hat.|RABBIT / BUNNY
+Name a bird that people keep as a pet.|PARROT|BUDGIE / PARAKEET|CANARY|COCKATIEL|FINCH
+Name something served at a wedding reception.|CAKE|CHAMPAGNE|CHICKEN|BEEF|SALAD
+Name a place you might see a fountain.|PARK|SHOPPING MALL|TOWN SQUARE|HOTEL|GARDEN
+Name something made from wool.|SWEATER / JUMPER|SCARF|HAT|SOCKS|BLANKET
+Name a game that uses dice.|MONOPOLY|YAHTZEE|BACKGAMMON|SNAKES AND LADDERS / CHUTES AND LADDERS|RISK
+
+Name something that might go wrong during a school play.|FORGOTTEN LINES|COSTUME PROBLEM|BROKEN PROP|MICROPHONE FAILURE|MISSED ENTRANCE|FALLING SCENERY|STAGE FRIGHT
+Name something people take to a swimming pool.|TOWEL|SWIMSUIT / BATHING SUIT|GOGGLES|SANDALS / FLIP FLOPS|SUNSCREEN|SWIM CAP
+Name something that makes a house feel cosy.|FIREPLACE / FIRE|SOFT BLANKETS|WARM LIGHTING|COMFORTABLE FURNITURE|HOME COOKING / BAKING
+Name something people use to keep a door open.|DOORSTOP|CHAIR|HEAVY BOOK|BRICK / ROCK
+Name an animal with a very long neck.|GIRAFFE
+Name a food often sold by the dozen.|EGGS|DOUGHNUTS / DONUTS|BAGELS|CUPCAKES|OYSTERS
+Name something you can fold.|PAPER|CLOTHES|CHAIR|BLANKET|MAP
+Name a colour people paint a front door.|RED|BLACK|WHITE|BLUE|GREEN
+Name a place that sells tickets.|CINEMA / MOVIE THEATRE|TRAIN STATION|STADIUM|AMUSEMENT PARK|CONCERT HALL
+Name something children might put stickers on.|NOTEBOOK|WATER BOTTLE|LUNCHBOX|LAPTOP|BEDROOM WALL
+
+Name something you would find in a gardener's shed.|SHOVEL / SPADE|RAKE|HOSE|PLANT POTS|FERTILIZER|SEEDS|GARDEN GLOVES
+Name something that might delay a flight.|BAD WEATHER|MECHANICAL PROBLEM|LATE INCOMING PLANE|AIR TRAFFIC|MISSING CREW|LATE PASSENGER
+Name something people like about a small town.|FRIENDLY PEOPLE|QUIET|LESS TRAFFIC|SENSE OF COMMUNITY|LOWER COST OF LIVING
+Name something people put in a bird feeder.|SEEDS / BIRDSEED|NUTS / PEANUTS|SUET|FRUIT
+Name something you use to measure temperature.|THERMOMETER
+Name a food you might roast over a campfire.|MARSHMALLOW|HOT DOG / WIENER|CORN|POTATO|SAUSAGE
+Name something that has a handle.|DOOR|MUG / CUP|SUITCASE|FRYING PAN|UMBRELLA
+Name an animal with a shell.|TURTLE / TORTOISE|SNAIL|CRAB|CLAM|LOBSTER
+Name a place where people wait in a line.|GROCERY STORE|BANK|AMUSEMENT PARK|AIRPORT|COFFEE SHOP
+Name something kept in a freezer.|ICE CREAM|MEAT|VEGETABLES|ICE|BREAD
+
+Name something you might find under a child's bed.|TOYS|DIRTY CLOTHES|SHOES|BOOKS|DUST / DUST BUNNIES|FOOD WRAPPERS|LOST SOCKS
+Name something people do to prepare for a houseguest.|CLEAN|CHANGE BED SHEETS|BUY FOOD|PUT OUT TOWELS|MAKE SPACE|PLAN ACTIVITIES
+Name a reason someone might return a gift.|WRONG SIZE|ALREADY HAVE ONE|DO NOT LIKE IT|BROKEN / DAMAGED|NEED MONEY
+Name something people polish.|SHOES|SILVER|FURNITURE|CAR
+Name a food traditionally eaten at a baseball game.|HOT DOG
+Name an object that floats in a bathtub.|RUBBER DUCK|BOAT / TOY BOAT|SPONGE|SOAP|BATH TOY
+Name something you stir with a spoon.|SOUP|COFFEE|TEA|SAUCE|PORRIDGE / OATMEAL
+Name a vehicle with only two wheels.|BICYCLE / BIKE|MOTORCYCLE|SCOOTER|MOPED|SEGWAY
+Name a food that is crunchy.|CHIPS / CRISPS|CARROT|APPLE|CRACKERS|NUTS
+Name something found on a desk.|COMPUTER|PEN|PAPER|LAMP|CALENDAR
+
+Name a reason people might stop during a hike.|REST / TIRED|TAKE A PHOTO|DRINK WATER|EAT|LOOK AT WILDLIFE|CHECK THE MAP|TIE A SHOE
+Name something a babysitter might ask the parents.|BEDTIME|EMERGENCY NUMBER|FOOD INSTRUCTIONS|WHEN THEY WILL RETURN|HOUSE RULES|PAY
+Name something people put on a refrigerator door.|MAGNETS|PHOTOS|CHILDREN'S ART|SHOPPING LIST|CALENDAR
+Name something that makes a squeaking noise.|DOOR|MOUSE|SHOE|SWING
+Name something people throw at a dartboard.|DART
+Name something you might buy at a florist.|BOUQUET / FLOWERS|POTTED PLANT|VASE|CARD|BALLOON
+Name a sport that uses a net.|TENNIS|VOLLEYBALL|BADMINTON|SOCCER / FOOTBALL|HOCKEY
+Name a food people eat at breakfast.|EGGS|CEREAL|TOAST|PANCAKES|YOGURT
+Name something that needs batteries.|REMOTE CONTROL|FLASHLIGHT / TORCH|TOY|CLOCK|SMOKE DETECTOR
+Name a place you might see a costume.|HALLOWEEN PARTY|THEATRE / PLAY|PARADE|CONVENTION|AMUSEMENT PARK
+
+Name something people do when they cannot find their glasses.|RETRACE THEIR STEPS|ASK SOMEONE|CHECK THEIR HEAD|LOOK UNDER FURNITURE|USE A SPARE PAIR|SQUINT|FEEL AROUND
+Name something a family might do on a rainy Sunday.|WATCH A FILM / MOVIE|PLAY BOARD GAMES|BAKE|READ|DO CRAFTS|VISIT A MUSEUM
+Name something people save in a scrapbook.|PHOTOS|TICKET STUBS|CARDS|NEWSPAPER CLIPPINGS|PRESSED FLOWERS
+Name something you might see from a train window.|TREES / FOREST|FIELDS|HOUSES|WATER / LAKE / RIVER
+Name a utensil used to drain pasta.|COLANDER / STRAINER
+Name a topping for a baked potato.|BUTTER|SOUR CREAM|CHEESE|BACON|CHIVES
+Name something a painter uses.|BRUSH|PAINT|CANVAS|EASEL|PALETTE
+Name a place that has lockers.|SCHOOL|GYM|SWIMMING POOL|SKATING RINK|TRAIN STATION
+Name a type of footwear for bad weather.|RAIN BOOTS / WELLIES|SNOW BOOTS|HIKING BOOTS|OVERSHOES / GALOSHES|WATERPROOF SHOES
+Name something you keep in a first-aid kit.|BANDAGES / PLASTERS|ANTISEPTIC|GAUZE|TAPE|SCISSORS
+
+Name something a child might want to be in a school talent show.|SINGER|DANCER|MAGICIAN|COMEDIAN|PIANIST|JUGGLER|ACTOR
+Name something you check before sending a parcel.|ADDRESS|POSTAGE|PACKAGING|RECIPIENT'S NAME|WEIGHT|DELIVERY DATE
+Name something a new puppy might chew.|SHOES|FURNITURE|TOYS|CLOTHING|CABLES / WIRES
+Name something people do to cool down on a hot day.|SWIM|DRINK SOMETHING COLD|USE A FAN / AIR CONDITIONING|SIT IN THE SHADE
+Name an animal that builds a dam.|BEAVER
+Name a food sold at a bakery.|BREAD|CAKE|COOKIES / BISCUITS|CROISSANT|MUFFIN
+Name something found at a playground.|SWING|SLIDE|SEESAW / TEETER TOTTER|CLIMBING FRAME / JUNGLE GYM|SANDBOX
+Name a reason people set an alarm.|WAKE UP|COOKING TIMER|TAKE MEDICINE|APPOINTMENT|REMINDER TO LEAVE
+Name something with a lid.|JAR|POT / SAUCEPAN|BIN / GARBAGE CAN|BOX|COFFEE CUP
+Name something you can tie in a knot.|ROPE|SHOELACE|RIBBON|TIE / NECKTIE|STRING
+
+Name something that might be missing from a flat-pack furniture box.|SCREWS|INSTRUCTIONS|WOODEN PANEL|DOWELS|ALLEN KEY / HEX KEY|WASHERS|HINGE
+Name something people do at a family reunion.|EAT|TAKE PHOTOS|TELL STORIES|PLAY GAMES|HUG|LOOK AT OLD PHOTOS
+Name something you might put in a time capsule.|NEWSPAPER|LETTER|PHOTOS|COINS|TOY
+Name something people use to carry groceries.|BAG|CART / TROLLEY|BASKET|BOX
+Name something that a clock tells you.|TIME
+Name a dessert usually served cold.|ICE CREAM|CHEESECAKE|JELLY / JELL-O|MOUSSE|PUDDING
+Name an animal that can jump a long way.|KANGAROO|FROG|RABBIT|GRASSHOPPER|FLEA
+Name something you might see in a harbour.|BOAT / SHIP|DOCK / PIER|SEAGULL|CRANE|BUOY
+Name something often made of glass.|WINDOW|DRINKING GLASS|BOTTLE|VASE|MIRROR
+Name a reason someone might carry an umbrella.|RAIN|SUN / SHADE|SNOW|COSTUME / PROP|WIND PROTECTION
+
+Name something people photograph on holiday.|SCENERY|LANDMARKS|FAMILY / FRIENDS|FOOD|WILDLIFE|HOTEL|SUNSET
+Name something people do before a garage sale.|SORT BELONGINGS|PUT PRICES ON ITEMS|MAKE SIGNS|ADVERTISE|SET UP TABLES|GET CHANGE
+Name something that might wake a sleeping cat.|FOOD / CAN OPENER|LOUD NOISE|DOG|SOMEONE TOUCHING IT|ANOTHER CAT
+Name something children look forward to at a fair.|RIDES|GAMES|TREATS / FOOD|ANIMALS
+Name something that a librarian lends out.|BOOKS
+Name a food people might buy in a bucket.|FRIED CHICKEN|POPCORN|ICE CREAM|CANDY|SEAFOOD
+Name something used to fasten clothes.|BUTTON|ZIPPER|SNAP / PRESS STUD|VELCRO|HOOK
+Name a place where you would see a stage.|THEATRE|CONCERT HALL|SCHOOL|FESTIVAL|TELEVISION STUDIO
+Name something you might find on a beach.|SAND|SHELLS|SEAWEED|ROCKS|DRIFTWOOD
+Name something round in a kitchen.|PLATE|BOWL|PAN|ORANGE|CLOCK

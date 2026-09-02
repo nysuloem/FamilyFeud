@@ -2,6 +2,8 @@ const socket = io();
 const app = document.querySelector('#app');
 let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = false, serverOffset = 0;
 let hostAudioQueue = Promise.resolve(), activeRecognition = null, activeHostPlayback = null, cancelledCues = new Set(), clockInterval = null;
+let roundDraft = { key: null, value: '' };
+let fastMicListening = false, fastMicWindow = null;
 let fastMic = null, fastMicSession = null, fastMicMuted = false, fastMicError = '', fastMicRestart = null, fastDraft = { key: null, value: '' };
 let session = JSON.parse(localStorage.getItem('feudSession') || 'null');
 
@@ -18,7 +20,11 @@ socket.on('connect', () => {
     });
   } else if (isDisplay && roomCode) watchRoom(roomCode);
 });
-socket.on('state', next => { serverOffset = next.serverNow - Date.now(); state = next; roomCode = next.code; render(); });
+socket.on('state', next => {
+  const answer=document.querySelector('#answer');
+  if(answer&&state)roundDraft={key:`${state.code}:${state.answerToken}`,value:answer.value};
+  serverOffset = next.serverNow - Date.now(); state = next; roomCode = next.code; render();
+});
 socket.on('cue', cue => {
   if (cue.sound) playEffect(cue.sound);
   if (cue.speechUrl && shouldHearHost()) {
@@ -29,6 +35,7 @@ socket.on('cue', cue => {
     }).catch(() => {});
   }
 });
+socket.on('goodAnswer', showGoodAnswer);
 socket.on('cancelCue', ({ cueId }) => cancelHostCue(cueId));
 socket.on('answerResult', result => { if (!result.correct) flashStrike(result.count || 1); });
 socket.on('boardReveal', result => { playEffect(result.fastIndex != null && result.points === 0 ? 'strike' : 'ding'); requestAnimationFrame(() => document.querySelector(`[data-${result.fastIndex == null ? `board-slot="${result.index}"` : `fast-slot="${result.fastIndex}-${result.index}"`}]`)?.classList.add('flip-now')); });
@@ -41,7 +48,7 @@ function showLanding() {
 }
 
 function showTestMenu() {
-  app.innerHTML = `<main class="page"><section class="panel test-setup"><h1>TEST MODE</h1><p>Rehearse on your own. Two sample families are provided; you control whichever contestant is up. The normal AI host, judging, five-second guesses, microphone, and reveals stay active.</p><p>Tests use fixed sample surveys so you can repeat the same sequence. They do not affect real games. AI audio, judging, and optional image generation use your configured API.</p><label>Your contestant name <input id="testName" maxlength="24" value="Alex"></label><details><summary>Optional: use your photo and test the introduction souvenir</summary><div class="photo-row"><img class="photo-preview" id="testPreview" alt="Your optional photo"><label class="secondary file-button">Upload your photo<input type="file" id="testPhoto" accept="image/*"></label></div><label class="consent-check"><input type="checkbox" id="testKissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it. This is optional and only runs in the introduction test.</span></label></details><div class="test-actions"><button class="primary" data-test-part="intro">Test Introduction + Round 1</button><button class="primary" data-test-part="fast">Test Fast Money</button></div><p>Fast Money includes player selection, both timed halves, both reveals, and the final payout.</p><a href="/">Back to regular games</a></section></main>`;
+  app.innerHTML = `<main class="page"><section class="panel test-setup"><h1>TEST MODE</h1><p>Rehearse on your own. Two sample families are provided; you control whichever contestant is up. The normal AI host, judging, 15-second guesses, microphone, and reveals stay active.</p><p>Test mode deliberately repeats the same sample questions. Regular games draw unused surveys from a separate bank. Rehearsals do not consume that bank. AI audio, judging, and optional image generation use your configured API.</p><label>Your contestant name <input id="testName" maxlength="24" value="Alex"></label><details><summary>Optional: use your photo and test the introduction souvenir</summary><div class="photo-row"><img class="photo-preview" id="testPreview" alt="Your optional photo"><label class="secondary file-button">Upload your photo<input type="file" id="testPhoto" accept="image/*"></label></div><label class="consent-check"><input type="checkbox" id="testKissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it. This is optional and only runs in the introduction test.</span></label></details><div class="test-actions"><button class="primary" data-test-part="intro">Test Introduction + Round 1</button><button class="primary" data-test-part="fast">Test Fast Money</button></div><p>Fast Money includes player selection, both timed halves, both reveals, and the final payout.</p><a href="/">Back to regular games</a></section></main>`;
   let photo = '';
   document.querySelector('#testPhoto').onchange = async event => {
     const file = event.target.files[0]; if (!file) return;
@@ -149,6 +156,8 @@ async function runIntro() {
     for (let index = 0; index < state.families.length; index++) {
       if (state.phase !== 'intro') return;
       if (introContent) introContent.innerHTML = dawsonFamilyIntroduction(state.families[index]);
+      fitFamilyName();
+      document.fonts?.ready.then(fitFamilyName);
       await playFamilyAnnouncement(index, 'name');
       if (state.phase !== 'intro') return;
       introContent?.querySelector('.family-reveal-window')?.classList.add('open');
@@ -182,8 +191,10 @@ function renderGame() {
   clearInterval(fastTimer); introRun = false;
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
   const faceoffScene = showFaceoffScene();
-  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}</section></main>`;
+  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${controls()}${goodAnswerControl()}</section></main>`;
   wireControls();
+  const answer=document.querySelector('#answer');
+  if(answer&&roundDraft.key===`${state.code}:${state.answerToken}`)answer.value=roundDraft.value;
   updateFastMicUI();
   startVisibleClocks();
   offerSoundUnlock();
@@ -225,7 +236,7 @@ function fastRevealStage(){
 function controls() {
   const mine = state.turnPlayerId === myPlayerId || (isTestController() && !!state.turnPlayerId);
   if (state.phase === 'faceoff') return faceoffBuzzControls() || '<span class="muted">Listen to the host. Faceoff contestants buzz on their own phones.</span>';
-  if (state.phase === 'answer' && mine && !state.inputLocked) return `<span class="answer-clock" data-answer-clock>5.0</span><form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Answer now" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
+  if (state.phase === 'answer' && mine && !state.inputLocked) return `<span class="answer-clock" data-answer-clock>${state.isSteal ? '30.0' : '15.0'}</span><form class="answer-form" id="answerForm"><input id="answer" autocomplete="off" placeholder="Answer now" autofocus required><button class="mic-button" type="button" data-mic="#answer" aria-label="Speak answer">🎤 <span>Speak</span></button><button class="primary" type="submit">Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
   if (state.phase === 'decision' && (state.faceoff.winnerFamily === familyIndex() || isTestController())) return '<div class="decision"><button class="primary" data-choice="play">PLAY</button><button class="secondary" data-choice="pass">PASS</button></div>';
   if (state.testPart && (state.phase === 'round_end' || state.phase === 'fast_results')) return '<p>Test complete.</p><a class="primary" href="/?test=1">Replay or choose another test</a>';
   if (state.phase === 'round_end' && state.adminId === myPlayerId) { const label=state.round<3?'Next Round':state.round===3&&Math.max(...state.scores)<300?'Go to Sudden Death':'Go to Fast Money';return `<button class="primary" id="next">${label}</button>`; }
@@ -243,7 +254,19 @@ function fastForm() {
   return `<div class="fast-progress">ANSWER ${state.fastQuestionIndex+1} OF 5${locked ? ' · LISTEN TO THE HOST' : ''}</div><form class="answer-form" id="fastForm"><input id="fastAnswer" autocomplete="off" placeholder="${locked ? 'Listen to the host…' : 'Type or speak your answer'}" ${locked ? 'disabled' : ''} required><button class="mic-button" type="button" id="fastMicToggle" aria-label="Toggle Fast Money microphone">🎤 <span>Mic on</span></button><button class="primary" type="submit" ${locked ? 'disabled' : ''}>Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
 }
 
+function goodAnswerControl(){
+  if(isDisplay||state.phase!=='answer'||!state.turnPlayerId||myPlayerId===state.turnPlayerId)return '';
+  const family=state.families.find(f=>f.playerIds.includes(myPlayerId));
+  return family?.playerIds.includes(state.turnPlayerId)?'<button class="secondary good-answer-button" id="goodAnswer">Good Answer!</button>':'';
+}
+function showGoodAnswer(reaction){
+  document.querySelector('.good-answer-shout')?.remove();
+  const el=document.createElement('div');el.className='good-answer-shout';
+  el.innerHTML=`<strong>GOOD ANSWER!</strong><span>${escapeHtml(reaction.name)} · ${escapeHtml(reaction.family)} family</span>`;
+  document.body.append(el);setTimeout(()=>el.remove(),2200);
+}
 function wireControls() {
+  document.querySelector('#goodAnswer')?.addEventListener('click',e=>{e.currentTarget.disabled=true;socket.emit('goodAnswer',{code:state.code});});
   document.querySelector('#buzz')?.addEventListener('click', () => { if (state.faceoff.canBuzz) { cancelCurrentHost(); socket.emit('buzz', { code: state.code }); } });
   document.querySelectorAll('[data-test-buzz]').forEach(button => button.onclick = () => { if (state.faceoff.canBuzz) { cancelCurrentHost(); socket.emit('buzz', { code: state.code, playerId: button.dataset.testBuzz }); } });
   document.querySelector('#answerForm')?.addEventListener('submit', e => {
@@ -287,7 +310,7 @@ function shouldHearHost(){return audioEnabled&&(isDisplay||state?.mode==='remote
 function isAudioController(){return state?.mode==='host'?isDisplay:state?.adminId===myPlayerId}
 async function playHostSpeech(url,text,cueId){
   const controller=new AbortController(),signal=controller.signal;
-  const session={cueId,audio:null,controller};activeHostPlayback=session;
+  const session={cueId,audio:null,controller};activeHostPlayback=session;syncFastMicrophone();
   const started=()=>{if(!signal.aborted&&isAudioController())socket.emit('cueStarted',{code:roomCode,cueId})};
   let objectUrl;
   try{
@@ -302,7 +325,7 @@ async function playHostSpeech(url,text,cueId){
     if(!signal.aborted)await speakAsync(text,signal,started);
   }finally{
     if(objectUrl)URL.revokeObjectURL(objectUrl);
-    if(activeHostPlayback===session)activeHostPlayback=null;
+    if(activeHostPlayback===session){activeHostPlayback=null;syncFastMicrophone();updateFastMicUI();}
   }
 }
 function cancelHostCue(cueId){cancelledCues.add(cueId);if(activeHostPlayback?.cueId===cueId){activeHostPlayback.controller.abort();activeHostPlayback.audio?.pause();if('speechSynthesis'in window)speechSynthesis.cancel()}}
@@ -312,19 +335,23 @@ function speakAsync(text,signal,onStart){return new Promise(resolve=>{if(!('spee
 function fastMicEligible(){return !isDisplay && !!state?.fastPlayers?.length && state.turnPlayerId===state.fastPlayers[state.fastIndex] && (state.turnPlayerId===myPlayerId||isTestController()) && ['host_wait','fast_play'].includes(state.phase);}
 function fastAnswerKey(){return `${state?.code}:${state?.fastIndex}:${state?.fastQuestionIndex}`;}
 function acceptingFastSpeech(){return fastMicEligible() && state.phase==='fast_play' && !state.inputLocked && !activeHostPlayback && !fastMicMuted;}
-function stopFastMicrophone(){clearTimeout(fastMicRestart);fastMicRestart=null;const mic=fastMic;fastMic=null;mic?.abort();}
+function stopFastMicrophone(){fastMicListening=false;clearTimeout(fastMicRestart);fastMicRestart=null;const mic=fastMic;fastMic=null;mic?.abort();}
 function syncFastMicrophone(){
   if(!fastMicEligible()){stopFastMicrophone();fastMicSession=null;return;}
   const sessionKey=`${state.code}:${state.fastIndex}`;
   if(fastMicSession!==sessionKey){stopFastMicrophone();fastMicSession=sessionKey;fastMicMuted=false;fastMicError='';fastDraft={key:null,value:''};}
   if(fastDraft.key!==fastAnswerKey())fastDraft={key:fastAnswerKey(),value:''};
-  if(fastMic || fastMicMuted || fastMicError || fastMicRestart)return;
+  // Start a fresh recognition session for each answer window. Some browsers do not
+  // fire speechstart again after hearing the host; never require it to accept results.
+  const windowKey = acceptingFastSpeech() ? fastAnswerKey() : null;
+  if(windowKey!==fastMicWindow){stopFastMicrophone();fastMicWindow=windowKey;}
+  if(!windowKey || fastMic || fastMicMuted || fastMicError || fastMicRestart)return;
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!Recognition){fastMicError='Voice input is not supported in this browser. Type your answer instead.';return;}
   activeRecognition?.abort();activeRecognition=null;
   const mic=new Recognition();fastMic=mic;mic.lang='en-CA';mic.continuous=true;mic.interimResults=true;
-  let utteranceKey=null;
-  mic.onspeechstart=()=>{utteranceKey=acceptingFastSpeech()?fastAnswerKey():null;};
+  const utteranceKey=windowKey;
+  mic.onstart=()=>{if(fastMic===mic){fastMicListening=true;updateFastMicUI();}};
   mic.onresult=event=>{
     if(fastMic!==mic||!acceptingFastSpeech()||utteranceKey!==fastAnswerKey())return;
     let words='';for(let i=event.resultIndex;i<event.results.length;i++)words+=event.results[i][0].transcript;
@@ -339,17 +366,17 @@ function syncFastMicrophone(){
     updateFastMicUI();
   };
   mic.onend=()=>{
-    if(fastMic!==mic)return;fastMic=null;
+    if(fastMic!==mic)return;fastMic=null;fastMicListening=false;
     if(fastMicEligible()&&!fastMicMuted&&!fastMicError)fastMicRestart=setTimeout(()=>{fastMicRestart=null;syncFastMicrophone();updateFastMicUI();},250);
   };
   try{mic.start();}catch{fastMic=null;fastMicError='Tap the mic to enable voice input, or type your answer.';}
 }
 function updateFastMicUI(){
   const button=document.querySelector('#fastMicToggle');if(!button)return;
-  button.classList.toggle('listening',!!fastMic&&!fastMicMuted);button.setAttribute('aria-pressed',String(!!fastMic&&!fastMicMuted));
-  button.querySelector('span').textContent=fastMicError?'Retry mic':fastMicMuted?'Mic off':'Mic on';
+  button.classList.toggle('listening',fastMicListening&&!fastMicMuted);button.setAttribute('aria-pressed',String(fastMicListening&&!fastMicMuted));
+  button.querySelector('span').textContent=fastMicError?'Retry mic':fastMicMuted?'Mic off':fastMicListening?'Listening':'Mic ready';
   const input=document.querySelector('#fastAnswer');if(input&&fastDraft.key===fastAnswerKey())input.value=fastDraft.value;
-  const status=document.querySelector('.mic-status');if(status)status.textContent=fastMicError||(fastMicMuted?'Microphone off. Type your answer or tap to turn it on.':state.inputLocked?'Mic stays on. Listen to the host; his words are ignored.':fastDraft.value?'Review your answer, then press Submit.':'Listening… say your answer, then press Submit.');
+  const status=document.querySelector('.mic-status');if(status)status.textContent=fastMicError||(fastMicMuted?'Microphone off. Type your answer or tap to turn it on.':state.inputLocked?'Mic enabled. Listening resumes automatically after the host.':fastDraft.value?'Review your answer, then press Submit.':'Listening… say your answer, then press Submit.');
 }
 function startMicrophone(selector,button){
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -362,7 +389,7 @@ function startMicrophone(selector,button){
   recognition.onend=()=>{button.classList.remove('listening');activeRecognition=null;if(status&&!input.value)status.textContent='Tap the microphone and speak, or type your answer.'};
   recognition.start();
 }
-function playEffect(type){if(!audioEnabled)return;if(type==='ding'){new Audio('/assets/answer-ding.mp3').play().catch(()=>{});return}const ctx=window.feudAudio||(window.feudAudio=new(window.AudioContext||window.webkitAudioContext)());const now=ctx.currentTime;const tones={buzz:[440,.16],reveal:[660,.12],strike:[120,.42],win:[523,.7],round:[330,.25],fast:[780,.2]}[type]||[440,.1];for(let i=0;i<(type==='win'?4:1);i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g).connect(ctx.destination);o.frequency.value=tones[0]*(type==='win'?1+i*.25:1);g.gain.setValueAtTime(.18,now+i*.12);g.gain.exponentialRampToValueAtTime(.001,now+i*.12+tones[1]);o.start(now+i*.12);o.stop(now+i*.12+tones[1])}}
+function playEffect(type){if(!audioEnabled)return;if(type==='ding'||type==='strike'){new Audio(type==='ding'?'/assets/answer-ding.mp3':'/assets/strike-buzzer.mp3').play().catch(()=>{});return}const ctx=window.feudAudio||(window.feudAudio=new(window.AudioContext||window.webkitAudioContext)());const now=ctx.currentTime;const tones={buzz:[440,.16],reveal:[660,.12],strike:[120,.42],win:[523,.7],round:[330,.25],fast:[780,.2]}[type]||[440,.1];for(let i=0;i<(type==='win'?4:1);i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g).connect(ctx.destination);o.frequency.value=tones[0]*(type==='win'?1+i*.25:1);g.gain.setValueAtTime(.18,now+i*.12);g.gain.exponentialRampToValueAtTime(.001,now+i*.12+tones[1]);o.start(now+i*.12);o.stop(now+i*.12+tones[1])}}
 
 function serverTime(){return Date.now()+serverOffset}
 function offerSoundUnlock(){
@@ -374,6 +401,7 @@ function startVisibleClocks(){
   clearInterval(clockInterval);
   const tick=()=>{
     const answer=document.querySelector('[data-answer-clock]');if(answer&&state.answerDeadline){const left=Math.max(0,state.answerDeadline-serverTime());answer.textContent=(left/1000).toFixed(1);answer.classList.toggle('urgent',left<2000)}
+    if(answer&&!state.answerDeadline&&state.stealWarning)answer.textContent='ANSWER NOW';
     const fast=document.querySelector('[data-fast-clock]');if(fast&&state.fastDeadline)fast.innerHTML=dotNumber(Math.max(0,Math.ceil((state.fastDeadline-serverTime())/1000)),2);
   };tick();clockInterval=setInterval(tick,100);
 }

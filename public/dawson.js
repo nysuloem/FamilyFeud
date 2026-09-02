@@ -63,3 +63,12 @@ function dawsonFamilyIntroduction(family) {
     return `<article class="intro-family-member"><img src="${p.photo}" alt="${escapeHtml(p.name)}"><strong>${escapeHtml(p.name)}</strong></article>`;
   }).join('')}</div><div class="intro-family-rail">${escapeHtml(family.name)} FAMILY</div><div class="family-name-door"><span class="oval-flourish flourish-top" aria-hidden="true">✦ ❧ ✦</span><h1 style="--name-size:${family.name.length>16?'6.5':family.name.length>10?'8':'11'}cqw">${escapeHtml(family.name)}</h1><span class="oval-flourish flourish-bottom" aria-hidden="true">✦ ❧ ✦</span></div></div><svg class="intro-oval-bulbs" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">${bulbs}</svg></section>`;
 }
+
+function fitFamilyName(){
+  const label=document.querySelector('.family-name-door h1');if(!label)return;
+  const width=label.parentElement.clientWidth*.86;
+  label.style.fontSize='';
+  const measured=label.scrollWidth;
+  if(measured>width)label.style.fontSize=`${parseFloat(getComputedStyle(label).fontSize)*width/measured}px`;
+}
+window.addEventListener?.('resize',fitFamilyName);
