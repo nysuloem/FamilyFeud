@@ -201,11 +201,23 @@ test('podium lights follow the first buzz through handoffs and reset for a new f
   assert.doesNotMatch(vm.runInContext('faceoffPodiumLights()',b.context),/panel lit/);
 });
 
-test('accepted faceoff buzzer cue plays the supplied recording',()=>{
+test('Dawson effects use cleaned recordings and Harvey retains its existing recordings',()=>{
   const b=browser(async()=>({}));
   b.handlers.cue({sound:'buzz'});
   assert.equal(b.audioInstances.length,1);
-  assert.equal(b.audioInstances[0].src,'/assets/faceoff-buzzer.mp3');
+  assert.equal(b.audioInstances[0].src,'/assets/dawson-faceoff-buzzer-clean.mp3');
+  for(const era of ['dawson','harvey']){
+    vm.runInContext(`state.era='${era}'`,b.context);
+    for(const [type,name] of Object.entries({ding:'answer-ding',strike:'strike-buzzer',buzz:'faceoff-buzzer'})){
+      vm.runInContext(`playEffect('${type}')`,b.context);
+      const expected=`/assets/${era==='dawson'?`dawson-${name}-clean`:name}.mp3`;
+      assert.equal(b.audioInstances.at(-1).src,expected);
+      assert.ok(fs.existsSync(path.join(__dirname,'../public',expected)));
+    }
+  }
+  const before=b.audioInstances.length;
+  vm.runInContext("audioEnabled=false;playEffect('ding')",b.context);
+  assert.equal(b.audioInstances.length,before,'Muted effects stay muted');
 });
 
 test('faceoff music starts with actual invitation playback and stops before the next cue',async()=>{
