@@ -14,19 +14,25 @@
             ]
           },
           {
-            "text": "WASPS / BEES",
+            "text": "WASPS",
             "points": 22,
             "aliases": [
               "wasps",
-              "bees"
+              "bees",
+              "WASPS / BEES",
+              "WASPS",
+              "BEES"
             ]
           },
           {
-            "text": "RUNNING OUT OF GAS / EMPTY PROPANE TANK",
+            "text": "RUNNING OUT OF GAS",
             "points": 17,
             "aliases": [
               "running out of gas",
-              "empty propane tank"
+              "empty propane tank",
+              "RUNNING OUT OF GAS / EMPTY PROPANE TANK",
+              "RUNNING OUT OF GAS",
+              "EMPTY PROPANE TANK"
             ]
           },
           {
@@ -37,18 +43,22 @@
             ]
           },
           {
-            "text": "A NEIGHBOUR COMPLAINING / NOISE COMPLAINT",
+            "text": "NOISE COMPLAINT",
             "points": 9,
             "aliases": [
               "a neighbour complaining",
-              "noise complaint"
+              "noise complaint",
+              "A NEIGHBOUR COMPLAINING / NOISE COMPLAINT",
+              "A NEIGHBOUR COMPLAINING",
+              "NOISE COMPLAINT"
             ]
           },
           {
-            "text": "A DOG STEALING FOOD",
+            "text": "DOG STEALS FOOD",
             "points": 7,
             "aliases": [
-              "a dog stealing food"
+              "a dog stealing food",
+              "A DOG STEALING FOOD"
             ]
           },
           {
@@ -111,11 +121,14 @@
         "question": "Name something people do when the power goes out.",
         "answers": [
           {
-            "text": "FIND A FLASHLIGHT / TORCH",
+            "text": "FIND A FLASHLIGHT",
             "points": 35,
             "aliases": [
               "find a flashlight",
-              "torch"
+              "torch",
+              "FIND A FLASHLIGHT / TORCH",
+              "FIND A FLASHLIGHT",
+              "TORCH"
             ]
           },
           {
@@ -126,26 +139,33 @@
             ]
           },
           {
-            "text": "CHECK THE BREAKER / FUSE BOX",
+            "text": "CHECK THE BREAKER",
             "points": 19,
             "aliases": [
               "check the breaker",
-              "fuse box"
+              "fuse box",
+              "CHECK THE BREAKER / FUSE BOX",
+              "CHECK THE BREAKER",
+              "FUSE BOX"
             ]
           },
           {
-            "text": "CALL THE POWER COMPANY",
+            "text": "CALL POWER CO.",
             "points": 12,
             "aliases": [
-              "call the power company"
+              "call the power company",
+              "CALL THE POWER COMPANY"
             ]
           },
           {
-            "text": "LOOK OUTSIDE / CHECK NEIGHBOURS",
+            "text": "LOOK OUTSIDE",
             "points": 8,
             "aliases": [
               "look outside",
-              "check neighbours"
+              "check neighbours",
+              "LOOK OUTSIDE / CHECK NEIGHBOURS",
+              "LOOK OUTSIDE",
+              "CHECK NEIGHBOURS"
             ]
           }
         ]
@@ -154,11 +174,14 @@
         "question": "Name something you hope a birthday cake has.",
         "answers": [
           {
-            "text": "ICING / FROSTING",
+            "text": "ICING",
             "points": 42,
             "aliases": [
               "icing",
-              "frosting"
+              "frosting",
+              "ICING / FROSTING",
+              "ICING",
+              "FROSTING"
             ]
           },
           {
@@ -176,11 +199,14 @@
             ]
           },
           {
-            "text": "YOUR NAME / A MESSAGE",
+            "text": "YOUR NAME",
             "points": 11,
             "aliases": [
               "your name",
-              "a message"
+              "a message",
+              "YOUR NAME / A MESSAGE",
+              "YOUR NAME",
+              "A MESSAGE"
             ]
           }
         ]
@@ -190,11 +216,14 @@
       "question": "Name a sport played on ice.",
       "answers": [
         {
-          "text": "HOCKEY / ICE HOCKEY",
+          "text": "HOCKEY",
           "points": 44,
           "aliases": [
             "hockey",
-            "ice hockey"
+            "ice hockey",
+            "HOCKEY / ICE HOCKEY",
+            "HOCKEY",
+            "ICE HOCKEY"
           ]
         }
       ]
@@ -225,11 +254,14 @@
             ]
           },
           {
-            "text": "MANDARIN / TANGERINE",
+            "text": "MANDARIN",
             "points": 12,
             "aliases": [
               "mandarin",
-              "tangerine"
+              "tangerine",
+              "MANDARIN / TANGERINE",
+              "MANDARIN",
+              "TANGERINE"
             ]
           },
           {
@@ -259,11 +291,14 @@
             ]
           },
           {
-            "text": "MOVIE THEATRE / CINEMA",
+            "text": "MOVIE THEATRE",
             "points": 19,
             "aliases": [
               "movie theatre",
-              "cinema"
+              "cinema",
+              "MOVIE THEATRE / CINEMA",
+              "MOVIE THEATRE",
+              "CINEMA"
             ]
           },
           {
@@ -286,11 +321,14 @@
         "question": "Name an animal known for moving slowly.",
         "answers": [
           {
-            "text": "TURTLE / TORTOISE",
+            "text": "TURTLE",
             "points": 35,
             "aliases": [
               "turtle",
-              "tortoise"
+              "tortoise",
+              "TURTLE / TORTOISE",
+              "TURTLE",
+              "TORTOISE"
             ]
           },
           {
@@ -334,11 +372,14 @@
             ]
           },
           {
-            "text": "TIRE / TYRE",
+            "text": "TIRE",
             "points": 26,
             "aliases": [
               "tire",
-              "tyre"
+              "tyre",
+              "TIRE / TYRE",
+              "TIRE",
+              "TYRE"
             ]
           },
           {
@@ -414,11 +455,14 @@
         "question": "Name something people check before buying a used car.",
         "answers": [
           {
-            "text": "MILEAGE / ODOMETER",
+            "text": "MILEAGE",
             "points": 28,
             "aliases": [
               "mileage",
-              "odometer"
+              "odometer",
+              "MILEAGE / ODOMETER",
+              "MILEAGE",
+              "ODOMETER"
             ]
           },
           {
@@ -443,19 +487,25 @@
             ]
           },
           {
-            "text": "TIRES / TYRES",
+            "text": "TIRES",
             "points": 9,
             "aliases": [
               "tires",
-              "tyres"
+              "tyres",
+              "TIRES / TYRES",
+              "TIRES",
+              "TYRES"
             ]
           },
           {
-            "text": "RUST / BODY DAMAGE",
+            "text": "RUST",
             "points": 7,
             "aliases": [
               "rust",
-              "body damage"
+              "body damage",
+              "RUST / BODY DAMAGE",
+              "RUST",
+              "BODY DAMAGE"
             ]
           },
           {
@@ -471,19 +521,25 @@
         "question": "Name something children build with sand.",
         "answers": [
           {
-            "text": "CASTLE / SANDCASTLE",
+            "text": "CASTLE",
             "points": 30,
             "aliases": [
               "castle",
-              "sandcastle"
+              "sandcastle",
+              "CASTLE / SANDCASTLE",
+              "CASTLE",
+              "SANDCASTLE"
             ]
           },
           {
-            "text": "MOAT / TRENCH",
+            "text": "MOAT",
             "points": 24,
             "aliases": [
               "moat",
-              "trench"
+              "trench",
+              "MOAT / TRENCH",
+              "MOAT",
+              "TRENCH"
             ]
           },
           {
@@ -494,11 +550,14 @@
             ]
           },
           {
-            "text": "MOUNTAIN / PILE",
+            "text": "MOUNTAIN",
             "points": 13,
             "aliases": [
               "mountain",
-              "pile"
+              "pile",
+              "MOUNTAIN / PILE",
+              "MOUNTAIN",
+              "PILE"
             ]
           },
           {
@@ -528,12 +587,16 @@
             ]
           },
           {
-            "text": "CUTLERY / FORK / KNIFE",
+            "text": "CUTLERY",
             "points": 26,
             "aliases": [
               "cutlery",
               "fork",
-              "knife"
+              "knife",
+              "CUTLERY / FORK / KNIFE",
+              "CUTLERY",
+              "FORK",
+              "KNIFE"
             ]
           },
           {
@@ -544,19 +607,25 @@
             ]
           },
           {
-            "text": "CONDIMENTS / KETCHUP",
+            "text": "CONDIMENTS",
             "points": 12,
             "aliases": [
               "condiments",
-              "ketchup"
+              "ketchup",
+              "CONDIMENTS / KETCHUP",
+              "CONDIMENTS",
+              "KETCHUP"
             ]
           },
           {
-            "text": "THE BILL / CHEQUE",
+            "text": "THE BILL",
             "points": 8,
             "aliases": [
               "the bill",
-              "cheque"
+              "cheque",
+              "THE BILL / CHEQUE",
+              "THE BILL",
+              "CHEQUE"
             ]
           }
         ]
@@ -599,11 +668,14 @@
       "question": "Name something people collect in an album.",
       "answers": [
         {
-          "text": "STAMPS / POSTAGE STAMPS",
+          "text": "STAMPS",
           "points": 44,
           "aliases": [
             "stamps",
-            "postage stamps"
+            "postage stamps",
+            "STAMPS / POSTAGE STAMPS",
+            "STAMPS",
+            "POSTAGE STAMPS"
           ]
         }
       ]
@@ -707,11 +779,14 @@
             ]
           },
           {
-            "text": "TELEVISION / TV",
+            "text": "TELEVISION",
             "points": 19,
             "aliases": [
               "television",
-              "tv"
+              "tv",
+              "TELEVISION / TV",
+              "TELEVISION",
+              "TV"
             ]
           },
           {
@@ -820,27 +895,36 @@
         "question": "Name something people forget to pack for a camping trip.",
         "answers": [
           {
-            "text": "BUG SPRAY / INSECT REPELLENT",
+            "text": "BUG SPRAY",
             "points": 28,
             "aliases": [
               "bug spray",
-              "insect repellent"
+              "insect repellent",
+              "BUG SPRAY / INSECT REPELLENT",
+              "BUG SPRAY",
+              "INSECT REPELLENT"
             ]
           },
           {
-            "text": "MATCHES / LIGHTER",
+            "text": "MATCHES",
             "points": 22,
             "aliases": [
               "matches",
-              "lighter"
+              "lighter",
+              "MATCHES / LIGHTER",
+              "MATCHES",
+              "LIGHTER"
             ]
           },
           {
-            "text": "FLASHLIGHT / TORCH",
+            "text": "FLASHLIGHT",
             "points": 17,
             "aliases": [
               "flashlight",
-              "torch"
+              "torch",
+              "FLASHLIGHT / TORCH",
+              "FLASHLIGHT",
+              "TORCH"
             ]
           },
           {
@@ -865,11 +949,14 @@
             ]
           },
           {
-            "text": "TENT PEGS / STAKES",
+            "text": "TENT PEGS",
             "points": 4,
             "aliases": [
               "tent pegs",
-              "stakes"
+              "stakes",
+              "TENT PEGS / STAKES",
+              "TENT PEGS",
+              "STAKES"
             ]
           }
         ]
@@ -885,26 +972,33 @@
             ]
           },
           {
-            "text": "CELL PHONES / PHONES",
+            "text": "CELL PHONES",
             "points": 24,
             "aliases": [
               "cell phones",
-              "phones"
+              "phones",
+              "CELL PHONES / PHONES",
+              "CELL PHONES",
+              "PHONES"
             ]
           },
           {
-            "text": "LOUD CHEWING / EATING NOISES",
+            "text": "LOUD CHEWING",
             "points": 18,
             "aliases": [
               "loud chewing",
-              "eating noises"
+              "eating noises",
+              "LOUD CHEWING / EATING NOISES",
+              "LOUD CHEWING",
+              "EATING NOISES"
             ]
           },
           {
-            "text": "UNCOMFORTABLE SEATS",
+            "text": "UNCOMFY SEATS",
             "points": 13,
             "aliases": [
-              "uncomfortable seats"
+              "uncomfortable seats",
+              "UNCOMFORTABLE SEATS"
             ]
           },
           {
@@ -915,12 +1009,16 @@
             ]
           },
           {
-            "text": "POOR TEMPERATURE / TOO COLD / TOO HOT",
+            "text": "POOR TEMPERATURE",
             "points": 6,
             "aliases": [
               "poor temperature",
               "too cold",
-              "too hot"
+              "too hot",
+              "POOR TEMPERATURE / TOO COLD / TOO HOT",
+              "POOR TEMPERATURE",
+              "TOO COLD",
+              "TOO HOT"
             ]
           }
         ]
@@ -936,11 +1034,14 @@
             ]
           },
           {
-            "text": "ROOM / HOUSE",
+            "text": "ROOM",
             "points": 26,
             "aliases": [
               "room",
-              "house"
+              "house",
+              "ROOM / HOUSE",
+              "ROOM",
+              "HOUSE"
             ]
           },
           {
@@ -970,11 +1071,19 @@
         "question": "Name something that can ruin a snowman.",
         "answers": [
           {
-            "text": "SUN / WARM WEATHER",
+            "text": "SUN",
             "points": 42,
             "aliases": [
               "sun",
-              "warm weather"
+              "warm weather",
+              "SUN / WARM WEATHER",
+              "SUN",
+              "WARM WEATHER",
+              "gets too warm",
+              "too warm",
+              "heat",
+              "hot weather",
+              "sun melts it"
             ]
           },
           {
@@ -992,10 +1101,11 @@
             ]
           },
           {
-            "text": "SOMEONE KNOCKING IT OVER",
+            "text": "KNOCKED OVER",
             "points": 11,
             "aliases": [
-              "someone knocking it over"
+              "someone knocking it over",
+              "SOMEONE KNOCKING IT OVER"
             ]
           }
         ]
@@ -1079,11 +1189,14 @@
             ]
           },
           {
-            "text": "AXE / AX",
+            "text": "AXE",
             "points": 12,
             "aliases": [
               "axe",
-              "ax"
+              "ax",
+              "AXE / AX",
+              "AXE",
+              "AX"
             ]
           },
           {
@@ -1099,28 +1212,38 @@
         "question": "Name something with a zipper.",
         "answers": [
           {
-            "text": "JACKET / COAT",
+            "text": "JACKET",
             "points": 35,
             "aliases": [
               "jacket",
-              "coat"
+              "coat",
+              "JACKET / COAT",
+              "JACKET",
+              "COAT"
             ]
           },
           {
-            "text": "TROUSERS / PANTS / JEANS",
+            "text": "TROUSERS",
             "points": 26,
             "aliases": [
               "trousers",
               "pants",
-              "jeans"
+              "jeans",
+              "TROUSERS / PANTS / JEANS",
+              "TROUSERS",
+              "PANTS",
+              "JEANS"
             ]
           },
           {
-            "text": "BAG / BACKPACK",
+            "text": "BAG",
             "points": 19,
             "aliases": [
               "bag",
-              "backpack"
+              "backpack",
+              "BAG / BACKPACK",
+              "BAG",
+              "BACKPACK"
             ]
           },
           {
@@ -1229,18 +1352,22 @@
         "question": "Name something people do to welcome a new neighbour.",
         "answers": [
           {
-            "text": "INTRODUCE THEMSELVES",
+            "text": "SAY HELLO",
             "points": 28,
             "aliases": [
-              "introduce themselves"
+              "introduce themselves",
+              "INTRODUCE THEMSELVES"
             ]
           },
           {
-            "text": "BRING FOOD / BAKING",
+            "text": "BRING FOOD",
             "points": 22,
             "aliases": [
               "bring food",
-              "baking"
+              "baking",
+              "BRING FOOD / BAKING",
+              "BRING FOOD",
+              "BAKING"
             ]
           },
           {
@@ -1265,18 +1392,22 @@
             ]
           },
           {
-            "text": "EXPLAIN THE NEIGHBOURHOOD",
+            "text": "LOCAL ADVICE",
             "points": 7,
             "aliases": [
-              "explain the neighbourhood"
+              "explain the neighbourhood",
+              "EXPLAIN THE NEIGHBOURHOOD"
             ]
           },
           {
-            "text": "SEND A CARD / NOTE",
+            "text": "SEND A CARD",
             "points": 4,
             "aliases": [
               "send a card",
-              "note"
+              "note",
+              "SEND A CARD / NOTE",
+              "SEND A CARD",
+              "NOTE"
             ]
           }
         ]
@@ -1346,11 +1477,14 @@
             ]
           },
           {
-            "text": "RELAX / NAP",
+            "text": "RELAX",
             "points": 19,
             "aliases": [
               "relax",
-              "nap"
+              "nap",
+              "RELAX / NAP",
+              "RELAX",
+              "NAP"
             ]
           },
           {
@@ -1394,11 +1528,14 @@
             ]
           },
           {
-            "text": "DECORATIONS / RIBBONS",
+            "text": "DECORATIONS",
             "points": 11,
             "aliases": [
               "decorations",
-              "ribbons"
+              "ribbons",
+              "DECORATIONS / RIBBONS",
+              "DECORATIONS",
+              "RIBBONS"
             ]
           }
         ]
@@ -1408,11 +1545,14 @@
       "question": "Name something a magician might pull out of a hat.",
       "answers": [
         {
-          "text": "RABBIT / BUNNY",
+          "text": "RABBIT",
           "points": 44,
           "aliases": [
             "rabbit",
-            "bunny"
+            "bunny",
+            "RABBIT / BUNNY",
+            "RABBIT",
+            "BUNNY"
           ]
         }
       ]
@@ -1429,11 +1569,14 @@
             ]
           },
           {
-            "text": "BUDGIE / PARAKEET",
+            "text": "BUDGIE",
             "points": 26,
             "aliases": [
               "budgie",
-              "parakeet"
+              "parakeet",
+              "BUDGIE / PARAKEET",
+              "BUDGIE",
+              "PARAKEET"
             ]
           },
           {
@@ -1543,11 +1686,14 @@
         "question": "Name something made from wool.",
         "answers": [
           {
-            "text": "SWEATER / JUMPER",
+            "text": "SWEATER",
             "points": 35,
             "aliases": [
               "sweater",
-              "jumper"
+              "jumper",
+              "SWEATER / JUMPER",
+              "SWEATER",
+              "JUMPER"
             ]
           },
           {
@@ -1605,11 +1751,14 @@
             ]
           },
           {
-            "text": "SNAKES AND LADDERS / CHUTES AND LADDERS",
+            "text": "SNAKES AND LADDERS",
             "points": 12,
             "aliases": [
               "snakes and ladders",
-              "chutes and ladders"
+              "chutes and ladders",
+              "SNAKES AND LADDERS / CHUTES AND LADDERS",
+              "SNAKES AND LADDERS",
+              "CHUTES AND LADDERS"
             ]
           },
           {
@@ -1692,11 +1841,14 @@
             ]
           },
           {
-            "text": "SWIMSUIT / BATHING SUIT",
+            "text": "SWIMSUIT",
             "points": 24,
             "aliases": [
               "swimsuit",
-              "bathing suit"
+              "bathing suit",
+              "SWIMSUIT / BATHING SUIT",
+              "SWIMSUIT",
+              "BATHING SUIT"
             ]
           },
           {
@@ -1707,11 +1859,14 @@
             ]
           },
           {
-            "text": "SANDALS / FLIP FLOPS",
+            "text": "SANDALS",
             "points": 13,
             "aliases": [
               "sandals",
-              "flip flops"
+              "flip flops",
+              "SANDALS / FLIP FLOPS",
+              "SANDALS",
+              "FLIP FLOPS"
             ]
           },
           {
@@ -1734,11 +1889,14 @@
         "question": "Name something that makes a house feel cosy.",
         "answers": [
           {
-            "text": "FIREPLACE / FIRE",
+            "text": "FIREPLACE",
             "points": 35,
             "aliases": [
               "fireplace",
-              "fire"
+              "fire",
+              "FIREPLACE / FIRE",
+              "FIREPLACE",
+              "FIRE"
             ]
           },
           {
@@ -1756,18 +1914,22 @@
             ]
           },
           {
-            "text": "COMFORTABLE FURNITURE",
+            "text": "COMFY FURNITURE",
             "points": 12,
             "aliases": [
-              "comfortable furniture"
+              "comfortable furniture",
+              "COMFORTABLE FURNITURE"
             ]
           },
           {
-            "text": "HOME COOKING / BAKING",
+            "text": "HOME COOKING",
             "points": 8,
             "aliases": [
               "home cooking",
-              "baking"
+              "baking",
+              "HOME COOKING / BAKING",
+              "HOME COOKING",
+              "BAKING"
             ]
           }
         ]
@@ -1797,11 +1959,14 @@
             ]
           },
           {
-            "text": "BRICK / ROCK",
+            "text": "BRICK",
             "points": 11,
             "aliases": [
               "brick",
-              "rock"
+              "rock",
+              "BRICK / ROCK",
+              "BRICK",
+              "ROCK"
             ]
           }
         ]
@@ -1831,11 +1996,14 @@
             ]
           },
           {
-            "text": "DOUGHNUTS / DONUTS",
+            "text": "DOUGHNUTS",
             "points": 26,
             "aliases": [
               "doughnuts",
-              "donuts"
+              "donuts",
+              "DOUGHNUTS / DONUTS",
+              "DOUGHNUTS",
+              "DONUTS"
             ]
           },
           {
@@ -1945,11 +2113,14 @@
         "question": "Name a place that sells tickets.",
         "answers": [
           {
-            "text": "CINEMA / MOVIE THEATRE",
+            "text": "CINEMA",
             "points": 35,
             "aliases": [
               "cinema",
-              "movie theatre"
+              "movie theatre",
+              "CINEMA / MOVIE THEATRE",
+              "CINEMA",
+              "MOVIE THEATRE"
             ]
           },
           {
@@ -2032,11 +2203,14 @@
         "question": "Name something you would find in a gardener's shed.",
         "answers": [
           {
-            "text": "SHOVEL / SPADE",
+            "text": "SHOVEL",
             "points": 28,
             "aliases": [
               "shovel",
-              "spade"
+              "spade",
+              "SHOVEL / SPADE",
+              "SHOVEL",
+              "SPADE"
             ]
           },
           {
@@ -2101,10 +2275,11 @@
             ]
           },
           {
-            "text": "LATE INCOMING PLANE",
+            "text": "LATE PLANE",
             "points": 18,
             "aliases": [
-              "late incoming plane"
+              "late incoming plane",
+              "LATE INCOMING PLANE"
             ]
           },
           {
@@ -2162,10 +2337,11 @@
             ]
           },
           {
-            "text": "LOWER COST OF LIVING",
+            "text": "LOWER COSTS",
             "points": 8,
             "aliases": [
-              "lower cost of living"
+              "lower cost of living",
+              "LOWER COST OF LIVING"
             ]
           }
         ]
@@ -2174,19 +2350,25 @@
         "question": "Name something people put in a bird feeder.",
         "answers": [
           {
-            "text": "SEEDS / BIRDSEED",
+            "text": "SEEDS",
             "points": 42,
             "aliases": [
               "seeds",
-              "birdseed"
+              "birdseed",
+              "SEEDS / BIRDSEED",
+              "SEEDS",
+              "BIRDSEED"
             ]
           },
           {
-            "text": "NUTS / PEANUTS",
+            "text": "NUTS",
             "points": 28,
             "aliases": [
               "nuts",
-              "peanuts"
+              "peanuts",
+              "NUTS / PEANUTS",
+              "NUTS",
+              "PEANUTS"
             ]
           },
           {
@@ -2230,11 +2412,14 @@
             ]
           },
           {
-            "text": "HOT DOG / WIENER",
+            "text": "HOT DOG",
             "points": 26,
             "aliases": [
               "hot dog",
-              "wiener"
+              "wiener",
+              "HOT DOG / WIENER",
+              "HOT DOG",
+              "WIENER"
             ]
           },
           {
@@ -2271,11 +2456,14 @@
             ]
           },
           {
-            "text": "MUG / CUP",
+            "text": "MUG",
             "points": 26,
             "aliases": [
               "mug",
-              "cup"
+              "cup",
+              "MUG / CUP",
+              "MUG",
+              "CUP"
             ]
           },
           {
@@ -2305,11 +2493,14 @@
         "question": "Name an animal with a shell.",
         "answers": [
           {
-            "text": "TURTLE / TORTOISE",
+            "text": "TURTLE",
             "points": 35,
             "aliases": [
               "turtle",
-              "tortoise"
+              "tortoise",
+              "TURTLE / TORTOISE",
+              "TURTLE",
+              "TORTOISE"
             ]
           },
           {
@@ -2460,11 +2651,14 @@
             ]
           },
           {
-            "text": "DUST / DUST BUNNIES",
+            "text": "DUST",
             "points": 9,
             "aliases": [
               "dust",
-              "dust bunnies"
+              "dust bunnies",
+              "DUST / DUST BUNNIES",
+              "DUST",
+              "DUST BUNNIES"
             ]
           },
           {
@@ -2555,11 +2749,14 @@
             ]
           },
           {
-            "text": "BROKEN / DAMAGED",
+            "text": "BROKEN",
             "points": 12,
             "aliases": [
               "broken",
-              "damaged"
+              "damaged",
+              "BROKEN / DAMAGED",
+              "BROKEN",
+              "DAMAGED"
             ]
           },
           {
@@ -2629,11 +2826,14 @@
             ]
           },
           {
-            "text": "BOAT / TOY BOAT",
+            "text": "BOAT",
             "points": 26,
             "aliases": [
               "boat",
-              "toy boat"
+              "toy boat",
+              "BOAT / TOY BOAT",
+              "BOAT",
+              "TOY BOAT"
             ]
           },
           {
@@ -2691,11 +2891,14 @@
             ]
           },
           {
-            "text": "PORRIDGE / OATMEAL",
+            "text": "PORRIDGE",
             "points": 8,
             "aliases": [
               "porridge",
-              "oatmeal"
+              "oatmeal",
+              "PORRIDGE / OATMEAL",
+              "PORRIDGE",
+              "OATMEAL"
             ]
           }
         ]
@@ -2704,11 +2907,14 @@
         "question": "Name a vehicle with only two wheels.",
         "answers": [
           {
-            "text": "BICYCLE / BIKE",
+            "text": "BICYCLE",
             "points": 35,
             "aliases": [
               "bicycle",
-              "bike"
+              "bike",
+              "BICYCLE / BIKE",
+              "BICYCLE",
+              "BIKE"
             ]
           },
           {
@@ -2745,11 +2951,14 @@
         "question": "Name a food that is crunchy.",
         "answers": [
           {
-            "text": "CHIPS / CRISPS",
+            "text": "CHIPS",
             "points": 35,
             "aliases": [
               "chips",
-              "crisps"
+              "crisps",
+              "CHIPS / CRISPS",
+              "CHIPS",
+              "CRISPS"
             ]
           },
           {
@@ -2832,11 +3041,14 @@
         "question": "Name a reason people might stop during a hike.",
         "answers": [
           {
-            "text": "REST / TIRED",
+            "text": "REST",
             "points": 28,
             "aliases": [
               "rest",
-              "tired"
+              "tired",
+              "REST / TIRED",
+              "REST",
+              "TIRED"
             ]
           },
           {
@@ -2908,10 +3120,11 @@
             ]
           },
           {
-            "text": "WHEN THEY WILL RETURN",
+            "text": "RETURN TIME",
             "points": 13,
             "aliases": [
-              "when they will return"
+              "when they will return",
+              "WHEN THEY WILL RETURN"
             ]
           },
           {
@@ -3021,11 +3234,14 @@
         "question": "Name something you might buy at a florist.",
         "answers": [
           {
-            "text": "BOUQUET / FLOWERS",
+            "text": "BOUQUET",
             "points": 35,
             "aliases": [
               "bouquet",
-              "flowers"
+              "flowers",
+              "BOUQUET / FLOWERS",
+              "BOUQUET",
+              "FLOWERS"
             ]
           },
           {
@@ -3083,11 +3299,14 @@
             ]
           },
           {
-            "text": "SOCCER / FOOTBALL",
+            "text": "SOCCER",
             "points": 12,
             "aliases": [
               "soccer",
-              "football"
+              "football",
+              "SOCCER / FOOTBALL",
+              "SOCCER",
+              "FOOTBALL"
             ]
           },
           {
@@ -3150,11 +3369,14 @@
             ]
           },
           {
-            "text": "FLASHLIGHT / TORCH",
+            "text": "FLASHLIGHT",
             "points": 26,
             "aliases": [
               "flashlight",
-              "torch"
+              "torch",
+              "FLASHLIGHT / TORCH",
+              "FLASHLIGHT",
+              "TORCH"
             ]
           },
           {
@@ -3191,11 +3413,14 @@
             ]
           },
           {
-            "text": "THEATRE / PLAY",
+            "text": "THEATRE",
             "points": 26,
             "aliases": [
               "theatre",
-              "play"
+              "play",
+              "THEATRE / PLAY",
+              "THEATRE",
+              "PLAY"
             ]
           },
           {
@@ -3231,10 +3456,11 @@
         "question": "Name something people do when they cannot find their glasses.",
         "answers": [
           {
-            "text": "RETRACE THEIR STEPS",
+            "text": "RETRACE STEPS",
             "points": 28,
             "aliases": [
-              "retrace their steps"
+              "retrace their steps",
+              "RETRACE THEIR STEPS"
             ]
           },
           {
@@ -3252,10 +3478,11 @@
             ]
           },
           {
-            "text": "LOOK UNDER FURNITURE",
+            "text": "UNDER FURNITURE",
             "points": 13,
             "aliases": [
-              "look under furniture"
+              "look under furniture",
+              "LOOK UNDER FURNITURE"
             ]
           },
           {
@@ -3285,11 +3512,14 @@
         "question": "Name something a family might do on a rainy Sunday.",
         "answers": [
           {
-            "text": "WATCH A FILM / MOVIE",
+            "text": "WATCH A FILM",
             "points": 30,
             "aliases": [
               "watch a film",
-              "movie"
+              "movie",
+              "WATCH A FILM / MOVIE",
+              "WATCH A FILM",
+              "MOVIE"
             ]
           },
           {
@@ -3354,10 +3584,11 @@
             ]
           },
           {
-            "text": "NEWSPAPER CLIPPINGS",
+            "text": "NEWS CLIPPINGS",
             "points": 12,
             "aliases": [
-              "newspaper clippings"
+              "newspaper clippings",
+              "NEWSPAPER CLIPPINGS"
             ]
           },
           {
@@ -3373,11 +3604,14 @@
         "question": "Name something you might see from a train window.",
         "answers": [
           {
-            "text": "TREES / FOREST",
+            "text": "TREES",
             "points": 42,
             "aliases": [
               "trees",
-              "forest"
+              "forest",
+              "TREES / FOREST",
+              "TREES",
+              "FOREST"
             ]
           },
           {
@@ -3395,12 +3629,16 @@
             ]
           },
           {
-            "text": "WATER / LAKE / RIVER",
+            "text": "WATER",
             "points": 11,
             "aliases": [
               "water",
               "lake",
-              "river"
+              "river",
+              "WATER / LAKE / RIVER",
+              "WATER",
+              "LAKE",
+              "RIVER"
             ]
           }
         ]
@@ -3410,11 +3648,14 @@
       "question": "Name a utensil used to drain pasta.",
       "answers": [
         {
-          "text": "COLANDER / STRAINER",
+          "text": "COLANDER",
           "points": 44,
           "aliases": [
             "colander",
-            "strainer"
+            "strainer",
+            "COLANDER / STRAINER",
+            "COLANDER",
+            "STRAINER"
           ]
         }
       ]
@@ -3544,11 +3785,14 @@
         "question": "Name a type of footwear for bad weather.",
         "answers": [
           {
-            "text": "RAIN BOOTS / WELLIES",
+            "text": "RAIN BOOTS",
             "points": 35,
             "aliases": [
               "rain boots",
-              "wellies"
+              "wellies",
+              "RAIN BOOTS / WELLIES",
+              "RAIN BOOTS",
+              "WELLIES"
             ]
           },
           {
@@ -3566,11 +3810,14 @@
             ]
           },
           {
-            "text": "OVERSHOES / GALOSHES",
+            "text": "OVERSHOES",
             "points": 12,
             "aliases": [
               "overshoes",
-              "galoshes"
+              "galoshes",
+              "OVERSHOES / GALOSHES",
+              "OVERSHOES",
+              "GALOSHES"
             ]
           },
           {
@@ -3586,11 +3833,14 @@
         "question": "Name something you keep in a first-aid kit.",
         "answers": [
           {
-            "text": "BANDAGES / PLASTERS",
+            "text": "BANDAGES",
             "points": 35,
             "aliases": [
               "bandages",
-              "plasters"
+              "plasters",
+              "BANDAGES / PLASTERS",
+              "BANDAGES",
+              "PLASTERS"
             ]
           },
           {
@@ -3762,11 +4012,14 @@
             ]
           },
           {
-            "text": "CABLES / WIRES",
+            "text": "CABLES",
             "points": 8,
             "aliases": [
               "cables",
-              "wires"
+              "wires",
+              "CABLES / WIRES",
+              "CABLES",
+              "WIRES"
             ]
           }
         ]
@@ -3782,18 +4035,22 @@
             ]
           },
           {
-            "text": "DRINK SOMETHING COLD",
+            "text": "COLD DRINK",
             "points": 28,
             "aliases": [
-              "drink something cold"
+              "drink something cold",
+              "DRINK SOMETHING COLD"
             ]
           },
           {
-            "text": "USE A FAN / AIR CONDITIONING",
+            "text": "USE A FAN",
             "points": 19,
             "aliases": [
               "use a fan",
-              "air conditioning"
+              "air conditioning",
+              "USE A FAN / AIR CONDITIONING",
+              "USE A FAN",
+              "AIR CONDITIONING"
             ]
           },
           {
@@ -3837,11 +4094,14 @@
             ]
           },
           {
-            "text": "COOKIES / BISCUITS",
+            "text": "COOKIES",
             "points": 19,
             "aliases": [
               "cookies",
-              "biscuits"
+              "biscuits",
+              "COOKIES / BISCUITS",
+              "COOKIES",
+              "BISCUITS"
             ]
           },
           {
@@ -3878,19 +4138,25 @@
             ]
           },
           {
-            "text": "SEESAW / TEETER TOTTER",
+            "text": "SEESAW",
             "points": 19,
             "aliases": [
               "seesaw",
-              "teeter totter"
+              "teeter totter",
+              "SEESAW / TEETER TOTTER",
+              "SEESAW",
+              "TEETER TOTTER"
             ]
           },
           {
-            "text": "CLIMBING FRAME / JUNGLE GYM",
+            "text": "CLIMBING FRAME",
             "points": 12,
             "aliases": [
               "climbing frame",
-              "jungle gym"
+              "jungle gym",
+              "CLIMBING FRAME / JUNGLE GYM",
+              "CLIMBING FRAME",
+              "JUNGLE GYM"
             ]
           },
           {
@@ -3953,19 +4219,25 @@
             ]
           },
           {
-            "text": "POT / SAUCEPAN",
+            "text": "POT",
             "points": 26,
             "aliases": [
               "pot",
-              "saucepan"
+              "saucepan",
+              "POT / SAUCEPAN",
+              "POT",
+              "SAUCEPAN"
             ]
           },
           {
-            "text": "BIN / GARBAGE CAN",
+            "text": "BIN",
             "points": 19,
             "aliases": [
               "bin",
-              "garbage can"
+              "garbage can",
+              "BIN / GARBAGE CAN",
+              "BIN",
+              "GARBAGE CAN"
             ]
           },
           {
@@ -4009,11 +4281,14 @@
             ]
           },
           {
-            "text": "TIE / NECKTIE",
+            "text": "TIE",
             "points": 12,
             "aliases": [
               "tie",
-              "necktie"
+              "necktie",
+              "TIE / NECKTIE",
+              "TIE",
+              "NECKTIE"
             ]
           },
           {
@@ -4063,11 +4338,14 @@
             ]
           },
           {
-            "text": "ALLEN KEY / HEX KEY",
+            "text": "ALLEN KEY",
             "points": 9,
             "aliases": [
               "allen key",
-              "hex key"
+              "hex key",
+              "ALLEN KEY / HEX KEY",
+              "ALLEN KEY",
+              "HEX KEY"
             ]
           },
           {
@@ -4184,11 +4462,14 @@
             ]
           },
           {
-            "text": "CART / TROLLEY",
+            "text": "CART",
             "points": 28,
             "aliases": [
               "cart",
-              "trolley"
+              "trolley",
+              "CART / TROLLEY",
+              "CART",
+              "TROLLEY"
             ]
           },
           {
@@ -4239,11 +4520,14 @@
             ]
           },
           {
-            "text": "JELLY / JELL-O",
+            "text": "JELLY",
             "points": 19,
             "aliases": [
               "jelly",
-              "jell-o"
+              "jell-o",
+              "JELLY / JELL-O",
+              "JELLY",
+              "JELL-O"
             ]
           },
           {
@@ -4306,19 +4590,25 @@
         "question": "Name something you might see in a harbour.",
         "answers": [
           {
-            "text": "BOAT / SHIP",
+            "text": "BOAT",
             "points": 35,
             "aliases": [
               "boat",
-              "ship"
+              "ship",
+              "BOAT / SHIP",
+              "BOAT",
+              "SHIP"
             ]
           },
           {
-            "text": "DOCK / PIER",
+            "text": "DOCK",
             "points": 26,
             "aliases": [
               "dock",
-              "pier"
+              "pier",
+              "DOCK / PIER",
+              "DOCK",
+              "PIER"
             ]
           },
           {
@@ -4395,11 +4685,14 @@
             ]
           },
           {
-            "text": "SUN / SHADE",
+            "text": "SUN",
             "points": 26,
             "aliases": [
               "sun",
-              "shade"
+              "shade",
+              "SUN / SHADE",
+              "SUN",
+              "SHADE"
             ]
           },
           {
@@ -4410,11 +4703,14 @@
             ]
           },
           {
-            "text": "COSTUME / PROP",
+            "text": "COSTUME",
             "points": 12,
             "aliases": [
               "costume",
-              "prop"
+              "prop",
+              "COSTUME / PROP",
+              "COSTUME",
+              "PROP"
             ]
           },
           {
@@ -4450,11 +4746,14 @@
             ]
           },
           {
-            "text": "FAMILY / FRIENDS",
+            "text": "FAMILY",
             "points": 17,
             "aliases": [
               "family",
-              "friends"
+              "friends",
+              "FAMILY / FRIENDS",
+              "FAMILY",
+              "FRIENDS"
             ]
           },
           {
@@ -4498,10 +4797,11 @@
             ]
           },
           {
-            "text": "PUT PRICES ON ITEMS",
+            "text": "PRICE ITEMS",
             "points": 24,
             "aliases": [
-              "put prices on items"
+              "put prices on items",
+              "PUT PRICES ON ITEMS"
             ]
           },
           {
@@ -4538,11 +4838,14 @@
         "question": "Name something that might wake a sleeping cat.",
         "answers": [
           {
-            "text": "FOOD / CAN OPENER",
+            "text": "FOOD",
             "points": 35,
             "aliases": [
               "food",
-              "can opener"
+              "can opener",
+              "FOOD / CAN OPENER",
+              "FOOD",
+              "CAN OPENER"
             ]
           },
           {
@@ -4560,10 +4863,11 @@
             ]
           },
           {
-            "text": "SOMEONE TOUCHING IT",
+            "text": "TOUCHING IT",
             "points": 12,
             "aliases": [
-              "someone touching it"
+              "someone touching it",
+              "SOMEONE TOUCHING IT"
             ]
           },
           {
@@ -4593,11 +4897,14 @@
             ]
           },
           {
-            "text": "TREATS / FOOD",
+            "text": "TREATS",
             "points": 19,
             "aliases": [
               "treats",
-              "food"
+              "food",
+              "TREATS / FOOD",
+              "TREATS",
+              "FOOD"
             ]
           },
           {
@@ -4681,11 +4988,14 @@
             ]
           },
           {
-            "text": "SNAP / PRESS STUD",
+            "text": "SNAP",
             "points": 19,
             "aliases": [
               "snap",
-              "press stud"
+              "press stud",
+              "SNAP / PRESS STUD",
+              "SNAP",
+              "PRESS STUD"
             ]
           },
           {
@@ -4909,10 +5219,11 @@
             ]
           },
           {
-            "text": "SOMETHING STUCK IN A WHEEL",
+            "text": "JAMMED WHEEL",
             "points": 19,
             "aliases": [
-              "something stuck in a wheel"
+              "something stuck in a wheel",
+              "SOMETHING STUCK IN A WHEEL"
             ]
           },
           {
@@ -5252,17 +5563,19 @@
         "question": "Name a reason someone might have to sleep on the couch.",
         "answers": [
           {
-            "text": "ARGUMENT WITH PARTNER",
+            "text": "ARGUMENT",
             "points": 30,
             "aliases": [
-              "argument with partner"
+              "argument with partner",
+              "ARGUMENT WITH PARTNER"
             ]
           },
           {
-            "text": "GUEST USING THE BED",
+            "text": "GUEST IN BED",
             "points": 23,
             "aliases": [
-              "guest using the bed"
+              "guest using the bed",
+              "GUEST USING THE BED"
             ]
           },
           {
@@ -5273,10 +5586,11 @@
             ]
           },
           {
-            "text": "FELL ASLEEP WATCHING TV",
+            "text": "DOZED OFF AT TV",
             "points": 12,
             "aliases": [
-              "fell asleep watching tv"
+              "fell asleep watching tv",
+              "FELL ASLEEP WATCHING TV"
             ]
           },
           {
@@ -5294,10 +5608,11 @@
             ]
           },
           {
-            "text": "PET TOOK OVER THE BED",
+            "text": "PET IN BED",
             "points": 4,
             "aliases": [
-              "pet took over the bed"
+              "pet took over the bed",
+              "PET TOOK OVER THE BED"
             ]
           }
         ]
@@ -5705,10 +6020,11 @@
             ]
           },
           {
-            "text": "SOUND EQUIPMENT FAILURE",
+            "text": "SOUND FAILURE",
             "points": 4,
             "aliases": [
-              "sound equipment failure"
+              "sound equipment failure",
+              "SOUND EQUIPMENT FAILURE"
             ]
           }
         ]
@@ -6107,10 +6423,11 @@
             ]
           },
           {
-            "text": "LOOK FOR ANOTHER ROUTE",
+            "text": "FIND A NEW ROUTE",
             "points": 7,
             "aliases": [
-              "look for another route"
+              "look for another route",
+              "LOOK FOR ANOTHER ROUTE"
             ]
           },
           {
@@ -6502,25 +6819,28 @@
             ]
           },
           {
-            "text": "CAMERA SHOWS PYJAMAS",
+            "text": "PYJAMAS ON CAMERA",
             "points": 9,
             "aliases": [
               "camera shows pyjamas",
-              "pajamas"
+              "pajamas",
+              "CAMERA SHOWS PYJAMAS"
             ]
           },
           {
-            "text": "FORGOT THEY WERE ON CAMERA",
+            "text": "FORGOT CAMERA",
             "points": 6,
             "aliases": [
-              "forgot they were on camera"
+              "forgot they were on camera",
+              "FORGOT THEY WERE ON CAMERA"
             ]
           },
           {
-            "text": "WRONG SCREEN SHARED",
+            "text": "WRONG SCREEN",
             "points": 4,
             "aliases": [
-              "wrong screen shared"
+              "wrong screen shared",
+              "WRONG SCREEN SHARED"
             ]
           }
         ]
@@ -6550,11 +6870,12 @@
             ]
           },
           {
-            "text": "LISTEN TO AN AUDIOBOOK",
+            "text": "AUDIOBOOK",
             "points": 12,
             "aliases": [
               "listen to an audiobook",
-              "podcast"
+              "podcast",
+              "LISTEN TO AN AUDIOBOOK"
             ]
           },
           {
@@ -6566,10 +6887,11 @@
             ]
           },
           {
-            "text": "STOP AT ATTRACTIONS",
+            "text": "SIGHTSEEING",
             "points": 5,
             "aliases": [
-              "stop at attractions"
+              "stop at attractions",
+              "STOP AT ATTRACTIONS"
             ]
           }
         ]
@@ -6627,10 +6949,11 @@
             ]
           },
           {
-            "text": "CHANGE A LIGHT BULB",
+            "text": "CHANGE BULB",
             "points": 29,
             "aliases": [
-              "change a light bulb"
+              "change a light bulb",
+              "CHANGE A LIGHT BULB"
             ]
           },
           {
@@ -6919,10 +7242,11 @@
             ]
           },
           {
-            "text": "SOMEONE NEEDS YOUR SEAT",
+            "text": "GIVE UP SEAT",
             "points": 6,
             "aliases": [
-              "someone needs your seat"
+              "someone needs your seat",
+              "SOMEONE NEEDS YOUR SEAT"
             ]
           },
           {
@@ -7300,10 +7624,11 @@
             ]
           },
           {
-            "text": "CALL A FAMILY MEMBER",
+            "text": "CALL FAMILY",
             "points": 17,
             "aliases": [
-              "call a family member"
+              "call a family member",
+              "CALL A FAMILY MEMBER"
             ]
           },
           {
@@ -7314,24 +7639,27 @@
             ]
           },
           {
-            "text": "CLIMB THROUGH A WINDOW",
+            "text": "USE A WINDOW",
             "points": 9,
             "aliases": [
-              "climb through a window"
+              "climb through a window",
+              "CLIMB THROUGH A WINDOW"
             ]
           },
           {
-            "text": "ASK A NEIGHBOUR FOR HELP",
+            "text": "ASK A NEIGHBOUR",
             "points": 7,
             "aliases": [
-              "ask a neighbour for help"
+              "ask a neighbour for help",
+              "ASK A NEIGHBOUR FOR HELP"
             ]
           },
           {
-            "text": "WAIT FOR SOMEONE TO COME HOME",
+            "text": "WAIT FOR HELP",
             "points": 4,
             "aliases": [
-              "wait for someone to come home"
+              "wait for someone to come home",
+              "WAIT FOR SOMEONE TO COME HOME"
             ]
           }
         ]
@@ -7368,10 +7696,11 @@
             ]
           },
           {
-            "text": "NOTHING YOU LIKE ON THE MENU",
+            "text": "DISLIKE MENU",
             "points": 9,
             "aliases": [
-              "nothing you like on the menu"
+              "nothing you like on the menu",
+              "NOTHING YOU LIKE ON THE MENU"
             ]
           },
           {
@@ -7684,10 +8013,11 @@
         "question": "Name something that might ruin a surprise party.",
         "answers": [
           {
-            "text": "GUEST ARRIVES EARLY",
+            "text": "EARLY GUEST",
             "points": 30,
             "aliases": [
-              "guest arrives early"
+              "guest arrives early",
+              "GUEST ARRIVES EARLY"
             ]
           },
           {
@@ -7713,24 +8043,27 @@
             ]
           },
           {
-            "text": "WRONG GROUP MESSAGE",
+            "text": "WRONG GROUP CHAT",
             "points": 9,
             "aliases": [
-              "wrong group message"
+              "wrong group message",
+              "WRONG GROUP MESSAGE"
             ]
           },
           {
-            "text": "GUEST DOES NOT SHOW UP",
+            "text": "NO-SHOW GUEST",
             "points": 6,
             "aliases": [
-              "guest does not show up"
+              "guest does not show up",
+              "GUEST DOES NOT SHOW UP"
             ]
           },
           {
-            "text": "CAKE ARRIVES AT WRONG TIME",
+            "text": "CAKE TIMING",
             "points": 4,
             "aliases": [
-              "cake arrives at wrong time"
+              "cake arrives at wrong time",
+              "CAKE ARRIVES AT WRONG TIME"
             ]
           }
         ]
@@ -8112,10 +8445,11 @@
             ]
           },
           {
-            "text": "PARTNER CANNOT COME",
+            "text": "PARTNER ABSENT",
             "points": 9,
             "aliases": [
-              "partner cannot come"
+              "partner cannot come",
+              "PARTNER CANNOT COME"
             ]
           },
           {
@@ -8248,10 +8582,11 @@
             ]
           },
           {
-            "text": "PUT IT IN AN ENVELOPE",
+            "text": "USE AN ENVELOPE",
             "points": 10,
             "aliases": [
-              "put it in an envelope"
+              "put it in an envelope",
+              "PUT IT IN AN ENVELOPE"
             ]
           }
         ]
@@ -8485,10 +8820,11 @@
         "question": "Name a reason someone might be relieved that a visitor has left.",
         "answers": [
           {
-            "text": "VISIT LASTED TOO LONG",
+            "text": "LONG VISIT",
             "points": 29,
             "aliases": [
-              "visit lasted too long"
+              "visit lasted too long",
+              "VISIT LASTED TOO LONG"
             ]
           },
           {
@@ -8513,10 +8849,11 @@
             ]
           },
           {
-            "text": "VISITOR WAS CRITICAL",
+            "text": "CRITICAL VISITOR",
             "points": 9,
             "aliases": [
-              "visitor was critical"
+              "visitor was critical",
+              "VISITOR WAS CRITICAL"
             ]
           },
           {
@@ -8527,10 +8864,11 @@
             ]
           },
           {
-            "text": "NEED TO GET WORK DONE",
+            "text": "WORK TO DO",
             "points": 4,
             "aliases": [
-              "need to get work done"
+              "need to get work done",
+              "NEED TO GET WORK DONE"
             ]
           }
         ]
@@ -8628,11 +8966,12 @@
         "question": "Name something people do when they smell smoke.",
         "answers": [
           {
-            "text": "LOOK FOR THE SOURCE",
+            "text": "FIND THE SOURCE",
             "points": 42,
             "aliases": [
               "look for the source",
-              "check the oven"
+              "check the oven",
+              "LOOK FOR THE SOURCE"
             ]
           },
           {
@@ -8643,11 +8982,12 @@
             ]
           },
           {
-            "text": "CALL THE FIRE DEPARTMENT",
+            "text": "CALL FIRE DEPT.",
             "points": 19,
             "aliases": [
               "call the fire department",
-              "call 911"
+              "call 911",
+              "CALL THE FIRE DEPARTMENT"
             ]
           },
           {
@@ -8902,10 +9242,11 @@
             ]
           },
           {
-            "text": "WANTS TO KEEP PLAYING",
+            "text": "KEEP PLAYING",
             "points": 16,
             "aliases": [
-              "wants to keep playing"
+              "wants to keep playing",
+              "WANTS TO KEEP PLAYING"
             ]
           },
           {
@@ -8923,17 +9264,19 @@
             ]
           },
           {
-            "text": "WANTS ANOTHER STORY",
+            "text": "ANOTHER STORY",
             "points": 6,
             "aliases": [
-              "wants another story"
+              "wants another story",
+              "WANTS ANOTHER STORY"
             ]
           },
           {
-            "text": "DOES NOT WANT TO MISS OUT",
+            "text": "MISSING OUT",
             "points": 4,
             "aliases": [
-              "does not want to miss out"
+              "does not want to miss out",
+              "DOES NOT WANT TO MISS OUT"
             ]
           }
         ]
@@ -8949,10 +9292,11 @@
             ]
           },
           {
-            "text": "STYLE IT DIFFERENTLY",
+            "text": "RESTYLE IT",
             "points": 24,
             "aliases": [
-              "style it differently"
+              "style it differently",
+              "STYLE IT DIFFERENTLY"
             ]
           },
           {
@@ -9017,10 +9361,11 @@
             ]
           },
           {
-            "text": "AN ITEM UNDER THE CART",
+            "text": "UNDER-CART ITEM",
             "points": 8,
             "aliases": [
-              "an item under the cart"
+              "an item under the cart",
+              "AN ITEM UNDER THE CART"
             ]
           }
         ]
@@ -9579,17 +9924,19 @@
             ]
           },
           {
-            "text": "GAME CONTROLLER BUTTON",
+            "text": "CONTROLLER BUTTON",
             "points": 12,
             "aliases": [
-              "game controller button"
+              "game controller button",
+              "GAME CONTROLLER BUTTON"
             ]
           },
           {
-            "text": "FINGERPRINT SCANNER",
+            "text": "FINGERPRINT ID",
             "points": 8,
             "aliases": [
-              "fingerprint scanner"
+              "fingerprint scanner",
+              "FINGERPRINT SCANNER"
             ]
           }
         ]

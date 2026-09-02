@@ -268,17 +268,35 @@ test('a duplicate retry clears the old transcript and starts a fresh microphone 
   assert.equal(vm.runInContext('fastDraft.value',b.context),'tea');
 });
 
-test('Harvey introduces Steve before either family and never runs Dawson clips or the souvenir',async()=>{
-  const b=browser(async()=>({status:204})),events=[],scenes=[];
+test('Harvey recording introduces Steve once, followed directly by families',async()=>{
+  const requests=[];
+  const b=browser(async url=>{requests.push(url);return {status:204}}),events=[],scenes=[];
   b.context.events=events;
   b.context.document.querySelector=selector=>selector==='#introContent'?{set innerHTML(value){scenes.push(value)}}:null;
   b.context.setTimeout=fn=>{fn();return 1};
   vm.runInContext("state={era:'harvey',code:'TEST',phase:'intro',mode:'remote',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}]};playAudioFile=async src=>events.push(src);speakAsync=async text=>events.push(text);playFamilyAnnouncement=async(i,part)=>events.push(i+':'+part)",b.context);
   await vm.runInContext('runIntro()',b.context);
-  assert.deepEqual(events,['/assets/harvey-intro.mp3',"And here's your host, Steve Harvey!",'0:name','0:members','1:name','1:members']);
+  assert.deepEqual(events,['/assets/harvey-intro.mp3','0:name','0:members','1:name','1:members']);
+  assert.deepEqual(requests,[], 'No redundant host TTS download');
   assert.match(scenes[0],/STEVE/);assert.match(scenes[1],/Brown/);assert.match(scenes[2],/Smith/);
   assert.doesNotMatch(scenes.join(''),/Richard|Dawson|kiss|family-name-door/);
   assert.equal(b.events.at(-1).name,'introComplete');
+});
+
+test('board labels shrink to fit and recover full size after a wider resize',()=>{
+  const b=browser(async()=>({}));
+  const label={textContent:'COMFY FURNITURE',style:{fontSize:''},clientWidth:100,parentElement:{clientHeight:40}};
+  const short={textContent:'SUN',style:{fontSize:''},clientWidth:100,parentElement:{clientHeight:40},scrollWidth:100};
+  Object.defineProperty(label,'scrollWidth',{get(){return Math.max(this.clientWidth,8+200*(parseFloat(this.style.fontSize)||20)/20)}});
+  b.context.document.querySelectorAll=()=>[label,short];
+  b.context.getComputedStyle=element=>({fontSize:element.style.fontSize||'20px',paddingLeft:'4px',paddingRight:'4px'});
+  vm.runInContext('fitBoardLabels()',b.context);
+  assert.ok(label.scrollWidth<=label.clientWidth);
+  assert.equal(label.textContent,'COMFY FURNITURE');
+  assert.equal(short.style.fontSize,'');
+  label.clientWidth=240;
+  vm.runInContext('fitBoardLabels()',b.context);
+  assert.equal(label.style.fontSize,'','Reset font size when the board grows');
 });
 
 test('Harvey boards preserve answer secrecy and use both columns only for the second reveal',()=>{

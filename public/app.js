@@ -196,12 +196,31 @@ function renderGame() {
   const faceoffScene = showFaceoffScene();
   app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${isHarvey() ? (faceoffScene ? harveyFaceoff() : round ? harveyStage(round) : harveyFastStage()) : (faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage())}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${goodAnswerControl()}</section></main>`;
   wireControls();
+  fitBoardLabels();
+  document.fonts?.ready.then(fitBoardLabels);
   const answer=document.querySelector('#answer');
   if(answer&&roundDraft.key===`${state.code}:${state.answerToken}`)answer.value=roundDraft.value;
   updateFastMicUI();
   startVisibleClocks();
   offerSoundUnlock();
 }
+
+// Refit after every reveal, font load and resize; retain the full answer text.
+function fitBoardLabels() {
+  for (const label of document.querySelectorAll?.('.dawson-label, .harvey-slot.revealed > span') || []) {
+    label.style.fontSize = '';
+    const style = getComputedStyle(label);
+    const padding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+    const available = label.clientWidth - padding;
+    if (available <= 0) continue;
+    const measured = label.scrollWidth - padding;
+    const size = parseFloat(style.fontSize);
+    const height = label.parentElement.clientHeight;
+    const scale = Math.min(1, available / Math.max(1, measured), height / size);
+    if (scale < 1) label.style.fontSize = `${size * scale * .96}px`;
+  }
+}
+window.addEventListener?.('resize', fitBoardLabels);
 
 function showFaceoffScene() {
   return !!state.faceoff && state.controlFamily === null && state.faceoff.winnerFamily === null && !state.faceoff.showBoard && ['faceoff', 'host_wait', 'answer'].includes(state.phase);

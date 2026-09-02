@@ -3,15 +3,8 @@ function harveyHostCard(){return `<div class="harvey-host-card"><img class="harv
 async function runHarveyIntroduction(){
   const content=document.querySelector('#introContent');
   if(content)content.innerHTML=harveyHostCard();
-  // Prepare the announcement under the opening music instead of adding a loading pause.
-  const announcement=fetch(`/api/room/${state.code}/announcement?part=host`).then(response=>response.ok&&response.status!==204?response.blob():null).catch(()=>null);
+  // The recording already introduces Steve; proceed directly to the families.
   await playAudioFile('/assets/harvey-intro.mp3').catch(()=>{});
-  if(state.phase!=='intro')return;
-  try{
-    const blob=await announcement;
-    if(!blob)throw Error('No announcement');
-    await playAudioBlob(blob);
-  }catch{await speakAsync("And here's your host, Steve Harvey!");}
   for(let index=0;index<state.families.length;index++){
     if(state.phase!=='intro')return;
     if(content)content.innerHTML=harveyFamilyIntroduction(state.families[index]);

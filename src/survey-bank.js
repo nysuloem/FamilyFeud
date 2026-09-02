@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { BUILTIN_GAME, validatePackage, generateGamePackage } = require('./game');
+const { compactBoardLabels } = require('./board-labels');
 const seeds = require('../data/survey-seeds.json');
 const questions = game => [...game.rounds, game.suddenDeath, ...game.fastMoney].map(q => q.question);
 const key = text => text.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
@@ -34,6 +35,8 @@ class SurveyBank {
         data.available.push(structuredClone(game));data.knownQuestions.push(...list);
       }
     }
+    // Upgrade labels in existing volume packs without resetting reservations or history.
+    data.available.forEach(compactBoardLabels);
     this.save(data);
   }
   save(data){
@@ -67,7 +70,7 @@ class SurveyBank {
         console.warn('Survey refill rejected invalid or repeated questions.');break;
       }
       const data=structuredClone(this.data);
-      data.available.push({...game,id:crypto.randomUUID(),source:'AI-generated synthetic home-game surveys'});
+      data.available.push({...compactBoardLabels(game),id:crypto.randomUUID(),source:'AI-generated synthetic home-game surveys'});
       data.knownQuestions.push(...list);this.save(data);
     }
   }

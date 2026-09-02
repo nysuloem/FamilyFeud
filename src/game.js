@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const { compactBoardLabels, hasCompactBoardLabels } = require('./board-labels');
 
 const BUILTIN_GAME = {
   rounds: [
@@ -57,6 +58,8 @@ const BUILTIN_GAME = {
     { question: 'Name something you might find in a garage.', answers: [{ text: 'CAR', points: 42, aliases: ['car', 'vehicle'] }, { text: 'TOOLS', points: 25, aliases: ['tools', 'tool'] }, { text: 'BICYCLE', points: 14, aliases: ['bike', 'bicycle'] }, { text: 'LAWN MOWER', points: 11, aliases: ['mower', 'lawn mower'] }, { text: 'BOXES', points: 8, aliases: ['boxes', 'storage'] }] }
   ]
 };
+
+compactBoardLabels(BUILTIN_GAME);
 
 function normalize(value = '') {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -127,6 +130,7 @@ async function judgeAnswer(guess, answers, revealed = [], { timeoutMs = 15000 } 
         instructions: `You are the final answer judge for a live Family Feud game. Decide whether the contestant's wording expresses the same core concept as exactly one unrevealed board answer.
 
 JUDGING RULES
+- Board answers are compact display labels. Their aliases preserve the full accepted category; judge against both, even when an alias is not a literal synonym of the label.
 - Accept synonyms, paraphrases, singular/plural forms, ordinary regional wording, and a specific example that clearly belongs inside a broader board category.
 - Accept speech-to-text mistakes only when the intended answer is unambiguous from a very close phonetic transcription.
 - Reject answers that are merely associated with a board answer, share only one vague word, are broader than the board category in a way that could cover several answers, or require a strained explanation.
@@ -158,7 +162,7 @@ QUALITY AND FAIRNESS
 - Every main-board answer must be clearly distinct. Never split near-synonyms into separate slots.
 - Prefer answers that players can express in many natural ways. Give every answer 4-10 useful aliases, including common Canadian and American variants where relevant.
 - Main-game and Fast Money points must be plausible counts from 100 surveyed people, descend strictly, and sum to exactly 100 for each board. Sudden Death is the exception because only its top response is retained.
-- Write board labels in concise uppercase display language. Write questions in natural sentence case.
+- Write each board label in uppercase, preferably 1-2 words, at most 18 characters including spaces. Use one clear compact category, with no slash-separated alternatives or explanatory parentheses. Put all longer wording and synonyms in aliases. For example, display SUN for a snowman-melting answer, with aliases including gets too warm, heat, and warm weather. Never shorten by cutting off words. Write questions in natural sentence case.
 
 MAIN GAME
 - Exactly four rounds.
@@ -210,6 +214,8 @@ async function generateGamePackage({ avoidQuestions = [] } = {}) {
       const output = payload.output_text || payload.output?.flatMap(x => x.content || []).find(x => x.type === 'output_text')?.text;
       const game = JSON.parse(output);
       if (!validatePackage(game)) throw new Error('Generated package failed answer-count, ranking, or 100-point validation');
+      compactBoardLabels(game);
+      if (!hasCompactBoardLabels(game)) throw new Error('Generated board labels must be 1-18 characters');
       return game;
     } catch (error) {
       lastError = error;
@@ -229,7 +235,7 @@ function boardSchema(minItems = 4, maxItems = 7) {
         items: {
           type: 'object', additionalProperties: false,
           properties: {
-            text: { type: 'string' },
+            text: { type: 'string', minLength: 1, maxLength: 18 },
             points: { type: 'integer', minimum: 1, maximum: 100 },
             aliases: { type: 'array', minItems: 2, maxItems: 12, items: { type: 'string' } }
           },

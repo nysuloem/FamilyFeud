@@ -2,7 +2,8 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {SurveyBank,questions,similar}=require('../src/survey-bank');
-const {validatePackage,BUILTIN_GAME}=require('../src/game');
+const {validatePackage,BUILTIN_GAME,matchAnswer}=require('../src/game');
+const {compactBoardLabels,hasCompactBoardLabels}=require('../src/board-labels');
 const seeds=require('../data/survey-seeds.json');
 function directory(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'feud-bank-test-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir;}
 test('240 valid prepared surveys are disjoint from each other and fixed test questions',()=>{
@@ -44,6 +45,38 @@ test('API failure and duplicate generation cannot fall back to the sample game',
 test('corrupt history is not silently reset and replayed',t=>{
   const dir=directory(t);fs.writeFileSync(path.join(dir,'survey-bank.json'),'broken');
   assert.throws(()=>new SurveyBank({directory:dir}).count(),/Cannot read survey history/);
+});
+
+test('all prepared and test boards have compact labels with idempotent alias preservation',()=>{
+  for(const game of [BUILTIN_GAME,...seeds]){
+    assert.ok(hasCompactBoardLabels(game));
+    assert.deepEqual(compactBoardLabels(structuredClone(game)),game);
+  }
+  const snowman=seeds.flatMap(g=>[...g.rounds,g.suddenDeath,...g.fastMoney]).find(b=>/snowman/i.test(b.question));
+  const sun=snowman.answers.findIndex(a=>a.text==='SUN');
+  assert.ok(sun>=0);
+  for(const wording of ['Sun','gets too warm','warm weather','heat'])assert.equal(matchAnswer(wording,snowman.answers).index,sun);
+});
+
+test('existing volume labels migrate without losing aliases, scores, IDs or used history',t=>{
+  const dir=directory(t),bank=new SurveyBank({directory:dir});
+  bank.take();
+  const legacy=structuredClone(bank.data);
+  const answer=legacy.available[0].rounds[0].answers[0];
+  answer.text='SUN / GETS TOO WARM';answer.aliases=['hot weather'];
+  fs.writeFileSync(bank.file,JSON.stringify(legacy));
+  const migrated=new SurveyBank({directory:dir});
+  assert.equal(migrated.count(),23);
+  assert.deepEqual(migrated.data.used,legacy.used);
+  assert.deepEqual(migrated.data.knownQuestions,legacy.knownQuestions);
+  assert.deepEqual(migrated.data.seeded,legacy.seeded);
+  assert.deepEqual(migrated.data.available.map(g=>g.id),legacy.available.map(g=>g.id));
+  const changed=migrated.data.available[0].rounds[0].answers[0];
+  assert.equal(changed.text,'SUN');assert.equal(changed.points,answer.points);
+  for(const text of ['hot weather','SUN / GETS TOO WARM','SUN','GETS TOO WARM'])assert.ok(changed.aliases.includes(text));
+  const restarted=new SurveyBank({directory:dir});
+  assert.equal(restarted.count(),23);
+  assert.deepEqual(restarted.data,migrated.data,'Migration is persisted and repeat-safe');
 });
 
 

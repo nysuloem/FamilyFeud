@@ -1,8 +1,8 @@
 # Original synthetic home-game surveys; each group contains 4 rounds, sudden death, 5 Fast Money boards.
 # Answers are ranked. Slash-separated alternatives are aliases for one answer, not separate slots.
-Name something that might interrupt a backyard barbecue.|RAIN|WASPS / BEES|RUNNING OUT OF GAS / EMPTY PROPANE TANK|BURNT FOOD|A NEIGHBOUR COMPLAINING / NOISE COMPLAINT|A DOG STEALING FOOD|A PHONE CALL
+Name something that might interrupt a backyard barbecue.|RAIN|WASPS / BEES|RUNNING OUT OF GAS / EMPTY PROPANE TANK|BURNT FOOD|NOISE COMPLAINT / A NEIGHBOUR COMPLAINING|DOG STEALS FOOD / A DOG STEALING FOOD|A PHONE CALL
 Name something a hotel guest might ask the front desk for.|EXTRA TOWELS|WI-FI PASSWORD|DIRECTIONS|WAKE-UP CALL|EXTRA PILLOW|LATE CHECKOUT
-Name something people do when the power goes out.|FIND A FLASHLIGHT / TORCH|LIGHT CANDLES|CHECK THE BREAKER / FUSE BOX|CALL THE POWER COMPANY|LOOK OUTSIDE / CHECK NEIGHBOURS
+Name something people do when the power goes out.|FIND A FLASHLIGHT / TORCH|LIGHT CANDLES|CHECK THE BREAKER / FUSE BOX|CALL POWER CO. / CALL THE POWER COMPANY|LOOK OUTSIDE / CHECK NEIGHBOURS
 Name something you hope a birthday cake has.|ICING / FROSTING|CANDLES|CHOCOLATE|YOUR NAME / A MESSAGE
 Name a sport played on ice.|HOCKEY / ICE HOCKEY
 Name a fruit with a peel people usually remove.|BANANA|ORANGE|GRAPEFRUIT|MANDARIN / TANGERINE|KIWI
@@ -23,9 +23,9 @@ Name a wild animal with stripes.|ZEBRA|TIGER|SKUNK|CHIPMUNK|OKAPI
 Name something you might rent for a day.|CAR|BICYCLE|BOAT|POWER TOOL|SKIS
 
 Name something people forget to pack for a camping trip.|BUG SPRAY / INSECT REPELLENT|MATCHES / LIGHTER|FLASHLIGHT / TORCH|SLEEPING BAG|TOILET PAPER|CAN OPENER|TENT PEGS / STAKES
-Name something someone might complain about in a movie theatre.|TALKING|CELL PHONES / PHONES|LOUD CHEWING / EATING NOISES|UNCOMFORTABLE SEATS|EXPENSIVE SNACKS|POOR TEMPERATURE / TOO COLD / TOO HOT
+Name something someone might complain about in a movie theatre.|TALKING|CELL PHONES / PHONES|LOUD CHEWING / EATING NOISES|UNCOMFY SEATS / UNCOMFORTABLE SEATS|EXPENSIVE SNACKS|POOR TEMPERATURE / TOO COLD / TOO HOT
 Name something people decorate for a celebration.|CAKE|ROOM / HOUSE|TABLE|CAR|TREE
-Name something that can ruin a snowman.|SUN / WARM WEATHER|RAIN|DOG|SOMEONE KNOCKING IT OVER
+Name something that can ruin a snowman.|SUN / WARM WEATHER|RAIN|DOG|KNOCKED OVER / SOMEONE KNOCKING IT OVER
 Name something people wave at a parade.|FLAG
 Name a food often served in a bowl.|SOUP|CEREAL|SALAD|ICE CREAM|RICE
 Name a tool used for cutting.|SCISSORS|KNIFE|SAW|AXE / AX|SHEARS
@@ -33,7 +33,7 @@ Name something with a zipper.|JACKET / COAT|TROUSERS / PANTS / JEANS|BAG / BACKP
 Name a place where people wear a helmet.|CONSTRUCTION SITE|HOCKEY RINK|SKI HILL|BIKE PATH|MOTORCYCLE TRACK
 Name something found in a pencil case.|PENCIL|PEN|ERASER|RULER|SHARPENER
 
-Name something people do to welcome a new neighbour.|INTRODUCE THEMSELVES|BRING FOOD / BAKING|INVITE THEM OVER|GIVE A GIFT|OFFER HELP MOVING|EXPLAIN THE NEIGHBOURHOOD|SEND A CARD / NOTE
+Name something people do to welcome a new neighbour.|SAY HELLO / INTRODUCE THEMSELVES|BRING FOOD / BAKING|INVITE THEM OVER|GIVE A GIFT|OFFER HELP MOVING|LOCAL ADVICE / EXPLAIN THE NEIGHBOURHOOD|SEND A CARD / NOTE
 Name a reason a washing machine might make a terrible noise.|UNBALANCED LOAD|COINS IN POCKETS|OVERLOADED|BROKEN PART|SHOES INSIDE|NOT LEVEL
 Name something people do at a picnic besides eat.|PLAY GAMES|TALK|RELAX / NAP|WALK|TAKE PHOTOS
 Name something people hang on a front door.|WREATH|WELCOME SIGN|DOOR KNOCKER|DECORATIONS / RIBBONS
@@ -46,7 +46,7 @@ Name a game that uses dice.|MONOPOLY|YAHTZEE|BACKGAMMON|SNAKES AND LADDERS / CHU
 
 Name something that might go wrong during a school play.|FORGOTTEN LINES|COSTUME PROBLEM|BROKEN PROP|MICROPHONE FAILURE|MISSED ENTRANCE|FALLING SCENERY|STAGE FRIGHT
 Name something people take to a swimming pool.|TOWEL|SWIMSUIT / BATHING SUIT|GOGGLES|SANDALS / FLIP FLOPS|SUNSCREEN|SWIM CAP
-Name something that makes a house feel cosy.|FIREPLACE / FIRE|SOFT BLANKETS|WARM LIGHTING|COMFORTABLE FURNITURE|HOME COOKING / BAKING
+Name something that makes a house feel cosy.|FIREPLACE / FIRE|SOFT BLANKETS|WARM LIGHTING|COMFY FURNITURE / COMFORTABLE FURNITURE|HOME COOKING / BAKING
 Name something people use to keep a door open.|DOORSTOP|CHAIR|HEAVY BOOK|BRICK / ROCK
 Name an animal with a very long neck.|GIRAFFE
 Name a food often sold by the dozen.|EGGS|DOUGHNUTS / DONUTS|BAGELS|CUPCAKES|OYSTERS
@@ -56,8 +56,8 @@ Name a place that sells tickets.|CINEMA / MOVIE THEATRE|TRAIN STATION|STADIUM|AM
 Name something children might put stickers on.|NOTEBOOK|WATER BOTTLE|LUNCHBOX|LAPTOP|BEDROOM WALL
 
 Name something you would find in a gardener's shed.|SHOVEL / SPADE|RAKE|HOSE|PLANT POTS|FERTILIZER|SEEDS|GARDEN GLOVES
-Name something that might delay a flight.|BAD WEATHER|MECHANICAL PROBLEM|LATE INCOMING PLANE|AIR TRAFFIC|MISSING CREW|LATE PASSENGER
-Name something people like about a small town.|FRIENDLY PEOPLE|QUIET|LESS TRAFFIC|SENSE OF COMMUNITY|LOWER COST OF LIVING
+Name something that might delay a flight.|BAD WEATHER|MECHANICAL PROBLEM|LATE PLANE / LATE INCOMING PLANE|AIR TRAFFIC|MISSING CREW|LATE PASSENGER
+Name something people like about a small town.|FRIENDLY PEOPLE|QUIET|LESS TRAFFIC|SENSE OF COMMUNITY|LOWER COSTS / LOWER COST OF LIVING
 Name something people put in a bird feeder.|SEEDS / BIRDSEED|NUTS / PEANUTS|SUET|FRUIT
 Name something you use to measure temperature.|THERMOMETER
 Name a food you might roast over a campfire.|MARSHMALLOW|HOT DOG / WIENER|CORN|POTATO|SAUSAGE
@@ -78,7 +78,7 @@ Name a food that is crunchy.|CHIPS / CRISPS|CARROT|APPLE|CRACKERS|NUTS
 Name something found on a desk.|COMPUTER|PEN|PAPER|LAMP|CALENDAR
 
 Name a reason people might stop during a hike.|REST / TIRED|TAKE A PHOTO|DRINK WATER|EAT|LOOK AT WILDLIFE|CHECK THE MAP|TIE A SHOE
-Name something a babysitter might ask the parents.|BEDTIME|EMERGENCY NUMBER|FOOD INSTRUCTIONS|WHEN THEY WILL RETURN|HOUSE RULES|PAY
+Name something a babysitter might ask the parents.|BEDTIME|EMERGENCY NUMBER|FOOD INSTRUCTIONS|RETURN TIME / WHEN THEY WILL RETURN|HOUSE RULES|PAY
 Name something people put on a refrigerator door.|MAGNETS|PHOTOS|CHILDREN'S ART|SHOPPING LIST|CALENDAR
 Name something that makes a squeaking noise.|DOOR|MOUSE|SHOE|SWING
 Name something people throw at a dartboard.|DART
@@ -88,9 +88,9 @@ Name a food people eat at breakfast.|EGGS|CEREAL|TOAST|PANCAKES|YOGURT
 Name something that needs batteries.|REMOTE CONTROL|FLASHLIGHT / TORCH|TOY|CLOCK|SMOKE DETECTOR
 Name a place you might see a costume.|HALLOWEEN PARTY|THEATRE / PLAY|PARADE|CONVENTION|AMUSEMENT PARK
 
-Name something people do when they cannot find their glasses.|RETRACE THEIR STEPS|ASK SOMEONE|CHECK THEIR HEAD|LOOK UNDER FURNITURE|USE A SPARE PAIR|SQUINT|FEEL AROUND
+Name something people do when they cannot find their glasses.|RETRACE STEPS / RETRACE THEIR STEPS|ASK SOMEONE|CHECK THEIR HEAD|UNDER FURNITURE / LOOK UNDER FURNITURE|USE A SPARE PAIR|SQUINT|FEEL AROUND
 Name something a family might do on a rainy Sunday.|WATCH A FILM / MOVIE|PLAY BOARD GAMES|BAKE|READ|DO CRAFTS|VISIT A MUSEUM
-Name something people save in a scrapbook.|PHOTOS|TICKET STUBS|CARDS|NEWSPAPER CLIPPINGS|PRESSED FLOWERS
+Name something people save in a scrapbook.|PHOTOS|TICKET STUBS|CARDS|NEWS CLIPPINGS / NEWSPAPER CLIPPINGS|PRESSED FLOWERS
 Name something you might see from a train window.|TREES / FOREST|FIELDS|HOUSES|WATER / LAKE / RIVER
 Name a utensil used to drain pasta.|COLANDER / STRAINER
 Name a topping for a baked potato.|BUTTER|SOUR CREAM|CHEESE|BACON|CHIVES
@@ -102,7 +102,7 @@ Name something you keep in a first-aid kit.|BANDAGES / PLASTERS|ANTISEPTIC|GAUZE
 Name something a child might want to be in a school talent show.|SINGER|DANCER|MAGICIAN|COMEDIAN|PIANIST|JUGGLER|ACTOR
 Name something you check before sending a parcel.|ADDRESS|POSTAGE|PACKAGING|RECIPIENT'S NAME|WEIGHT|DELIVERY DATE
 Name something a new puppy might chew.|SHOES|FURNITURE|TOYS|CLOTHING|CABLES / WIRES
-Name something people do to cool down on a hot day.|SWIM|DRINK SOMETHING COLD|USE A FAN / AIR CONDITIONING|SIT IN THE SHADE
+Name something people do to cool down on a hot day.|SWIM|COLD DRINK / DRINK SOMETHING COLD|USE A FAN / AIR CONDITIONING|SIT IN THE SHADE
 Name an animal that builds a dam.|BEAVER
 Name a food sold at a bakery.|BREAD|CAKE|COOKIES / BISCUITS|CROISSANT|MUFFIN
 Name something found at a playground.|SWING|SLIDE|SEESAW / TEETER TOTTER|CLIMBING FRAME / JUNGLE GYM|SANDBOX
@@ -122,8 +122,8 @@ Name something often made of glass.|WINDOW|DRINKING GLASS|BOTTLE|VASE|MIRROR
 Name a reason someone might carry an umbrella.|RAIN|SUN / SHADE|SNOW|COSTUME / PROP|WIND PROTECTION
 
 Name something people photograph on holiday.|SCENERY|LANDMARKS|FAMILY / FRIENDS|FOOD|WILDLIFE|HOTEL|SUNSET
-Name something people do before a garage sale.|SORT BELONGINGS|PUT PRICES ON ITEMS|MAKE SIGNS|ADVERTISE|SET UP TABLES|GET CHANGE
-Name something that might wake a sleeping cat.|FOOD / CAN OPENER|LOUD NOISE|DOG|SOMEONE TOUCHING IT|ANOTHER CAT
+Name something people do before a garage sale.|SORT BELONGINGS|PRICE ITEMS / PUT PRICES ON ITEMS|MAKE SIGNS|ADVERTISE|SET UP TABLES|GET CHANGE
+Name something that might wake a sleeping cat.|FOOD / CAN OPENER|LOUD NOISE|DOG|TOUCHING IT / SOMEONE TOUCHING IT|ANOTHER CAT
 Name something children look forward to at a fair.|RIDES|GAMES|TREATS / FOOD|ANIMALS
 Name something that a librarian lends out.|BOOKS
 Name a food people might buy in a bucket.|FRIED CHICKEN|POPCORN|ICE CREAM|CANDY|SEAFOOD
@@ -134,7 +134,7 @@ Name something round in a kitchen.|PLATE|BOWL|PAN|ORANGE|CLOCK
 
 # Expansion: 12 additional games (starter-13 through starter-24).
 Name something a person might frantically do five minutes before company arrives.|HIDE THE CLUTTER / TIDY UP|VACUUM / SWEEP|CHANGE CLOTHES / GET DRESSED|CHECK THE FOOD / FINISH COOKING|CLEAN THE BATHROOM|SET THE TABLE|BRUSH THEIR HAIR / FIX THEIR HAIR
-Name something that makes a shopping cart difficult to push.|WOBBLY WHEEL / BAD WHEEL|TOO MUCH WEIGHT / OVERLOADED|SOMETHING STUCK IN A WHEEL|UPHILL SLOPE / HILL|SNOW OR ICE|NARROW AISLE / OBSTACLE
+Name something that makes a shopping cart difficult to push.|WOBBLY WHEEL / BAD WHEEL|TOO MUCH WEIGHT / OVERLOADED|JAMMED WHEEL / SOMETHING STUCK IN A WHEEL|UPHILL SLOPE / HILL|SNOW OR ICE|NARROW AISLE / OBSTACLE
 Name something that disappears quickly from an office break room.|COFFEE|DOUGHNUTS / DONUTS|MILK / CREAMER|CLEAN MUGS / CUPS|TEASPOONS / SPOONS
 Name something people accidentally leave on overnight.|LIGHTS|TELEVISION / TV|COMPUTER|OVEN / STOVE
 Name something people make a wish on.|BIRTHDAY CANDLES / CANDLES
@@ -144,7 +144,7 @@ Name something people check on a weather forecast.|TEMPERATURE|RAIN / PRECIPITAT
 Name an animal you would not want loose in your kitchen.|RAT|SNAKE|SKUNK|RACCOON|BAT
 Name something a person may keep in a car's glove compartment.|REGISTRATION / OWNERSHIP|INSURANCE PAPERS|OWNER'S MANUAL|NAPKINS / TISSUES|FLASHLIGHT / TORCH
 
-Name a reason someone might have to sleep on the couch.|ARGUMENT WITH PARTNER|GUEST USING THE BED|SNORING PARTNER|FELL ASLEEP WATCHING TV|BED IS BROKEN|ROOM TOO HOT|PET TOOK OVER THE BED
+Name a reason someone might have to sleep on the couch.|ARGUMENT / ARGUMENT WITH PARTNER|GUEST IN BED / GUEST USING THE BED|SNORING PARTNER|DOZED OFF AT TV / FELL ASLEEP WATCHING TV|BED IS BROKEN|ROOM TOO HOT|PET IN BED / PET TOOK OVER THE BED
 Name something a child might trade at school.|LUNCH FOOD / SNACKS|TRADING CARDS / POKEMON CARDS|STICKERS|TOYS|PENCILS / PENS|BOOKS / COMICS
 Name a sign that a banana is getting old.|BROWN SKIN / BROWN SPOTS|SOFT / MUSHY|STRONG SMELL|FRUIT FLIES|SHRIVELLED / SHRUNK
 Name something that can get tangled in a vacuum cleaner.|HAIR|STRING / THREAD|CORD / CABLE|RUG FRINGE / CARPET FRINGE
@@ -155,7 +155,7 @@ Name something a hotel room has more than one of.|PILLOWS|TOWELS|LAMPS|HANGERS|B
 Name a food you might eat straight from the jar.|PICKLES|PEANUT BUTTER|OLIVES|JAM|APPLESAUCE
 Name something people put in a piggy bank besides coins.|PAPER MONEY / BILLS|BUTTONS|NOTES / WISHES|KEYS|JEWELLERY / RINGS
 
-Name something that could make a wedding ceremony start late.|BRIDE IS LATE|GROOM IS LATE|OFFICIANT IS LATE|MISSING RINGS|BAD WEATHER|WARDROBE PROBLEM / DRESS TROUBLE|SOUND EQUIPMENT FAILURE
+Name something that could make a wedding ceremony start late.|BRIDE IS LATE|GROOM IS LATE|OFFICIANT IS LATE|MISSING RINGS|BAD WEATHER|WARDROBE PROBLEM / DRESS TROUBLE|SOUND FAILURE / SOUND EQUIPMENT FAILURE
 Name something people struggle to assemble on Christmas Eve.|DOLLHOUSE / DOLL HOUSE|BICYCLE|DESK / FLAT PACK DESK|CHRISTMAS TREE|MODEL TRAIN / TRAIN SET|PLAY KITCHEN
 Name something you might discover in the pocket of a winter coat you have not worn for months.|MONEY / CASH|TISSUES|GLOVES|RECEIPTS|CANDY / SWEETS
 Name a reason someone would put a towel on the floor.|SPILLED WATER / CLEAN A SPILL|LEAK|DRY WET FEET|BLOCK A DRAUGHT / DRAFT
@@ -166,7 +166,7 @@ Name something you might see on a farmer's tractor.|LARGE TIRES / BIG WHEELS|STE
 Name a food people often sprinkle salt on.|FRIES / CHIPS|EGGS|POPCORN|CORN|TOMATOES
 Name something people hang from a rearview mirror.|AIR FRESHENER|PARKING PASS / PERMIT|FUZZY DICE|BEADS / ROSARY|TASSEL
 
-Name something a person might do while stuck in a traffic jam.|LISTEN TO MUSIC / RADIO|COMPLAIN / SWEAR|CHECK THE TIME|HONK / BEEP THE HORN|EAT A SNACK|LOOK FOR ANOTHER ROUTE|SING
+Name something a person might do while stuck in a traffic jam.|LISTEN TO MUSIC / RADIO|COMPLAIN / SWEAR|CHECK THE TIME|HONK / BEEP THE HORN|EAT A SNACK|FIND A NEW ROUTE / LOOK FOR ANOTHER ROUTE|SING
 Name something you would be disappointed to find missing from a rented cottage.|HOT WATER|ELECTRICITY|CLEAN BEDDING / SHEETS|WI-FI / INTERNET|COOKING EQUIPMENT / POTS|TOILET PAPER
 Name something people do with wrapping paper after opening a gift.|RECYCLE IT|THROW IT AWAY|SAVE IT / REUSE IT|MAKE A BALL / CRUMPLE IT|USE IT FOR CRAFTS
 Name something that might roll under the refrigerator.|GRAPE|COIN|MARBLE|PEN
@@ -177,10 +177,10 @@ Name a word people shout when they drop something heavy on their foot.|OUCH|OW|O
 Name something people bring to a sleepover.|PYJAMAS / PAJAMAS|SLEEPING BAG|TOOTHBRUSH|PILLOW|SNACKS
 Name something people put on top of a pizza besides cheese.|PEPPERONI|MUSHROOMS|PEPPERS|OLIVES|PINEAPPLE
 
-Name something that could embarrass a person during a video meeting.|FORGOT TO MUTE / PRIVATE COMMENT|PET INTERRUPTS|CHILD INTERRUPTS|MESSY BACKGROUND|CAMERA SHOWS PYJAMAS / PAJAMAS|FORGOT THEY WERE ON CAMERA|WRONG SCREEN SHARED
-Name something people do to make a long car ride more enjoyable.|PLAY MUSIC|PLAY ROAD GAMES|BRING SNACKS|LISTEN TO AN AUDIOBOOK / PODCAST|TELL STORIES / CHAT|STOP AT ATTRACTIONS
+Name something that could embarrass a person during a video meeting.|FORGOT TO MUTE / PRIVATE COMMENT|PET INTERRUPTS|CHILD INTERRUPTS|MESSY BACKGROUND|PYJAMAS ON CAMERA / CAMERA SHOWS PYJAMAS / PAJAMAS|FORGOT CAMERA / FORGOT THEY WERE ON CAMERA|WRONG SCREEN / WRONG SCREEN SHARED
+Name something people do to make a long car ride more enjoyable.|PLAY MUSIC|PLAY ROAD GAMES|BRING SNACKS|AUDIOBOOK / LISTEN TO AN AUDIOBOOK / PODCAST|TELL STORIES / CHAT|SIGHTSEEING / STOP AT ATTRACTIONS
 Name something you might put on a kitchen windowsill.|PLANT / HERBS|SOAP|SPONGE|ORNAMENT|RIPENING TOMATOES / FRUIT
-Name a reason a person would stand on a chair.|REACH A HIGH SHELF|CHANGE A LIGHT BULB|ESCAPE A MOUSE|HANG DECORATIONS
+Name a reason a person would stand on a chair.|REACH A HIGH SHELF|CHANGE BULB / CHANGE A LIGHT BULB|ESCAPE A MOUSE|HANG DECORATIONS
 Name something people remove from their face before going to bed.|MAKEUP / MAKE UP
 Name a drink people often serve hot.|COFFEE|TEA|HOT CHOCOLATE / COCOA|CIDER|MULLED WINE
 Name something you need to play table tennis.|PADDLE / BAT|BALL|TABLE|NET|OPPONENT / PARTNER
@@ -188,7 +188,7 @@ Name something that might be written on a moving box.|ROOM NAME / KITCHEN / BEDR
 Name something that comes out of a printer.|DOCUMENT / LETTER / REPORT|PHOTO / PHOTOGRAPH|ENVELOPE|LABEL / STICKER|RECEIPT
 Name something you might leave for someone watching your house.|KEY|INSTRUCTIONS / NOTE|PHONE NUMBER|PET FOOD|MONEY
 
-Name something that might make you choose a different seat on a bus.|LOUD PASSENGER|BAD SMELL|DIRTY SEAT|TOO MUCH SUN|MORE LEGROOM|SOMEONE NEEDS YOUR SEAT|SIT NEAR A FRIEND
+Name something that might make you choose a different seat on a bus.|LOUD PASSENGER|BAD SMELL|DIRTY SEAT|TOO MUCH SUN|MORE LEGROOM|GIVE UP SEAT / SOMEONE NEEDS YOUR SEAT|SIT NEAR A FRIEND
 Name something a child might try to sneak into a movie theatre.|CANDY|POPCORN|DRINK / SODA|CHIPS / CRISPS|TOY|ANOTHER CHILD / FRIEND
 Name something a person might practise in front of a mirror.|SPEECH|DANCING|SINGING|SMILING|MAKEUP
 Name something that could fall off a wall.|PICTURE / PAINTING|CLOCK|SHELF|MIRROR
@@ -199,8 +199,8 @@ Name something you might buy at a pet store for a cat.|FOOD|LITTER|TOY|SCRATCHIN
 Name something you would put on a postcard.|ADDRESS|STAMP|MESSAGE|YOUR NAME / SIGNATURE|DATE
 Name something people might balance on their head for fun.|BOOK|HAT|BALL|PLATE|BASKET
 
-Name something a person might do after locking themselves out of their house.|CALL A LOCKSMITH|GET A SPARE KEY|CALL A FAMILY MEMBER|TRY ANOTHER DOOR|CLIMB THROUGH A WINDOW|ASK A NEIGHBOUR FOR HELP|WAIT FOR SOMEONE TO COME HOME
-Name something that would make you leave a restaurant before ordering.|LONG WAIT|DIRTY TABLES|HIGH PRICES|RUDE STAFF|NOTHING YOU LIKE ON THE MENU|TOO NOISY
+Name something a person might do after locking themselves out of their house.|CALL A LOCKSMITH|GET A SPARE KEY|CALL FAMILY / CALL A FAMILY MEMBER|TRY ANOTHER DOOR|USE A WINDOW / CLIMB THROUGH A WINDOW|ASK A NEIGHBOUR / ASK A NEIGHBOUR FOR HELP|WAIT FOR HELP / WAIT FOR SOMEONE TO COME HOME
+Name something that would make you leave a restaurant before ordering.|LONG WAIT|DIRTY TABLES|HIGH PRICES|RUDE STAFF|DISLIKE MENU / NOTHING YOU LIKE ON THE MENU|TOO NOISY
 Name something people keep even though it no longer works.|OLD PHONE|WATCH|COMPUTER|CAR|TOY
 Name something a person might carry over their shoulder.|BAG / BACKPACK|JACKET / COAT|TOWEL|UMBRELLA
 Name a food people associate with the movies.|POPCORN
@@ -210,7 +210,7 @@ Name a food often served with gravy.|MASHED POTATOES|TURKEY|ROAST BEEF|POUTINE|M
 Name something you can smell at a swimming pool.|CHLORINE|SUNSCREEN|FOOD|PERFUME|CLEANING PRODUCTS
 Name something people keep in an address book.|NAMES|STREET ADDRESSES|PHONE NUMBERS|EMAIL ADDRESSES|BIRTHDAYS
 
-Name something that might ruin a surprise party.|GUEST ARRIVES EARLY|SOMEONE TELLS / SPOILS THE SECRET|CARS GIVE IT AWAY|DECORATIONS SEEN|WRONG GROUP MESSAGE|GUEST DOES NOT SHOW UP|CAKE ARRIVES AT WRONG TIME
+Name something that might ruin a surprise party.|EARLY GUEST / GUEST ARRIVES EARLY|SOMEONE TELLS / SPOILS THE SECRET|CARS GIVE IT AWAY|DECORATIONS SEEN|WRONG GROUP CHAT / WRONG GROUP MESSAGE|NO-SHOW GUEST / GUEST DOES NOT SHOW UP|CAKE TIMING / CAKE ARRIVES AT WRONG TIME
 Name something people borrow from a neighbour.|LADDER|POWER TOOL / DRILL|SUGAR|LAWN MOWER|CHAIR|SNOW SHOVEL
 Name something you might have to untangle before using.|HEADPHONES / EARPHONES|GARDEN HOSE|CHRISTMAS LIGHTS|NECKLACE|YARN
 Name something children insist on doing by themselves.|GETTING DRESSED|TYING SHOES|POURING A DRINK|BRUSHING TEETH
@@ -221,10 +221,10 @@ Name a food that people eat with chopsticks.|NOODLES|RICE|SUSHI|DUMPLINGS|STIR F
 Name something you would find in a toolbox.|HAMMER|SCREWDRIVER|WRENCH / SPANNER|PLIERS|TAPE MEASURE
 Name something people hide under a doormat.|SPARE KEY|NOTE|MONEY|SMALL PARCEL|FLAT STONE
 
-Name a reason someone might cancel an outdoor tennis game.|RAIN|TOO HOT|INJURY|COURT UNAVAILABLE|PARTNER CANNOT COME|BROKEN RACKET|STRONG WIND
+Name a reason someone might cancel an outdoor tennis game.|RAIN|TOO HOT|INJURY|COURT UNAVAILABLE|PARTNER ABSENT / PARTNER CANNOT COME|BROKEN RACKET|STRONG WIND
 Name something that makes a room look bigger.|MIRRORS|LIGHT PAINT|LESS FURNITURE / DECLUTTERING|GOOD LIGHTING|LARGE WINDOWS|HIGH CEILINGS
 Name something you might drop into the gap between sofa cushions.|REMOTE CONTROL|COINS|PHONE|SNACKS / CRUMBS|KEYS
-Name something a person may do to a letter before mailing it.|FOLD IT|SIGN IT|PROOFREAD IT|PUT IT IN AN ENVELOPE
+Name something a person may do to a letter before mailing it.|FOLD IT|SIGN IT|PROOFREAD IT|USE AN ENVELOPE / PUT IT IN AN ENVELOPE
 Name something you would hate to lose while swimming in the ocean.|WEDDING RING / RING
 Name something you might put in a Christmas stocking.|CANDY / CHOCOLATE|SOCKS|SMALL TOY|ORANGE|GIFT CARD
 Name a place that might have a revolving door.|HOTEL|DEPARTMENT STORE|OFFICE BUILDING|AIRPORT|HOSPITAL
@@ -232,10 +232,10 @@ Name something a person might plant in a vegetable garden.|TOMATOES|CARROTS|LETT
 Name something people can do with their eyebrows.|RAISE THEM|PLUCK THEM|WAX THEM|DRAW THEM ON / FILL THEM IN|TRIM THEM
 Name something a person might hold while making a toast.|GLASS / DRINK|MICROPHONE|SPEECH NOTES / PAPER|BOTTLE|SOMEONE'S HAND
 
-Name a reason someone might be relieved that a visitor has left.|VISIT LASTED TOO LONG|NEED TO SLEEP|VISITOR WAS LOUD|WANT PRIVACY|VISITOR WAS CRITICAL|RAN OUT OF FOOD|NEED TO GET WORK DONE
+Name a reason someone might be relieved that a visitor has left.|LONG VISIT / VISIT LASTED TOO LONG|NEED TO SLEEP|VISITOR WAS LOUD|WANT PRIVACY|CRITICAL VISITOR / VISITOR WAS CRITICAL|RAN OUT OF FOOD|WORK TO DO / NEED TO GET WORK DONE
 Name something a person might buy immediately after moving into a new home.|FURNITURE|GROCERIES|CLEANING SUPPLIES|CURTAINS / BLINDS|LIGHT BULBS|TOOLS
 Name something people might put in their ears.|EARPHONES / EARBUDS|EARPLUGS|HEARING AIDS|EARRINGS|FINGERS
-Name something people do when they smell smoke.|LOOK FOR THE SOURCE / CHECK THE OVEN|LEAVE THE BUILDING|CALL THE FIRE DEPARTMENT / CALL 911|WARN OTHER PEOPLE
+Name something people do when they smell smoke.|FIND THE SOURCE / LOOK FOR THE SOURCE / CHECK THE OVEN|LEAVE THE BUILDING|CALL FIRE DEPT. / CALL THE FIRE DEPARTMENT / CALL 911|WARN OTHER PEOPLE
 Name something people send to say thank you.|CARD / THANK YOU CARD
 Name something that might be embroidered on a towel.|PERSONAL NAME / INITIALS / MONOGRAM|FLOWERS|HOTEL LOGO / HOTEL NAME|ANIMAL|HEART
 Name something people put on a hamburger.|KETCHUP|CHEESE|LETTUCE|TOMATO|PICKLES
@@ -243,9 +243,9 @@ Name something you might find at the bottom of a handbag.|COINS / LOOSE CHANGE|R
 Name an animal that people associate with the desert.|CAMEL|SNAKE|SCORPION|LIZARD|COYOTE
 Name something a person might shake before using.|SALAD DRESSING|KETCHUP|JUICE|PAINT|SNOW GLOBE
 
-Name something that might make a child refuse to go to bed.|NOT TIRED|AFRAID OF THE DARK|WANTS TO KEEP PLAYING|WANTS TO WATCH TV|HUNGRY|WANTS ANOTHER STORY|DOES NOT WANT TO MISS OUT
-Name something a person might do to make a bad haircut less noticeable.|WEAR A HAT|STYLE IT DIFFERENTLY|USE HAIR CLIPS|WEAR A WIG|TIE IT BACK|GET IT CUT AGAIN
-Name something a shopper might forget at the checkout.|WALLET|SHOPPING BAGS|COUPONS|LOYALTY CARD|AN ITEM UNDER THE CART
+Name something that might make a child refuse to go to bed.|NOT TIRED|AFRAID OF THE DARK|KEEP PLAYING / WANTS TO KEEP PLAYING|WANTS TO WATCH TV|HUNGRY|ANOTHER STORY / WANTS ANOTHER STORY|MISSING OUT / DOES NOT WANT TO MISS OUT
+Name something a person might do to make a bad haircut less noticeable.|WEAR A HAT|RESTYLE IT / STYLE IT DIFFERENTLY|USE HAIR CLIPS|WEAR A WIG|TIE IT BACK|GET IT CUT AGAIN
+Name something a shopper might forget at the checkout.|WALLET|SHOPPING BAGS|COUPONS|LOYALTY CARD|UNDER-CART ITEM / AN ITEM UNDER THE CART
 Name something people give away when moving to a smaller home.|FURNITURE|BOOKS|CLOTHES|DISHES
 Name something people eat to celebrate a promotion.|STEAK
 Name something you would see in a bowling alley.|BOWLING BALL|PINS|LANES|RENTAL SHOES|SCOREBOARD
@@ -261,6 +261,6 @@ Name something that might stick to the bottom of a shoe.|CHEWING GUM / GUM|MUD|T
 Name something people have delivered to their door for dinner.|PIZZA
 Name something people can make with a potato.|FRIES / CHIPS|MASHED POTATOES|BAKED POTATO|POTATO SALAD|HASH BROWNS
 Name something a person might put in a display cabinet.|CHINA / PLATES|TROPHIES|FIGURINES|GLASSWARE|SOUVENIRS
-Name something that people might press with their thumb.|PHONE SCREEN|DOORBELL|REMOTE BUTTON|GAME CONTROLLER BUTTON|FINGERPRINT SCANNER
+Name something that people might press with their thumb.|PHONE SCREEN|DOORBELL|REMOTE BUTTON|CONTROLLER BUTTON / GAME CONTROLLER BUTTON|FINGERPRINT ID / FINGERPRINT SCANNER
 Name something you might see hanging in a butcher's shop.|SAUSAGES|MEAT / CARCASS|SCALE|SIGN|APRON
 Name something parents label with a child's name.|LUNCHBOX|BACKPACK|COAT|WATER BOTTLE|SCHOOL SUPPLIES
