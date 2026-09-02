@@ -20,7 +20,7 @@ async function until(predicate, timeout = 2500) {
   while (!predicate()) { if (Date.now() > deadline) throw new Error('State transition timed out'); await pause(5); }
 }
 async function fixture(t) {
-  const room = makeRoom('remote'), clients = [];
+  const room = makeRoom('remote', 'dawson'), clients = [];
   for (const name of ['Alice', 'Bob']) {
     const client = connect(url, { transports: ['websocket'], forceNew: true }); clients.push(client);
     await new Promise(resolve => client.once('connect', resolve));
@@ -458,4 +458,37 @@ test('an answer submitted before Fast Money expires is judged once even if its c
   complete();await finishing;
   assert.equal(room.phase,'fast_reveal');assert.equal(room.fastAnswers[1][0],answer);
   assert.equal(room.fastScores[1][0],room.game.fastMoney[0].answers[1].points);
+});
+
+test('the chosen era persists across public state, rounds and reconnecting',async t=>{
+  const {room,clients,finish}=await fixture(t);room.era='harvey';
+  assert.equal(publicRoom(room).era,'harvey');beginRound(room,0);await finish();await finish();
+  const oldId=clients[0].id;clients[0].disconnect();
+  const client=connect(url,{transports:['websocket'],forceNew:true});t.after(()=>client.disconnect());
+  await new Promise(resolve=>client.once('connect',resolve));
+  assert.equal((await client.emitWithAck('rejoin',{code:room.code,playerId:oldId})).ok,true);
+  beginRound(room,1);assert.equal(publicRoom(room).era,'harvey');
+  assert.equal(room.speechCues.get(room.pendingCue.cueId).sound,'round');
+});
+
+test('test mode accepts either era and Harvey never creates the Dawson souvenir',async t=>{
+  for(const era of ['dawson','harvey']){
+    const client=connect(url,{transports:['websocket'],forceNew:true});await new Promise(resolve=>client.once('connect',resolve));
+    t.after(()=>client.disconnect());
+    const result=await client.emitWithAck('createTestRoom',{part:'intro',era,name:'Pat',photo:'data:image/png;base64,AAAA',kissConsent:true});
+    assert.equal(result.ok,true);const room=rooms.get(result.code);t.after(()=>disposeRoom(room));
+    await until(()=>room.phase==='intro');assert.equal(publicRoom(room).era,era);
+    if(era==='harvey'){assert.equal(room.kissStatus,'off');assert.equal(room.kissPlayerId,null);}
+  }
+});
+
+test('Harvey host announcement uses Steve and modern voice direction through the real audio endpoint',async t=>{
+  const {room}=await fixture(t);room.era='harvey';
+  const originalFetch=global.fetch,originalKey=process.env.OPENAI_API_KEY;let payload;
+  global.fetch=async(url,options)=>{payload=JSON.parse(options.body);return {ok:true,arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer}};
+  process.env.OPENAI_API_KEY='test';
+  t.after(()=>{global.fetch=originalFetch;if(originalKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=originalKey});
+  const response=await originalFetch(`${url}/api/room/${room.code}/announcement?part=host`);
+  assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/audio\/mpeg/);
+  assert.equal(payload.input,"And here's your host, Steve Harvey!");assert.match(payload.instructions,/modern/);assert.doesNotMatch(payload.input,/Dawson/);
 });

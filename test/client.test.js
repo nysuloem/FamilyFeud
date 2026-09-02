@@ -24,6 +24,7 @@ function browser(fetchImpl) {
   });
   context.speechSynthesis = context.window.speechSynthesis;
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/dawson.js'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/harvey.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8'), context);
   vm.runInContext("state={mode:'remote',adminId:'P'};myPlayerId='P';roomCode='TEST';audioEnabled=true", context);
   return { context, events, handlers, audioInstances };
@@ -265,4 +266,39 @@ test('a duplicate retry clears the old transcript and starts a fresh microphone 
   assert.equal(vm.runInContext('fastDraft.value',b.context),'');
   microphones[1].onresult({resultIndex:0,results:[[{transcript:'tea'}]]});
   assert.equal(vm.runInContext('fastDraft.value',b.context),'tea');
+});
+
+test('Harvey introduces Steve before either family and never runs Dawson clips or the souvenir',async()=>{
+  const b=browser(async()=>({status:204})),events=[],scenes=[];
+  b.context.events=events;
+  b.context.document.querySelector=selector=>selector==='#introContent'?{set innerHTML(value){scenes.push(value)}}:null;
+  b.context.setTimeout=fn=>{fn();return 1};
+  vm.runInContext("state={era:'harvey',code:'TEST',phase:'intro',mode:'remote',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}]};playAudioFile=async src=>events.push(src);speakAsync=async text=>events.push(text);playFamilyAnnouncement=async(i,part)=>events.push(i+':'+part)",b.context);
+  await vm.runInContext('runIntro()',b.context);
+  assert.deepEqual(events,['/assets/harvey-intro.mp3',"And here's your host, Steve Harvey!",'0:name','0:members','1:name','1:members']);
+  assert.match(scenes[0],/STEVE/);assert.match(scenes[1],/Brown/);assert.match(scenes[2],/Smith/);
+  assert.doesNotMatch(scenes.join(''),/Richard|Dawson|kiss|family-name-door/);
+  assert.equal(b.events.at(-1).name,'introComplete');
+});
+
+test('Harvey boards preserve answer secrecy and use both columns only for the second reveal',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={era:'harvey',phase:'fast_play',fastIndex:0,fastRevealIndex:null,fastRevealCount:0,fastPlayers:['P','Q'],players:[{id:'P',name:'Pat',photo:'pat.png'},{id:'Q',name:'Sam',photo:'sam.png'}],fastAnswers:[null,null],fastScores:[null,null]}",b.context);
+  let html=vm.runInContext('harveyFastStage()',b.context);
+  assert.match(html,/data-harvey-fast-clock/);assert.match(html,/pat.png/);assert.doesNotMatch(html,/dawson/i);
+  vm.runInContext("state.phase='fast_reveal';state.fastRevealIndex=0;state.fastAnswers=[['COFFEE'],null];state.fastScores=[[null],null]",b.context);
+  html=vm.runInContext('harveyFastStage()',b.context);assert.match(html,/<span>COFFEE<\/span><b><\/b>/);assert.doesNotMatch(html,/data-harvey-fast-clock/);
+  vm.runInContext("state.fastIndex=1;state.fastRevealIndex=1;state.fastAnswers[1]=['TEA'];state.fastScores[1]=[12]",b.context);
+  html=vm.runInContext('harveyFastStage()',b.context);assert.match(html,/COFFEE/);assert.match(html,/TEA/);assert.doesNotMatch(html,/<img|data-harvey-fast-clock/);
+  assert.equal((html.match(/data-fast-slot/g)||[]).length,10);
+  html=vm.runInContext("harveyBoard({answers:[{text:'KEYS',points:31},...Array.from({length:6},()=>({text:null}))]})",b.context);
+  assert.equal((html.match(/data-board-slot/g)||[]).length,8);assert.match(html,/data-board-slot="4" style="grid-row:1;grid-column:2"/);
+});
+
+test('Harvey podium lights keep the first family lit through answer handoffs',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={era:'harvey',families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}],faceoff:{buzzedBy:null}}",b.context);
+  assert.doesNotMatch(vm.runInContext('harveyPodiumLights()',b.context),/side-\d lit/);
+  vm.runInContext("state.faceoff.buzzedBy='Q';state.turnPlayerId='P'",b.context);
+  const html=vm.runInContext('harveyPodiumLights()',b.context);assert.match(html,/side-1 lit/);assert.doesNotMatch(html,/side-0 lit/);
 });

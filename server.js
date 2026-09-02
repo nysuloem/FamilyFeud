@@ -7,6 +7,7 @@ const QRCode = require('qrcode');
 const { BUILTIN_GAME, judgeAnswer, matchAnswer, newCode } = require('./src/game');
 const { SurveyBank } = require('./src/survey-bank');
 const surveyBank = new SurveyBank();
+const { ERAS, chooseEra } = require('./src/eras');
 function refillSurveys(){
   if(!process.env.OPENAI_API_KEY)return;
   try {void surveyBank.refill().catch(error=>console.error('Survey bank:',error.message));}
@@ -31,7 +32,7 @@ app.get('/api/room/:code/announcement', async (req, res) => {
   if (!room?.families?.length || !process.env.OPENAI_API_KEY) return res.status(204).end();
   try {
     const family = Number(req.query.family), part = req.query.part;
-    if (![0, 1].includes(family) || !['name', 'members'].includes(part)) return res.status(400).end();
+    if (part !== 'host' && (![0, 1].includes(family) || !['name', 'members'].includes(part))) return res.status(400).end();
     room.announcementAudio ||= new Map();
     const key = `${family}-${part}`;
     if (!room.announcementAudio.has(key)) room.announcementAudio.set(key, createAnnouncement(room, family, part));
@@ -46,7 +47,7 @@ app.get('/api/room/:code/speech/:cueId', async (req, res) => {
   const cue = room?.speechCues?.get(Number(req.params.cueId));
   if (!room || !cue || !process.env.OPENAI_API_KEY) return res.status(204).end();
   try {
-    if (!cue.audioPromise) cue.audioPromise = createHostSpeech(cue.text);
+    if (!cue.audioPromise) cue.audioPromise = createHostSpeech(cue.text, room.era);
     const audio = await cue.audioPromise;
     if (!audio) return res.status(204).end();
     res.type('audio/mpeg').send(audio);
@@ -68,10 +69,10 @@ function joinUrl(req, code) {
   return `${base.replace(/\/$/, '')}/join/${code}`;
 }
 
-function makeRoom(mode) {
+function makeRoom(mode, era = chooseEra()) {
   let code; do code = newCode(); while (rooms.has(code));
   const room = {
-    code, mode, phase: 'lobby', adminId: null, players: [], families: [], scores: [0, 0],
+    code, mode, era, phase: 'lobby', adminId: null, players: [], families: [], scores: [0, 0],
     game: null, round: -1, revealed: [], strikes: 0, bank: 0, faceoff: null,
     controlFamily: null, turnPlayerId: null, message: 'Waiting for players', winnerFamily: null,
     fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null], fastSelectorId: null, fastRevealIndex: null, fastRevealCount: 0, fastPrize: null,
@@ -225,13 +226,14 @@ async function resolveAnswer(room, contestant, given, timedOut = false) {
 }
 
 io.on('connection', socket => {
-  socket.on('createTestRoom', async ({ part, name, photo, kissConsent = false } = {}, reply) => {
+  socket.on('createTestRoom', async ({ part, name, photo, kissConsent = false, era = 'dawson' } = {}, reply) => {
+    if (!['dawson','harvey','random'].includes(era)) return reply?.({ ok: false, error: 'Choose an available era.' });
     if (!['intro', 'fast'].includes(part)) return reply?.({ ok: false, error: 'Choose an introduction or Fast Money test.' });
     if (photo && (typeof photo !== 'string' || photo.length > 1_500_000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo))) return reply?.({ ok: false, error: 'Please use a smaller JPG, PNG, or WebP photo.' });
     if (kissConsent && !photo) return reply?.({ ok: false, error: 'Upload your own photo to test the optional souvenir.' });
     const existing = rooms.get(socket.data.roomCode);
     if (existing) return reply?.({ ok: false, error: 'Exit your current game before starting a test.' });
-    const room = makeRoom('remote');
+    const room = makeRoom('remote', era === 'random' ? chooseEra() : era);
     room.testPart = part; room.adminId = socket.id; room.phase = 'generating';
     room.game = structuredClone(BUILTIN_GAME); // Repeatable, isolated fixtures; no survey-generation charge.
     room.players = [String(name || '').trim().slice(0, 24) || 'Alex', 'Sam', 'Taylor', 'Jordan'].map((name, i) => ({
@@ -325,7 +327,7 @@ io.on('connection', socket => {
     // Warm only the five shared Fast Money questions; both contestants reuse them.
     if (process.env.OPENAI_API_KEY) room.fastSpeech = new Map(room.game.fastMoney.map(q => {
       const text = q.question;
-      return [text, createHostSpeech(text).catch(() => null)];
+      return [text, createHostSpeech(text, room.era).catch(() => null)];
     }));
     const shuffled = [...room.players].sort(() => Math.random() - .5);
     const ids = [[], []]; shuffled.forEach((p, i) => ids[i % 2].push(p.id));
@@ -436,7 +438,7 @@ function beginRound(room, index) {
   room.phase = 'faceoff'; room.turnPlayerId = null;
   const opening = index === 4 ? 'Sudden Death.' : `Round ${index + 1}.`;
   room.message = `${opening} The host is calling the faceoff players.`;
-  runHostedCue(room, `${opening} Let's have ${p0.name}. Let's have ${p1.name}.`, 'faceoff_walkup', () => readFaceoffQuestion(room));
+  runHostedCue(room, `${opening} Let's have ${p0.name}. Let's have ${p1.name}.`, room.era === 'harvey' ? 'round' : 'faceoff_walkup', () => readFaceoffQuestion(room));
 }
 
 function readFaceoffQuestion(room) {
@@ -714,6 +716,7 @@ function multiplier(round) { return round < 2 ? 1 : round === 2 ? 2 : 3; }
 function normalizeLoose(v) { return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
 async function prepareKissImage(room) {
+  if (room.era === 'harvey') { room.kissStatus = 'off'; room.kissPlayerId = null; return; }
   const volunteers = room.players.filter(p => p.kissConsent);
   if (!volunteers.length) return;
   const chosen = volunteers[Math.floor(Math.random() * volunteers.length)];
@@ -747,26 +750,26 @@ function disposeRoom(room) {
 
 async function createAnnouncement(room, index, part) {
   const family = room.families[index];
-  const lines = part === 'name' ? `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!` : `${family.playerIds.map(id => player(room, id).name).join(', ')}!`;
+  const lines = part === 'host' ? `And here's your host, ${ERAS[room.era || 'dawson'].name}!` : part === 'name' ? `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!` : `${family.playerIds.map(id => player(room, id).name).join(', ')}!`;
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
-    method: 'POST',
+    method: 'POST', signal: AbortSignal.timeout(15000),
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts', voice: 'onyx', input: lines, response_format: 'mp3',
-      instructions: 'You are an exuberant 1970s television game-show announcer. Project clearly, build excitement, and pause briefly after each family name and player name. Do not imitate any real person.'
+      instructions: `You are an exuberant ${ERAS[room.era || 'dawson'].period} television game-show announcer. Project with big, welcoming energy, build excitement, and pause briefly after each family name and player name. Read the script exactly. Do not imitate any real person.`
     })
   });
   if (!response.ok) throw new Error(`OpenAI speech ${response.status}: ${await response.text()}`);
   return Buffer.from(await response.arrayBuffer());
 }
 
-async function createHostSpeech(input) {
+async function createHostSpeech(input, era = 'dawson') {
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST', signal: AbortSignal.timeout(15000),
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts', voice: 'onyx', input, response_format: 'mp3',
-      instructions: 'Deliver a VERY enthusiastic, charismatic 1970s television game-show performance for an excited live studio audience. Sound delighted to be here: smile audibly, project with bright energy, use lively rising and falling intonation, and put strong expressive emphasis on contestant names, big points, and prizes. Celebrate wins with genuine excitement and make invitations feel like an event. Keep the warmth and playful encouragement even after a wrong answer. Build suspense with one short dramatic pause around Survey says, then deliver the result with a punch. Fast Money questions must be brisk, urgent, upbeat, and exceptionally clear; keep those sentences moving and save the bigger celebrations for the reveals. Avoid a flat, sleepy, solemn, or documentary-style delivery. Be animated without shouting or distorting words. Do not imitate any real person, add question numbers, invent laughter or crowd sounds, or add any words that are not in the script.'
+      instructions: `Deliver a VERY enthusiastic, charismatic ${ERAS[era].period} television game-show performance for an excited live studio audience. Sound delighted to be here: smile audibly, project with bright energy, use lively rising and falling intonation, and put strong expressive emphasis on contestant names, big points, and prizes. Celebrate wins with genuine excitement and make invitations feel like an event. Keep the warmth and playful encouragement even after a wrong answer. Build suspense with one short dramatic pause around Survey says, then deliver the result with a punch. Fast Money questions must be brisk, urgent, upbeat, and exceptionally clear; keep those sentences moving and save the bigger celebrations for the reveals. Avoid a flat, sleepy, solemn, or documentary-style delivery. Be animated without shouting or distorting words. Do not imitate any real person, add question numbers, invent laughter or crowd sounds, or add any words that are not in the script.`
     })
   });
   if (!response.ok) throw new Error(`OpenAI speech ${response.status}: ${await response.text()}`);

@@ -41,14 +41,14 @@ socket.on('answerResult', result => { if (!result.correct) flashStrike(result.co
 socket.on('boardReveal', result => { playEffect(result.fastIndex != null && result.points === 0 ? 'strike' : 'ding'); requestAnimationFrame(() => document.querySelector(`[data-${result.fastIndex == null ? `board-slot="${result.index}"` : `fast-slot="${result.fastIndex}-${result.index}"`}]`)?.classList.add('flip-now')); });
 
 function showLanding() {
-  app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">The classic survey game, made for your family.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article><article class="mode-card test-mode-card"><h2>TEST MODE</h2><p>Try the introduction and first round, or jump straight to Fast Money. No other players needed.</p><button class="primary" id="testMode">Open Test Mode</button></article></div></section></main>`;
+  app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">Two eras. One Family Feud.<br>Each game randomly selects Richard Dawson or Steve Harvey.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article><article class="mode-card test-mode-card"><h2>TEST MODE</h2><p>Try the introduction and first round, or jump straight to Fast Money. No other players needed.</p><button class="primary" id="testMode">Open Test Mode</button></article></div></section></main>`;
   document.querySelector('#hostMode').onclick = () => createRoom('host');
   document.querySelector('#remoteMode').onclick = () => createRoom('remote');
   document.querySelector('#testMode').onclick = showTestMenu;
 }
 
 function showTestMenu() {
-  app.innerHTML = `<main class="page"><section class="panel test-setup"><h1>TEST MODE</h1><p>Rehearse on your own. Two sample families are provided; you control whichever contestant is up. The normal AI host, judging, 15-second guesses, microphone, and reveals stay active.</p><p>Test mode deliberately repeats the same sample questions. Regular games draw unused surveys from a separate bank. Rehearsals do not consume that bank. AI audio, judging, and optional image generation use your configured API.</p><label>Your contestant name <input id="testName" maxlength="24" value="Alex"></label><details><summary>Optional: use your photo and test the introduction souvenir</summary><div class="photo-row"><img class="photo-preview" id="testPreview" alt="Your optional photo"><label class="secondary file-button">Upload your photo<input type="file" id="testPhoto" accept="image/*"></label></div><label class="consent-check"><input type="checkbox" id="testKissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it. This is optional and only runs in the introduction test.</span></label></details><div class="test-actions"><button class="primary" data-test-part="intro">Test Introduction + Round 1</button><button class="primary" data-test-part="fast">Test Fast Money</button></div><p>Fast Money includes player selection, both timed halves, both reveals, and the final payout.</p><a href="/">Back to regular games</a></section></main>`;
+  app.innerHTML = `<main class="page"><section class="panel test-setup"><h1>TEST MODE</h1><p>Rehearse on your own. Two sample families are provided; you control whichever contestant is up. The normal AI host, judging, 15-second guesses, microphone, and reveals stay active.</p><p>Test mode deliberately repeats the same sample questions. Regular games draw unused surveys from a separate bank. Rehearsals do not consume that bank. AI audio, judging, and optional image generation use your configured API.</p><label>Era to rehearse<select id="testEra"><option value="dawson">Richard Dawson</option><option value="harvey">Steve Harvey</option><option value="random">Surprise me</option></select></label><label>Your contestant name <input id="testName" maxlength="24" value="Alex"></label><details><summary>Optional: use your photo and test the introduction souvenir</summary><div class="photo-row"><img class="photo-preview" id="testPreview" alt="Your optional photo"><label class="secondary file-button">Upload your photo<input type="file" id="testPhoto" accept="image/*"></label></div><label class="consent-check"><input type="checkbox" id="testKissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it. This is optional and only runs in a Richard Dawson introduction test.</span></label></details><div class="test-actions"><button class="primary" data-test-part="intro">Test Introduction + Round 1</button><button class="primary" data-test-part="fast">Test Fast Money</button></div><p>Fast Money includes player selection, both timed halves, both reveals, and the final payout.</p><a href="/">Back to regular games</a></section></main>`;
   let photo = '';
   document.querySelector('#testPhoto').onchange = async event => {
     const file = event.target.files[0]; if (!file) return;
@@ -56,11 +56,12 @@ function showTestMenu() {
   };
   document.querySelectorAll('[data-test-part]').forEach(button => button.onclick = () => {
     const part = button.dataset.testPart;
-    const kissConsent = part === 'intro' && document.querySelector('#testKissConsent').checked;
+    const era = val('#testEra');
+    const kissConsent = era !== 'harvey' && part === 'intro' && document.querySelector('#testKissConsent').checked;
     if (kissConsent && !photo) return toast('Upload your own photo to test the souvenir.');
     unlockAudio();
     const buttons = [...document.querySelectorAll('[data-test-part]')]; buttons.forEach(b => b.disabled = true);
-    socket.emit('createTestRoom', { part, name: val('#testName'), photo, kissConsent }, result => {
+    socket.emit('createTestRoom', { part, era, name: val('#testName'), photo, kissConsent }, result => {
       if (!result?.ok) { buttons.forEach(b => b.disabled = false); return toast(result?.error || 'Could not start the test.'); }
       roomCode = result.code; myPlayerId = result.playerId; isDisplay = false; introRun = false;
       history.replaceState({}, '', `/join/${result.code}`); saveSession();
@@ -72,7 +73,7 @@ function isTestController() { return !!state?.testPart && state.adminId === myPl
 function testToolbar() {
   if (!state?.testPart) return '';
   const contestant = state.players.find(p => p.id === state.turnPlayerId);
-  return `<nav class="test-toolbar" aria-label="Test controls"><strong>TEST: ${state.testPart === 'intro' ? 'INTRO + ROUND 1' : 'FAST MONEY'}</strong><span>${contestant ? `You control ${escapeHtml(contestant.name)}` : 'You control both families'}</span><a href="/?test=1">Restart / switch test</a><a href="/">Exit test</a></nav>`;
+  return `<nav class="test-toolbar" aria-label="Test controls"><strong>TEST: ${isHarvey() ? "HARVEY" : "DAWSON"} · ${state.testPart === 'intro' ? 'INTRO + ROUND 1' : 'FAST MONEY'}</strong><span>${contestant ? `You control ${escapeHtml(contestant.name)}` : 'You control both families'}</span><a href="/?test=1">Restart / switch test</a><a href="/">Exit test</a></nav>`;
 }
 
 function createRoom(mode) {
@@ -93,7 +94,7 @@ function showJoin(code) {
   if (session?.code === code && session.playerId) {
     app.innerHTML = `<main class="page"><section class="panel"><h2>Rejoining game…</h2></section></main>`; return;
   }
-  app.innerHTML = `<main class="page"><section class="panel join-wrap"><h1>Join the Family Feud</h1><form class="join-form" id="joinForm"><label>Your name<input id="name" maxlength="24" required autocomplete="name" placeholder="e.g., Jason"></label><div class="photo-row"><img class="photo-preview" id="preview" alt="Your photo"><div class="photo-actions"><button class="secondary" type="button" id="camera">Take a selfie</button><label class="secondary file-button">Upload a photo<input type="file" id="file" accept="image/*"></label></div></div><label>Suggest a family name<input id="family" maxlength="24" required placeholder="e.g., Brown"><small>We’ll add “Family” on the game board.</small></label><label class="consent-check"><input type="checkbox" id="kissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it.<small>Optional. Your photo remains available for the normal game even if this is unchecked.</small></span></label><button class="primary" type="submit">Join Game</button></form></section></main>`;
+  app.innerHTML = `<main class="page"><section class="panel join-wrap"><h1>Join the Family Feud</h1><form class="join-form" id="joinForm"><label>Your name<input id="name" maxlength="24" required autocomplete="name" placeholder="e.g., Jason"></label><div class="photo-row"><img class="photo-preview" id="preview" alt="Your photo"><div class="photo-actions"><button class="secondary" type="button" id="camera">Take a selfie</button><label class="secondary file-button">Upload a photo<input type="file" id="file" accept="image/*"></label></div></div><label>Suggest a family name<input id="family" maxlength="24" required placeholder="e.g., Brown"><small>We’ll add “Family” on the game board.</small></label><label class="consent-check"><input type="checkbox" id="kissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it.<small>Optional, for the Richard Dawson era only. Your photo remains available for the normal game even if this is unchecked.</small></span></label><button class="primary" type="submit">Join Game</button></form></section></main>`;
   let photo = '';
   document.querySelector('#camera').onclick = async () => { const result = await takeSelfie(); if (result) setPhoto(result); };
   document.querySelector('#file').onchange = async e => { if (e.target.files[0]) setPhoto(await resizeImage(e.target.files[0])); };
@@ -110,6 +111,7 @@ function showJoin(code) {
 
 function render() {
   if (!state) return; clearInterval(clockInterval);
+  document.body?.classList?.toggle('harvey-era', isHarvey());
   syncFastMicrophone();
   if (state.testPart && state.phase === 'generating') {
     app.innerHTML = `${testToolbar()}<main class="page"><section class="panel"><h1>Preparing your test…</h1><p>${state.kissStatus === 'preparing' ? 'Creating your optional souvenir. This can take up to 90 seconds.' : 'Setting up the sample families.'}</p></section></main>`; return;
@@ -126,7 +128,7 @@ function renderLobby() {
   const admin = state.adminId === myPlayerId;
   const url = `${location.origin}/join/${state.code}`;
   const roster = admin ? `<div class="players">${state.players.map(playerCard).join('') || '<p>No players yet</p>'}</div>` : `<div class="private-lobby"><div class="player-count">${state.players.length}/10</div><p>${isDisplay ? 'Players have joined.' : 'You’re in!'} Only the player who created the game can see the lobby roster.</p></div>`;
-  app.innerHTML = `<main class="page"><section class="lobby"><div class="lobby-layout"><article class="panel"><h2>${state.mode === 'host' ? 'SCAN TO JOIN' : 'SHARE THIS GAME'}</h2><div class="join-code">${state.code}</div>${state.mode === 'host' ? `<img class="qr" src="/api/room/${state.code}/qr" alt="Join QR code">` : ''}<p class="share-url">${escapeHtml(url)}</p><button class="secondary" id="share">Share link</button><p><small>The dynamic announcer is an AI-generated voice.</small></p></article><article class="panel"><h1>${state.phase === 'generating' ? 'Preparing the surveys…' : admin ? `Who’s playing? (${state.players.length}/10)` : 'Waiting for the game to start'}</h1>${roster}${admin && state.phase === 'lobby' ? `<p>You’re the first player, so you control the game.</p><button class="primary" id="start" ${state.players.length < 2 ? 'disabled' : ''}>Start the Game</button>${state.players.length < 2 ? '<p><small>At least two players are needed.</small></p>' : ''}` : state.phase === 'lobby' ? '<p>Waiting for the first player to start…</p>' : ''}</article></div></section></main>`;
+  app.innerHTML = `<main class="page"><section class="lobby"><div class="lobby-layout"><article class="panel"><h2>${state.mode === 'host' ? 'SCAN TO JOIN' : 'SHARE THIS GAME'}</h2><div class="join-code">${state.code}</div>${state.mode === 'host' ? `<img class="qr" src="/api/room/${state.code}/qr" alt="Join QR code">` : ''}<p class="share-url">${escapeHtml(url)}</p><button class="secondary" id="share">Share link</button><p class="era-label">${isHarvey() ? "STEVE HARVEY ERA" : "RICHARD DAWSON ERA"}</p><p><small>The dynamic announcer is an AI-generated voice.</small></p></article><article class="panel"><h1>${state.phase === 'generating' ? 'Preparing the surveys…' : admin ? `Who’s playing? (${state.players.length}/10)` : 'Waiting for the game to start'}</h1>${roster}${admin && state.phase === 'lobby' ? `<p>You’re the first player, so you start the game.</p><button class="primary" id="start" ${state.players.length < 2 ? 'disabled' : ''}>Start the Game</button>${state.players.length < 2 ? '<p><small>At least two players are needed.</small></p>' : ''}` : state.phase === 'lobby' ? '<p>Waiting for the first player to start…</p>' : ''}</article></div></section></main>`;
   document.querySelector('#share').onclick = () => share(url);
   const start = document.querySelector('#start'); if (start) start.onclick = () => { unlockAudio(); socket.emit('startGame', { code: state.code }, r => { if (!r?.ok) toast(r.error); }); };
 }
@@ -150,6 +152,7 @@ async function runIntro() {
   if (state.mode !== 'remote' && !isDisplay) return;
   introRun = true;
   try {
+    if (isHarvey()) { await runHarveyIntroduction(); return; }
     // The sequence is deliberate: opening clip, family introductions, then host clip.
     await playAudioFile('/assets/richard-dawson-intro.mp3');
     const introContent = document.querySelector('#introContent');
@@ -191,7 +194,7 @@ function renderGame() {
   clearInterval(fastTimer); introRun = false;
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
   const faceoffScene = showFaceoffScene();
-  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage()}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${goodAnswerControl()}</section></main>`;
+  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${isHarvey() ? (faceoffScene ? harveyFaceoff() : round ? harveyStage(round) : harveyFastStage()) : (faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage())}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${goodAnswerControl()}</section></main>`;
   wireControls();
   const answer=document.querySelector('#answer');
   if(answer&&roundDraft.key===`${state.code}:${state.answerToken}`)answer.value=roundDraft.value;
@@ -301,7 +304,7 @@ function val(sel){return document.querySelector(sel)?.value.trim()||''}
 function saveSession(){session={code:roomCode,playerId:myPlayerId};localStorage.setItem('feudSession',JSON.stringify(session))}
 function escapeHtml(v=''){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function toast(text){const el=document.querySelector('#toast');el.textContent=text;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000)}
-function flashStrike(count=1){const el=document.createElement('div');el.className='strike-flash';el.innerHTML=Array.from({length:Math.min(3,count)},()=>`<span class="strike-frame"><svg viewBox="0 0 100 130" aria-hidden="true"><path d="M18 16L82 114M82 16L18 114" stroke="#a92d1e" stroke-width="24" stroke-linecap="square"/></svg></span>`).join('');document.body.append(el);setTimeout(()=>el.remove(),1250)}
+function flashStrike(count=1){const el=document.createElement('div');el.className=isHarvey()?'strike-flash harvey-strike':'strike-flash';el.innerHTML=Array.from({length:Math.min(3,count)},()=>`<span class="strike-frame"><svg viewBox="0 0 100 130" aria-hidden="true"><path d="M18 16L82 114M82 16L18 114" stroke="#a92d1e" stroke-width="24" stroke-linecap="square"/></svg></span>`).join('');document.body.append(el);setTimeout(()=>el.remove(),1250)}
 async function share(url){try{if(navigator.share)await navigator.share({title:'Join our Family Feud game',url});else{await navigator.clipboard.writeText(url);toast('Join link copied!')}}catch{}}
 function unlockAudio(){
   audioEnabled=true;const Ctx=window.AudioContext||window.webkitAudioContext;
@@ -410,6 +413,7 @@ function startVisibleClocks(){
   const tick=()=>{
     const answer=document.querySelector('[data-answer-clock]');if(answer&&state.answerDeadline){const left=Math.max(0,state.answerDeadline-serverTime());answer.textContent=(left/1000).toFixed(1);answer.classList.toggle('urgent',left<2000)}
     if(answer&&!state.answerDeadline&&state.stealWarning)answer.textContent='ANSWER NOW';
+    const modernFast=document.querySelector('[data-harvey-fast-clock]');if(modernFast&&state.fastDeadline)modernFast.textContent=Math.max(0,Math.ceil((state.fastDeadline-serverTime())/1000));
     const fast=document.querySelector('[data-fast-clock]');if(fast&&state.fastDeadline)fast.innerHTML=dotNumber(Math.max(0,Math.ceil((state.fastDeadline-serverTime())/1000)),2);
   };tick();clockInterval=setInterval(tick,100);
 }

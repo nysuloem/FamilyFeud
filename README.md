@@ -1,12 +1,12 @@
 # Family Feud Home Game
 
-A phone-controlled Family Feud game inspired by the Richard Dawson era. It supports a shared-TV host display and fully remote play.
+A phone-controlled Family Feud game with Richard Dawson and Steve Harvey era presentations. It supports a shared-TV host display and fully remote play.
 
 Games support 2–10 players. If a one-player family reaches Fast Money, that player completes both timed halves.
 
 ## Solo Test Mode
 
-Choose **Open Test Mode** on the home screen, then either **Test Introduction + Round 1** or **Test Fast Money**. No joining link, second device, or other player is required. The test creates two sample families, and you control the active contestant (including both faceoff buzzers and both Fast Money players).
+Choose **Open Test Mode** on the home screen, select **Richard Dawson**, **Steve Harvey**, or **Surprise me**, then either **Test Introduction + Round 1** or **Test Fast Money**. No joining link, second device, or other player is required. The test creates two sample families, and you control the active contestant (including both faceoff buzzers and both Fast Money players).
 
 The introduction test plays the normal opening sequence, runs one full round including strikes/steal/unrevealed answers, and stops there. Fast Money starts at player selection and includes both timed halves, both narrated reveals, and the payout. Use **Restart / switch test** at any time to return to the test setup, or **Exit test** to return to regular games.
 
@@ -14,7 +14,7 @@ Tests use fixed built-in surveys in separate rooms, without generating a new sur
 
 Fast Money automatically enables the active contestant's microphone (with browser permission) and keeps voice input enabled through that half, automatically restarting recognition after each host question. Recognition pauses during host speech so it cannot get stuck treating the player as part of the same utterance. Late transcripts from earlier questions are ignored. Players review the transcript and press **Submit**, or type instead; the mic can be muted or retried. The 45/60-second clock starts after the first question finishes, then continues through later questions. Questions are read without numbers. Each reveal rereads the question, shows the answer as “You said…” starts, then waits until “Survey says…” finishes before showing points with a ding for positive scores or the normal strike buzzer for zero.
 
-Family introductions show one family at a time behind a gold oval name panel with surrounding bulbs. After the announcer says the family name, the panel slides aside to show the contestant photos and their names are announced before the next family appears.
+Richard Dawson family introductions show one family at a time behind a gold oval name panel with surrounding bulbs. After the announcer says the family name, the panel slides aside to show the contestant photos and their names are announced before the next family appears.
 
 ## Prepared surveys and repeat protection
 
@@ -76,3 +76,14 @@ The playing family sees its current strike count on their phones during normal f
 
 
 Host speech requests ask for a much more enthusiastic studio performance: audible smiles, bright projection, lively intonation, celebratory emphasis, and punchier reveals. Fast Money retains brisk, clear reading and short pauses. This direction applies to newly generated host audio; browser speech synthesis remains the fallback when API speech is unavailable.
+
+
+## Two eras
+
+Each regular room makes one unbiased 50/50 server-side choice between Richard Dawson and Steve Harvey. The choice is shared with every display and phone and remains fixed through reconnects, all rounds, and Fast Money. Test rooms can explicitly choose either era; existing test requests default to Dawson. Both eras draw from the same persistent survey bank, so switching eras cannot replay a used pack.
+
+Harvey opens with the supplied recording and Steve's portrait, introduces Steve, then introduces each family. Family lineups use the modern blue set instead of Dawson's sliding gold oval. The main board uses blue/chrome answer panels and white numerals; faceoffs use the supplied modern podium reference with only the first-buzzing side illuminated. Fast Money uses black answer cells on a blue board, a contestant portrait for the first reveal, and both answer columns for the second. Timers remain hidden during reveals. The modern strike overlay uses large red beveled frames.
+
+This update changes presentation and introduction order. Both eras currently retain the home's established rules, including 15-second round answers, the 30-second steal discussion plus host warning, 45/60-second Fast Money, and the $10,000 prize. Speech directions name the selected period without imitating the real host's voice. The optional Dawson greeting souvenir runs only in the Dawson era, even if a player previously opted in. The supplied Harvey intro is used only for the opening; until a separate Harvey walkup clip is supplied, its faceoff invitation uses the standard short round cue.
+
+Harvey assets and edit prompts are recorded in `assets/HARVEY_ASSET_NOTES.md`. Live TV/phone appearance and timing should be checked using the new Harvey test selector; automated tests validate era persistence, intro ordering, board secrecy, and the shared game flow.
