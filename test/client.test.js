@@ -412,3 +412,82 @@ test('Harvey podium lights keep the first family lit through answer handoffs',()
   vm.runInContext("state.faceoff.buzzedBy='Q';state.turnPlayerId='P'",b.context);
   const html=vm.runInContext('harveyPodiumLights()',b.context);assert.match(html,/side-1 lit/);assert.doesNotMatch(html,/side-0 lit/);
 });
+
+
+test('Fast Money offers an empty-answer pass and locks it while the host speaks', () => {
+  const b = browser(async () => ({}));
+  vm.runInContext("state={phase:'fast_play',fastQuestionIndex:0,fastIndex:1,fastAttempt:2,code:'TEST',inputLocked:false}", b.context);
+  assert.match(vm.runInContext('fastForm()', b.context), /type="button" id="fastPass" >Pass/);
+  vm.runInContext('passFastQuestion()', b.context);
+  assert.equal(b.events.at(-1).name, 'passFastQuestion');
+  assert.deepEqual(JSON.parse(JSON.stringify(b.events.at(-1).value)), {code:'TEST',questionIndex:0,fastIndex:1,attempt:2});
+  vm.runInContext('state.inputLocked=true', b.context);
+  assert.match(vm.runInContext('fastForm()', b.context), /id="fastPass" disabled/);
+  const count=b.events.length; vm.runInContext('passFastQuestion()', b.context);
+  assert.equal(b.events.length,count);
+});
+
+for (const renderer of ['dawsonFastStage','harveyFastStage']) test(`${renderer} retains the first total through second-player preparation and play`, () => {
+  const b=browser(async()=>({}));
+  vm.runInContext("state={phase:'host_wait',players:[],fastPlayers:[],fastIndex:1,fastFirstTotal:117,fastScores:[[null,null,null,null,null],null],fastAnswers:[null,null]}",b.context);
+  for (const phase of ['host_wait','fast_play','fast_judging']) {
+    b.context.phase=phase; vm.runInContext('state.phase=phase',b.context);
+    assert.match(vm.runInContext(`${renderer}()`,b.context), /(?:aria-label="117"|<b>117<\/b>)/);
+  }
+});
+
+test('creating or reopening the host display enables sound without a separate toggle', () => {
+  const b=browser(async()=>({}));
+  vm.runInContext("audioEnabled=false;createRoom('host')",b.context);
+  assert.equal(vm.runInContext('audioEnabled',b.context),true);
+  vm.runInContext("audioEnabled=false;watchRoom('TEST')",b.context);
+  assert.equal(vm.runInContext('shouldHearHost()',b.context),true);
+});
+
+test('blocked autoplay waits for a gesture, then resumes the same audio once', async () => {
+  const b=browser(async()=>({ok:true,status:200,blob:async()=>({})}));
+  let button;
+  b.context.document.createElement=()=>button={remove(){}};
+  let allowed=false, attempts=0;
+  b.context.Audio.prototype.play=function(){attempts++;if(!allowed)return Promise.reject(Object.assign(new Error('gesture required'),{name:'NotAllowedError'}));this.onplaying?.();return Promise.resolve()};
+  const playing=vm.runInContext("playHostSpeech('/question','Question',71)",b.context);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(b.events.length,0);assert.equal(button.textContent,'Enable sound');
+  assert.equal(vm.runInContext('blockedAudio.size',b.context),1);
+  allowed=true;button.onclick();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(attempts,2);assert.equal(b.audioInstances.length,1);
+  assert.equal(b.events[0].name,'cueStarted');
+  b.audioInstances[0].onended();await playing;
+  assert.equal(vm.runInContext('blockedAudio.size',b.context),0);
+});
+
+test('blocked intro audio does not finish early, and cancelled blocked host cues cannot replay', async () => {
+  const b=browser(async()=>({ok:true,status:200,blob:async()=>({})}));
+  b.context.document.createElement=()=>({remove(){}});
+  b.context.Audio.prototype.play=()=>Promise.reject(Object.assign(new Error('blocked'),{name:'NotAllowedError'}));
+  let finished=false;
+  const intro=vm.runInContext("playAudioFile('/intro.mp3')",b.context).then(()=>finished=true);
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(finished,false);
+  b.context.Audio.prototype.play=function(){this.onended?.();return Promise.resolve()};
+  vm.runInContext('unlockAudio()',b.context);await intro;
+  b.context.Audio.prototype.play=()=>Promise.reject(Object.assign(new Error('blocked'),{name:'NotAllowedError'}));
+  const playing=vm.runInContext("playHostSpeech('/question','Question',72)",b.context);
+  await new Promise(resolve=>setImmediate(resolve));
+  vm.runInContext('cancelHostCue(72)',b.context);await playing;
+  assert.equal(vm.runInContext('blockedAudio.size',b.context),0);
+  vm.runInContext('unlockAudio()',b.context);
+  assert.equal(b.events.length,0);
+});
+
+test('reopening a host screen resumes its pending cue without queuing duplicate playback', async () => {
+  const b=browser(async()=>({ok:true,status:200,blob:async()=>({})}));
+  vm.runInContext(`socket.emit=(name,value,reply)=>{
+    if(name==='watchRoom')reply({ok:true,room:{mode:'host',pendingSpeech:{cueId:80,text:'Welcome back',speechUrl:'/speech',requiresAck:true}}});
+  };watchRoom('TEST');watchRoom('TEST')`,b.context);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(b.audioInstances.length,1);
+  b.audioInstances[0].onended();
+  await vm.runInContext('hostAudioQueue',b.context);
+  assert.equal(vm.runInContext('queuedHostCues.size',b.context),0);
+});

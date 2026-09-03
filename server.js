@@ -85,7 +85,7 @@ function makeRoom(mode, era = chooseEra()) {
 }
 
 function publicRoom(room) {
-  const { announcementAudio, speechCues, fastSpeech, fastMatches, pendingCue, fastDraftAnswers, fastDraftMatches, fastPendingAnswer, displayId, answerTimer, fastTimer, transitionTimer, kissImage, ...safeRoom } = room;
+  const { announcementAudio, speechCues, fastSpeech, fastMatches, pendingCue, fastDraftAnswers, fastDraftMatches, fastPendingAnswer, fastQuestionQueue, fastQuestionAttempts, displayId, answerTimer, fastTimer, transitionTimer, kissImage, ...safeRoom } = room;
   return {
     ...safeRoom,
     serverNow: Date.now(),
@@ -97,6 +97,7 @@ function publicRoom(room) {
     } : null,
     fastAnswers: room.fastAnswers.map((answers, i) => answers?.map((answer, qi) => canRevealFast(room, i, qi, 'answer') ? answer : null) ?? null),
     fastScores: room.fastScores.map((scores, i) => scores?.map((score, qi) => canRevealFast(room, i, qi) ? score : null) ?? null),
+    fastFirstTotal: room.fastIndex === 1 ? (room.fastScores[0] || []).reduce((sum, points) => sum + (Number(points) || 0), 0) : null,
     fastTopAnswers: room.game ? room.game.fastMoney.map((q, qi) => canRevealFast(room, 1, qi) ? q.answers[0].text : null) : null
   };
 }
@@ -408,6 +409,17 @@ io.on('connection', socket => {
     void acceptFastAnswer(room, given);
   });
 
+  socket.on('passFastQuestion', ({ code, questionIndex, fastIndex, attempt = 0 }, reply) => {
+    const room = rooms.get(String(code).toUpperCase());
+    if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== answeringPlayer(room, socket.id) || room.judging || room.inputLocked || questionIndex !== room.fastQuestionIndex || fastIndex !== room.fastIndex || attempt !== room.fastAttempt) return reply?.({ ok: false });
+    if (Date.now() >= room.fastDeadline) { void finishFastPlayer(room); return reply?.({ ok: false }); }
+    room.inputLocked = true;
+    room.fastQuestionAttempts[questionIndex] = room.fastAttempt + 1;
+    room.fastQuestionQueue.push(questionIndex);
+    reply?.({ ok: true });
+    advanceFastQuestion(room);
+  });
+
   socket.on('fastTimeout', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== socket.id || room.judging || !room.fastDeadline || Date.now() < room.fastDeadline) return;
@@ -587,12 +599,14 @@ function advanceFastReveal(room){
 }
 
 function startFastPlayer(room, index) {
-  clearTransition(room);room.fastAttempt=0;room.fastDraftMatches=[];room.fastPendingAnswer=null;room.fastChecking=false;
+  clearTransition(room);room.fastAttempt=0;room.fastQuestionQueue=[1,2,3,4];room.fastQuestionAttempts=Array(5).fill(0);room.fastDraftMatches=[];room.fastPendingAnswer=null;room.fastChecking=false;
   clearTimeout(room.fastTimer); room.fastTimer = null; room.fastRevealStep = null;
   room.phase = 'host_wait'; room.fastIndex = index; room.fastRevealIndex = null; room.fastRevealCount = 0; room.fastQuestionIndex = 0; room.fastDraftAnswers = []; room.fastDeadline = null; room.turnPlayerId = room.fastPlayers[index];
   const seconds = index === 0 ? 45 : 60; const name = player(room, room.turnPlayerId).name;
   room.message = `${name} is getting ready for Fast Money.`;
-  runHostedCue(room, `We need everyone to be quiet for Fast Money. ${name}, your microphone will stay on. You have ${seconds} seconds. The clock starts after I finish reading the first question. Listen carefully and answer each question as quickly as you can.`, 'fast', () => {
+  const firstTotal = (room.fastScores[0] || []).reduce((sum, points) => sum + (Number(points) || 0), 0);
+  const scoreReminder = index === 1 ? `${player(room, room.fastPlayers[0]).name} scored ${firstTotal} points, so you need ${Math.max(0, 200 - firstTotal)} points, ${name}. ` : '';
+  runHostedCue(room, `${scoreReminder}We need everyone to be quiet for Fast Money. ${name}, your microphone will stay on. You have ${seconds} seconds. The clock starts after I finish reading the first question. Listen carefully and answer each question as quickly as you can. You can pass a question and we will come back to it if there is time.`, 'fast', () => {
     room.phase = 'fast_play';
     askFastQuestion(room);
   });
@@ -619,7 +633,7 @@ async function acceptFastAnswer(room, given) {
     if (Date.now() >= room.fastDeadline) return finishFastPlayer(room);
     room.fastPendingAnswer = null;
     if (duplicate) {
-      room.fastAttempt++; room.message = 'That answer was already given. Try again!';
+      room.fastAttempt++; room.fastQuestionAttempts[qi] = room.fastAttempt; room.message = 'That answer was already given. Try again!';
       runHostedCue(room, 'Try again!', 'strike', () => {
         if (room.phase !== 'fast_play') return;
         room.inputLocked = false; emit(room);
@@ -629,8 +643,16 @@ async function acceptFastAnswer(room, given) {
     room.fastDraftMatches[qi] = judgment;
   }
   room.fastDraftAnswers[qi] = given;
-  if (qi >= 4) return finishFastPlayer(room);
-  room.fastQuestionIndex++; room.fastAttempt = 0; askFastQuestion(room);
+  advanceFastQuestion(room);
+}
+
+function advanceFastQuestion(room) {
+  // Complete the first sweep before returning to passes in the order received.
+  const next = room.fastQuestionQueue.shift();
+  if (next == null) return void finishFastPlayer(room);
+  room.fastQuestionIndex = next;
+  room.fastAttempt = room.fastQuestionAttempts[next];
+  askFastQuestion(room);
 }
 
 function askFastQuestion(room) {

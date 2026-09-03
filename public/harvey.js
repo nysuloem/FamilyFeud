@@ -43,7 +43,7 @@ function harveyFastStage(){
   const idx=(reveal?state.fastRevealIndex:state.fastIndex)??0;
   const both=reveal&&(idx===1||state.phase==='fast_results');
   const p=state.players.find(p=>p.id===state.fastPlayers[idx]);
-  const total=state.fastScores.flat().reduce((a,b)=>a+(Number(b)||0),0);
+  const total=(!reveal && state.fastIndex === 1 && state.fastFirstTotal != null) ? state.fastFirstTotal : state.fastScores.flat().reduce((a,b)=>a+(Number(b)||0),0);
   const rows=column=>Array.from({length:5},(_,i)=>{
     const answer=state.fastAnswers[column]?.[i],points=state.fastScores[column]?.[i];
     return `<div class="harvey-fast-row" data-fast-slot="${column}-${i}"><span>${reveal&&answer!=null?escapeHtml(answer||'NO ANSWER'):''}</span><b>${reveal&&points!=null?points:''}</b></div>`;

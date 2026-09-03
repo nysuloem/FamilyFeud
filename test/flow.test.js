@@ -6,7 +6,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 const bankDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'feud-flow-bank-'));
 const previousDirectory = process.env.DATA_DIR;
 process.env.DATA_DIR = bankDirectory;
-const { server, io, rooms, makeRoom, beginRound, publicRoom, awardRound, beginFastMoney, finishFastPlayer, openAnswer, answerClockExpired, disposeRoom } = require('../server');
+const { server, io, rooms, makeRoom, beginRound, publicRoom, awardRound, beginFastMoney, startFastPlayer, finishFastPlayer, openAnswer, answerClockExpired, disposeRoom } = require('../server');
 
 if (previousDirectory === undefined) delete process.env.DATA_DIR; else process.env.DATA_DIR = previousDirectory;
 const previousKey = process.env.OPENAI_API_KEY;
@@ -506,4 +506,67 @@ test('host speech requests use a distinct AI voice for each era',async t=>{
   }
   assert.deepEqual(payloads.map(p=>p.voice),['onyx','echo']);
   assert.match(payloads[0].instructions,/1970s/);assert.match(payloads[1].instructions,/modern/);
+});
+
+
+test('passes revisit in order, reject stale inputs, preserve the clock and score by original question', async t => {
+  const { room, clients, finish } = await fixture(t);
+  room.fastPlayers = clients.map(c => c.id); startFastPlayer(room, 0);
+  await finish(); await finish();
+  const deadline = room.fastDeadline;
+  const packet = () => ({ code: room.code, fastIndex: 0, questionIndex: room.fastQuestionIndex, attempt: room.fastAttempt });
+  const original = packet();
+  assert.equal((await clients[1].emitWithAck('passFastQuestion', packet())).ok, false);
+  for (const qi of [0,1,2,3,4,0,2]) {
+    assert.equal(room.fastQuestionIndex, qi);
+    assert.equal(room.fastDeadline, deadline);
+    if (qi === 0 && room.fastAttempt === 1) {
+      assert.equal((await clients[0].emitWithAck('passFastQuestion', original)).ok, false);
+      assert.equal((await clients[0].emitWithAck('submitFastAnswer', {...original, answer:'stale'})).ok, false);
+    }
+    const passing = (qi === 0 || qi === 2) && room.fastAttempt === 0;
+    const event = passing ? 'passFastQuestion' : 'submitFastAnswer';
+    assert.equal((await clients[0].emitWithAck(event, {...packet(), answer:room.game.fastMoney[qi].answers[0].text})).ok, true);
+    await until(() => room.pendingCue);
+    if (room.phase === 'fast_play') {
+      assert.equal((await clients[0].emitWithAck('passFastQuestion', packet())).ok, false, 'Cannot pass while host is reading');
+      await finish();
+    }
+  }
+  assert.equal(room.phase, 'fast_reveal');
+  assert.deepEqual(room.fastAnswers[0], room.game.fastMoney.map(q => q.answers[0].text));
+  assert.deepEqual(room.fastScores[0], room.game.fastMoney.map(q => q.answers[0].points));
+});
+
+test('second player retains only the first total, can pass every question, retry a duplicate on return, and time out', async t => {
+  const { room, clients, finish } = await fixture(t);
+  room.fastPlayers = clients.map(c => c.id);
+  room.fastAnswers[0] = room.game.fastMoney.map(q => q.answers[0].text);
+  room.fastMatches[0] = [0,0,0,0,0]; room.fastScores[0] = [30,20,10,40,17];
+  startFastPlayer(room, 1);
+  assert.match(room.speechCues.get(room.pendingCue.cueId).text, /Alice scored 117 points, so you need 83 points, Bob/);
+  const visible = publicRoom(room);
+  assert.equal(visible.fastFirstTotal, 117);
+  assert.ok(visible.fastAnswers[0].every(a => a === null));
+  assert.ok(visible.fastScores[0].every(a => a === null));
+  assert.equal(visible.fastQuestionQueue, undefined);
+  await finish(); await finish(); const deadline = room.fastDeadline;
+  const packet = () => ({code:room.code, fastIndex:1, questionIndex:room.fastQuestionIndex, attempt:room.fastAttempt});
+  for (let q=0; q<5; q++) {
+    assert.equal(room.fastQuestionIndex,q);
+    assert.equal((await clients[1].emitWithAck('passFastQuestion',packet())).ok,true);
+    await finish();
+  }
+  assert.equal(room.fastQuestionIndex,0); assert.equal(room.fastAttempt,1);
+  assert.equal((await clients[1].emitWithAck('submitFastAnswer',{...packet(), answer:room.fastAnswers[0][0]})).ok,true);
+  await until(() => room.pendingCue);
+  assert.equal(room.speechCues.get(room.pendingCue.cueId).text, 'Try again!');
+  await finish(); assert.equal(room.fastAttempt,2);
+  assert.equal((await clients[1].emitWithAck('passFastQuestion',packet())).ok,true);
+  assert.equal(room.fastQuestionIndex,1); assert.equal(room.fastDeadline,deadline);
+  await finish(); room.fastDeadline = Date.now()-1;
+  assert.equal((await clients[1].emitWithAck('passFastQuestion',packet())).ok,false);
+  await until(() => room.phase === 'fast_reveal');
+  assert.deepEqual(room.fastAnswers[1],['','','','','']);
+  assert.deepEqual(room.fastScores[1],[0,0,0,0,0]);
 });

@@ -1,6 +1,7 @@
 const socket = io();
 const app = document.querySelector('#app');
 let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = false, serverOffset = 0;
+const blockedAudio = new Set(), queuedHostCues = new Set();
 let hostAudioQueue = Promise.resolve(), activeRecognition = null, activeHostPlayback = null, cancelledCues = new Set(), clockInterval = null;
 let roundDraft = { key: null, value: '' };
 let fastMicListening = false, fastMicWindow = null;
@@ -25,16 +26,19 @@ socket.on('state', next => {
   if(answer&&state)roundDraft={key:`${state.code}:${state.answerToken}`,value:answer.value};
   serverOffset = next.serverNow - Date.now(); state = next; roomCode = next.code; render();
 });
-socket.on('cue', cue => {
+socket.on('cue', queueHostCue);
+function queueHostCue(cue) {
+  if (queuedHostCues.has(cue.cueId)) return;
   if (cue.sound && cue.sound !== 'faceoff_walkup') playEffect(cue.sound);
   if (cue.speechUrl && shouldHearHost()) {
+    queuedHostCues.add(cue.cueId);
     hostAudioQueue = hostAudioQueue.then(async () => {
       if (cancelledCues.delete(cue.cueId)) return;
       await playHostSpeech(cue.speechUrl, cue.text, cue.cueId, cue.sound);
       if (cue.requiresAck && isAudioController() && !cancelledCues.has(cue.cueId)) socket.emit('cueFinished', { code: roomCode, cueId: cue.cueId });
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => queuedHostCues.delete(cue.cueId));
   }
-});
+}
 socket.on('goodAnswer', showGoodAnswer);
 socket.on('cancelCue', ({ cueId }) => cancelHostCue(cueId));
 socket.on('answerResult', result => { if (!result.correct) flashStrike(result.count || 1); });
@@ -77,6 +81,7 @@ function testToolbar() {
 }
 
 function createRoom(mode) {
+  if (mode === 'host') unlockAudio();
   socket.emit('createRoom', { mode }, result => {
     if (!result?.ok) return toast('Could not create the game.');
     if (mode === 'host') { history.replaceState({}, '', `/host/${result.code}`); roomCode = result.code; isDisplay = true; }
@@ -85,8 +90,12 @@ function createRoom(mode) {
 }
 
 function watchRoom(code) {
-  roomCode = code; isDisplay = true;
-  socket.emit('watchRoom', { code }, result => { if (!result?.ok) toast(result.error || 'Game not found'); });
+  roomCode = code; isDisplay = true; audioEnabled = true;
+  socket.emit('watchRoom', { code }, result => {
+    if (!result?.ok) return toast(result?.error || 'Game not found');
+    state = result.room;
+    if (state?.pendingSpeech) queueHostCue(state.pendingSpeech);
+  });
 }
 
 function showJoin(code) {
@@ -144,7 +153,7 @@ function renderFaceoffBuzzer(){
 
 function renderIntro() {
   if (introRun && document.querySelector('#introContent')) return;
-  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent"><h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p></div></section>`;
+  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled && !blockedAudio.size ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent"><h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p></div></section>`;
   document.querySelector('#sound').onclick = () => { unlockAudio(); runIntro(); };
   runIntro();
 }
@@ -191,7 +200,27 @@ async function playFamilyAnnouncement(index, part){
 
 function playAudioFile(src){return playAudioElement(new Audio(src))}
 function playAudioBlob(blob){return playAudioElement(new Audio(URL.createObjectURL(blob)))}
-function playAudioElement(audio){return new Promise((resolve,reject)=>{audio.onended=resolve;audio.onerror=reject;audio.play().catch(reject)})}
+function playAudioElement(audio, signal, onStart) {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => { blockedAudio.delete(retry); signal?.removeEventListener('abort', aborted); };
+    const ended = () => { cleanup(); resolve(); };
+    const failed = error => { cleanup(); reject(error); };
+    const aborted = () => { audio.pause(); ended(); };
+    const retry = () => {
+      blockedAudio.delete(retry);
+      if (signal?.aborted) return aborted();
+      audio.play().catch(error => {
+        if (signal?.aborted) return aborted();
+        if (error.name !== 'NotAllowedError') return failed(error);
+        // Keep the cue pending: autoplay restrictions must not skip host speech.
+        blockedAudio.add(retry); offerSoundUnlock();
+      });
+    };
+    audio.onplaying = onStart; audio.onended = ended; audio.onerror = failed;
+    signal?.addEventListener('abort', aborted, { once: true });
+    retry();
+  });
+}
 
 function renderGame() {
   clearInterval(fastTimer); introRun = false;
@@ -275,7 +304,7 @@ function controls() {
 
 function fastForm() {
   const locked = state.inputLocked;
-  return `<div class="fast-progress">ANSWER ${state.fastQuestionIndex+1} OF 5${locked ? ' · LISTEN TO THE HOST' : ''}</div><form class="answer-form" id="fastForm"><input id="fastAnswer" autocomplete="off" placeholder="${locked ? 'Listen to the host…' : 'Type or speak your answer'}" ${locked ? 'disabled' : ''} required><button class="mic-button" type="button" id="fastMicToggle" aria-label="Toggle Fast Money microphone">🎤 <span>Mic on</span></button><button class="primary" type="submit" ${locked ? 'disabled' : ''}>Submit</button></form><p class="mic-status" aria-live="polite"></p>`;
+  return `<div class="fast-progress">ANSWER ${state.fastQuestionIndex+1} OF 5${locked ? ' · LISTEN TO THE HOST' : ''}</div><form class="answer-form" id="fastForm"><input id="fastAnswer" autocomplete="off" placeholder="${locked ? 'Listen to the host…' : 'Type or speak your answer'}" ${locked ? 'disabled' : ''} required><button class="mic-button" type="button" id="fastMicToggle" aria-label="Toggle Fast Money microphone">🎤 <span>Mic on</span></button><button class="primary" type="submit" ${locked ? 'disabled' : ''}>Submit</button><button class="secondary fast-pass" type="button" id="fastPass" ${locked ? 'disabled' : ''}>Pass</button></form><p class="mic-status" aria-live="polite"></p>`;
 }
 
 function phoneStrikes(){
@@ -308,6 +337,7 @@ function wireControls() {
   document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>socket.emit('playOrPass',{code:state.code,choice:b.dataset.choice}));
   document.querySelector('#fastSelect')?.addEventListener('submit',e=>{e.preventDefault();const ids=[...e.target.querySelectorAll(':checked')].map(x=>x.value);if(ids.length!==2)return toast('Choose exactly two players.');socket.emit('selectFastPlayers',{code:state.code,playerIds:ids});});
   document.querySelector('#fastForm')?.addEventListener('submit',e=>{e.preventDefault();submitFast(e.target);});
+  document.querySelector('#fastPass')?.addEventListener('click', passFastQuestion);
   document.querySelector('#fastAnswer')?.addEventListener('input',e=>{fastDraft={key:fastAnswerKey(),value:e.target.value};});
   document.querySelector('#fastMicToggle')?.addEventListener('click',()=>{
     if(fastMicError || fastMicMuted){fastMicMuted=false;fastMicError='';syncFastMicrophone();}
@@ -317,6 +347,16 @@ function wireControls() {
 }
 
 function submitFast(form) { const answer=form.querySelector('#fastAnswer').value.trim();if(!answer||state.inputLocked)return;const button=form.querySelector('button[type="submit"],button.primary');button.disabled=true;socket.emit('submitFastAnswer',{code:state.code,answer,questionIndex:state.fastQuestionIndex,fastIndex:state.fastIndex,attempt:state.fastAttempt||0},result=>{if(!result?.ok)button.disabled=false}); }
+function passFastQuestion() {
+  if (state.phase !== 'fast_play' || state.inputLocked) return;
+  const button = document.querySelector('#fastPass');
+  if (button?.disabled) return;
+  if (button) button.disabled = true;
+  stopFastMicrophone();
+  socket.emit('passFastQuestion', { code: state.code, questionIndex: state.fastQuestionIndex, fastIndex: state.fastIndex, attempt: state.fastAttempt || 0 }, result => {
+    if (!result?.ok) { if (button) button.disabled = false; syncFastMicrophone(); }
+  });
+}
 function scoreCard(i,right=false){const f=state.families[i];return `<div class="family-score ${right?'right':''}"><div>${f?`${escapeHtml(f.name)}<br><small>FAMILY</small>`:'FAMILY'}</div><div class="score-number">${state.scores[i]||0}</div></div>`}
 function playerCard(p){return `<div class="player-card">${contestantPortrait(p, isHarvey()?'harvey':'dawson')}${p.connected?'':'<small>Reconnecting…</small>'}</div>`}
 function familyPanel(f){return `<article class="family-panel"><h2>${escapeHtml(f.name)} FAMILY</h2><div class="family-list">${f.playerIds.map(id=>playerCard(state.players.find(p=>p.id===id))).join('')}</div></article>`}
@@ -330,8 +370,12 @@ function toast(text){const el=document.querySelector('#toast');el.textContent=te
 function flashStrike(count=1){const el=document.createElement('div');el.className=isHarvey()?'strike-flash harvey-strike':'strike-flash';el.innerHTML=Array.from({length:Math.min(3,count)},()=>`<span class="strike-frame"><svg viewBox="0 0 100 130" aria-hidden="true"><path d="M18 16L82 114M82 16L18 114" stroke="#a92d1e" stroke-width="24" stroke-linecap="square"/></svg></span>`).join('');document.body.append(el);setTimeout(()=>el.remove(),1250)}
 async function share(url){try{if(navigator.share)await navigator.share({title:'Join our Family Feud game',url});else{await navigator.clipboard.writeText(url);toast('Join link copied!')}}catch{}}
 function unlockAudio(){
-  audioEnabled=true;const Ctx=window.AudioContext||window.webkitAudioContext;
-  if(Ctx){window.feudAudio=window.feudAudio||new Ctx();window.feudAudio.resume();const oscillator=window.feudAudio.createOscillator(),gain=window.feudAudio.createGain();gain.gain.value=0;oscillator.connect(gain).connect(window.feudAudio.destination);oscillator.start();oscillator.stop(window.feudAudio.currentTime+.01)}
+  audioEnabled=true;
+  for (const retry of [...blockedAudio]) retry();
+  document.querySelector('#audioUnlock')?.remove();
+  const introButton=document.querySelector('#sound');if(introButton)introButton.textContent='Sound enabled';
+  const Ctx=window.AudioContext||window.webkitAudioContext;
+  if(Ctx){window.feudAudio=window.feudAudio||new Ctx();window.feudAudio.resume()?.catch(()=>{});const oscillator=window.feudAudio.createOscillator(),gain=window.feudAudio.createGain();gain.gain.value=0;oscillator.connect(gain).connect(window.feudAudio.destination);oscillator.start();oscillator.stop(window.feudAudio.currentTime+.01)}
 }
 function speak(text){if(!('speechSynthesis'in window)||!audioEnabled)return;const u=new SpeechSynthesisUtterance(text);u.rate=.88;u.pitch=.78;u.volume=1;speechSynthesis.speak(u)}
 function shouldHearHost(){return audioEnabled&&(isDisplay||state?.mode==='remote')}
@@ -350,10 +394,7 @@ async function playHostSpeech(url,text,cueId,sound){
     const response=await fetch(url,{signal});if(!response.ok||response.status===204)throw new Error('No API audio');
     const blob=await response.blob();if(signal.aborted)return;
     objectUrl=URL.createObjectURL(blob);const audio=new Audio(objectUrl);session.audio=audio;
-    await new Promise((resolve,reject)=>{
-      const aborted=()=>{audio.pause();resolve()};signal.addEventListener('abort',aborted,{once:true});
-      audio.onplaying=started;audio.onended=()=>{signal.removeEventListener('abort',aborted);resolve()};audio.onerror=reject;audio.play().catch(reject);
-    });
+    await playAudioElement(audio,signal,started);
   }catch(error){
     if(!signal.aborted)await speakAsync(text,signal,started);
   }finally{
@@ -431,9 +472,11 @@ function playEffect(type){if(!audioEnabled)return;if(['ding','strike','buzz'].in
 
 function serverTime(){return Date.now()+serverOffset}
 function offerSoundUnlock(){
-  if(audioEnabled||(!isDisplay&&state.mode!=='remote'))return;
-  const button=document.createElement('button');button.className='secondary sound-unlock';button.textContent='Enable host audio';app.append(button);
-  button.onclick=()=>{unlockAudio();button.remove();const cue=state.pendingSpeech;if(!cue)return;hostAudioQueue=hostAudioQueue.then(async()=>{await playHostSpeech(cue.speechUrl,cue.text,cue.cueId,cue.sound);if(isAudioController()&&!cancelledCues.has(cue.cueId))socket.emit('cueFinished',{code:roomCode,cueId:cue.cueId})})};
+  if((audioEnabled&&!blockedAudio.size)||(!isDisplay&&state?.mode!=='remote'))return;
+  const introButton=document.querySelector('#sound');if(introButton){introButton.textContent='Enable sound';return;}
+  if(document.querySelector('#audioUnlock'))return;
+  const button=document.createElement('button');button.id='audioUnlock';button.className='secondary sound-unlock';button.textContent='Enable sound';app.append(button);
+  button.onclick=()=>{const waiting=blockedAudio.size>0;unlockAudio();button.remove();if(waiting)return;if(state?.phase==='intro'){runIntro();return;}const cue=state.pendingSpeech;if(!cue)return;hostAudioQueue=hostAudioQueue.then(async()=>{await playHostSpeech(cue.speechUrl,cue.text,cue.cueId,cue.sound);if(isAudioController()&&!cancelledCues.has(cue.cueId))socket.emit('cueFinished',{code:roomCode,cueId:cue.cueId})})};
 }
 function startVisibleClocks(){
   clearInterval(clockInterval);

@@ -57,7 +57,7 @@ function dawsonFastStage() {
   const idx = (reveal ? state.fastRevealIndex : state.fastIndex) ?? 0;
   const both = reveal && (idx === 1 || state.phase === 'fast_results');
   const contestant = state.players.find(p => p.id === state.fastPlayers[idx]);
-  const total = state.fastScores.flat().reduce((sum, value) => sum + (Number(value) || 0), 0);
+  const total = (!reveal && state.fastIndex === 1 && state.fastFirstTotal != null) ? state.fastFirstTotal : state.fastScores.flat().reduce((sum, value) => sum + (Number(value) || 0), 0);
   const rows = column => Array.from({ length: 5 }, (_, i) => {
     const answer = state.fastAnswers[column]?.[i], points = state.fastScores[column]?.[i];
     const shown = reveal && answer != null;
