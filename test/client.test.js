@@ -198,7 +198,7 @@ test('a Fast Money win plays celebration, credits and Made by Jason in order', a
   vm.runInContext("var closingAudio=[];var closingStages=[];playClosingAudio=async src=>closingAudio.push(src);renderGame=()=>closingStages.push(closingStage);state={code:'WIN',mode:'remote',phase:'fast_results',fastScores:[[100,50,25,20,5],[15,null,null,null,null]]}",b.context);
   await vm.runInContext('maybeStartClosingSequence()',b.context);
   assert.equal(vm.runInContext("closingAudio.join(',')",b.context),'/assets/fast-money-celebration.mp3,/assets/fast-money-end-credits.mp3,/assets/made-by-jason.mp3');
-  assert.equal(vm.runInContext("closingStages.join(',')",b.context),'credits,jason,done');
+  assert.equal(vm.runInContext("closingStages.join(',')",b.context),'celebration,credits,jason,done');
 });
 
 test('family announcements and oval reveals finish one family before introducing the other', async () => {

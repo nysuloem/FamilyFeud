@@ -6,6 +6,8 @@
 .contestant-name-badge{position:absolute;z-index:2;left:8%;bottom:17%;width:62%;height:auto;overflow:visible;filter:drop-shadow(0 1px 1px #0008);pointer-events:none}
 .contestant-name-badge ellipse{fill:#f6ecd9;stroke:#c8bcaa;stroke-width:3}
 .contestant-name-badge text{fill:#30261d;font:700 28px 'Arial Narrow','Oswald',sans-serif;text-transform:uppercase;letter-spacing:.3px}
+.badge-dawson ellipse{fill:#60391f;stroke:#b99062;stroke-width:3}
+.badge-dawson text{fill:#fff;font-family:'Arial Narrow','Oswald',sans-serif}
 .badge-harvey ellipse{fill:#195c9e;stroke:#f4cf78;stroke-width:4}
 .badge-harvey text{fill:#ffe187;font-family:'Oswald',sans-serif;font-style:italic}
 .stage-player .contestant-name-badge,.harvey-players .contestant-name-badge{left:3%;bottom:10%;width:94%}

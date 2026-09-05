@@ -267,6 +267,8 @@ async function maybeStartClosingSequence() {
   const key = `${state.code}:${total}`;
   if (closingSequenceKey === key) return;
   closingSequenceKey = key; closingStage = total >= 200 ? 'celebration' : 'credits';
+  // Paint the celebration/credits before waiting for their audio to finish.
+  renderGame();
   if (!shouldHearHost()) return;
   try {
     if (total >= 200) await playClosingAudio('/assets/fast-money-celebration.mp3');

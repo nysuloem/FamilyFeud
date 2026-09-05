@@ -52,8 +52,8 @@
 .fast-clock{position:absolute;bottom:9%;right:4%;width:15%;height:12%;border:3px solid #adbaaa;background:#11150f}.fast-clock .dot-number{background:transparent}
 .fast-first-reveal .fast-split,.fast-both .fast-split{top:17%;height:66%;gap:0 3%}.fast-both .fast-split{height:62%}
 .reveal-pair{width:100%;height:auto;aspect-ratio:3/2}.fast-reveal-host,.fast-reveal-arm{position:absolute;inset:0;height:100%;width:100%;object-fit:fill}
-.reveal-pair .fast-guest{position:absolute;left:7%;top:9%;width:43%;height:91%;object-fit:cover;object-position:center top;border-radius:45% 45% 0 0;mask-image:linear-gradient(to bottom,#000 85%,transparent)}
-.fast-reveal-arm{z-index:3;clip-path:polygon(14% 44%,25% 42%,52% 51%,54% 66%,35% 61%,25% 53%,15% 51%)}
+.reveal-pair .fast-guest{position:absolute;z-index:3;left:7%;top:9%;width:43%;height:91%;object-fit:cover;object-position:center top;border-radius:45% 45% 0 0;mask-image:linear-gradient(to bottom,#000 85%,transparent)}
+.fast-reveal-arm{z-index:2;clip-path:polygon(14% 44%,25% 42%,52% 51%,54% 66%,35% 61%,25% 53%,15% 51%)}
 .fast-top-answer{position:absolute;bottom:4%;left:3%;right:3%;text-align:center;font:bold 2cqw monospace;color:#fff6bb}
 .fast-payout{position:absolute;bottom:1%;left:12%;right:12%;text-align:center;background:#17150e;border:3px solid #d7c590;color:#fff2a5;font:700 clamp(24px,5vw,58px)/1 monospace;padding:4px}.fast-payout small{font:14px monospace;display:block}
 .phone-strikes{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 8px;color:#fff2c5}.phone-strikes span{font-size:14px}.phone-strikes b{font:bold 25px monospace;color:#a9947270;border:2px solid currentColor;padding:0 5px}.phone-strikes b.earned{color:#ff9981}
