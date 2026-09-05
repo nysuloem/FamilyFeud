@@ -6,6 +6,7 @@ let hostAudioQueue = Promise.resolve(), activeRecognition = null, activeHostPlay
 let roundDraft = { key: null, value: '' };
 let fastMicListening = false, fastMicWindow = null;
 let fastMic = null, fastMicSession = null, fastMicMuted = false, fastMicError = '', fastMicRestart = null, fastDraft = { key: null, value: '' };
+let closingSequenceKey = null, closingStage = null, closingPlayback = null;
 let session = JSON.parse(localStorage.getItem('feudSession') || 'null');
 
 const pathBits = location.pathname.split('/').filter(Boolean);
@@ -236,6 +237,38 @@ function renderGame() {
   updateFastMicUI();
   startVisibleClocks();
   offerSoundUnlock();
+  maybeStartClosingSequence();
+}
+
+function closingCard() {
+  if (!['credits','jason','done'].includes(closingStage)) return null;
+  const families = (state.families || []).map(f => `${escapeHtml(f.name)} FAMILY`).join('<span>•</span>');
+  if (closingStage === 'credits') return `<section class="feud-credits"><h1>THANKS FOR PLAYING!</h1><div>${families}</div><p>${state.players.map(p => escapeHtml(p.name)).join(' · ')}</p></section>`;
+  if (closingStage === 'jason' || closingStage === 'done') return `<section class="made-by-jason"><img src="/assets/made-by-jason-logo.png" alt="Made by Jason — red-haired, red-bearded man"></section>`;
+  return null;
+}
+
+async function maybeStartClosingSequence() {
+  if (state?.phase !== 'fast_results') return;
+  const total = state.fastScores.flat().reduce((sum, value) => sum + (Number(value) || 0), 0);
+  const key = `${state.code}:${total}`;
+  if (closingSequenceKey === key) return;
+  closingSequenceKey = key; closingStage = total >= 200 ? 'celebration' : 'credits';
+  if (!shouldHearHost()) return;
+  try {
+    if (total >= 200) await playClosingAudio('/assets/fast-money-celebration.mp3');
+    closingStage = 'credits'; renderGame();
+    await playClosingAudio('/assets/fast-money-end-credits.mp3');
+    closingStage = 'jason'; renderGame();
+    await playClosingAudio('/assets/made-by-jason.mp3');
+    closingStage = 'done'; renderGame();
+  } catch {}
+}
+
+function playClosingAudio(src) {
+  closingPlayback?.pause();
+  closingPlayback = new Audio(src);
+  return playAudioElement(closingPlayback).finally(() => { closingPlayback = null; });
 }
 
 // Refit after every reveal, font load and resize; retain the full answer text.
@@ -272,6 +305,7 @@ function board(round) {
 }
 
 function fastStage() {
+  const card = closingCard(); if (card) return card;
   if (state.phase === 'fast_reveal' || state.phase === 'fast_reveal_done') return fastRevealStage();
   if (state.phase === 'fast_results') {
     const rows = state.game.fastMoney.map((q,i)=>`<div class="fast-row"><div class="fast-cell">${escapeHtml(state.fastAnswers[0]?.[i] || '—')}</div><div class="fast-cell fast-point">${state.fastScores[0]?.[i] || 0}</div><div class="fast-cell">${escapeHtml(state.fastAnswers[1]?.[i] || '—')}</div><div class="fast-cell fast-point">${state.fastScores[1]?.[i] || 0}</div></div>`).join('');
@@ -465,10 +499,12 @@ function startMicrophone(selector,button){
   recognition.start();
 }
 function effectAudioSource(type){
+  if (type === 'fast_duplicate') return '/assets/fast-money-duplicate.mp3';
+  if (type === 'fast_complete') return '/assets/fast-money-complete.mp3';
   const filename={ding:'answer-ding',strike:'strike-buzzer',buzz:'faceoff-buzzer'}[type];
   return `/assets/dawson-${filename}-clean.mp3`;
 }
-function playEffect(type){if(!audioEnabled)return;if(['ding','strike','buzz'].includes(type)){new Audio(effectAudioSource(type)).play().catch(()=>{});return}const ctx=window.feudAudio||(window.feudAudio=new(window.AudioContext||window.webkitAudioContext)());const now=ctx.currentTime;const tones={buzz:[440,.16],reveal:[660,.12],strike:[120,.42],win:[523,.7],round:[330,.25],fast:[780,.2]}[type]||[440,.1];for(let i=0;i<(type==='win'?4:1);i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g).connect(ctx.destination);o.frequency.value=tones[0]*(type==='win'?1+i*.25:1);g.gain.setValueAtTime(.18,now+i*.12);g.gain.exponentialRampToValueAtTime(.001,now+i*.12+tones[1]);o.start(now+i*.12);o.stop(now+i*.12+tones[1])}}
+function playEffect(type){if(!audioEnabled)return;if(['ding','strike','buzz','fast_duplicate','fast_complete'].includes(type)){new Audio(effectAudioSource(type)).play().catch(()=>{});return}const ctx=window.feudAudio||(window.feudAudio=new(window.AudioContext||window.webkitAudioContext)());const now=ctx.currentTime;const tones={buzz:[440,.16],reveal:[660,.12],strike:[120,.42],win:[523,.7],round:[330,.25],fast:[780,.2]}[type]||[440,.1];for(let i=0;i<(type==='win'?4:1);i++){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g).connect(ctx.destination);o.frequency.value=tones[0]*(type==='win'?1+i*.25:1);g.gain.setValueAtTime(.18,now+i*.12);g.gain.exponentialRampToValueAtTime(.001,now+i*.12+tones[1]);o.start(now+i*.12);o.stop(now+i*.12+tones[1])}}
 
 function serverTime(){return Date.now()+serverOffset}
 function offerSoundUnlock(){

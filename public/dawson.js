@@ -53,6 +53,7 @@ function faceoffPodiumLights() {
 }
 
 function dawsonFastStage() {
+  const card = closingCard(); if (card) return card;
   const reveal = ['fast_reveal', 'fast_reveal_done', 'fast_results'].includes(state.phase);
   const idx = (reveal ? state.fastRevealIndex : state.fastIndex) ?? 0;
   const both = reveal && (idx === 1 || state.phase === 'fast_results');

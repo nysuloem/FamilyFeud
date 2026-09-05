@@ -39,6 +39,7 @@ function harveyFaceoff(){
   return `<section class="harvey-faceoff" aria-label="Steve Harvey faceoff podium"><div class="harvey-round">${state.round===4?'SUDDEN DEATH':`ROUND ${state.round+1}`} · FACE-OFF</div>${state.faceoff.players.map((id,side)=>{const p=state.players.find(p=>p.id===id);return `<article class="harvey-faceoff-player side-${side} ${state.turnPlayerId===id?'active':''}">${contestantPortrait(p, 'harvey')}</article>`}).join('')}${harveyPodiumLights()}</section>`;
 }
 function harveyFastStage(){
+  const card=closingCard();if(card)return card;
   const reveal=['fast_reveal','fast_reveal_done','fast_results'].includes(state.phase);
   const idx=(reveal?state.fastRevealIndex:state.fastIndex)??0;
   const both=reveal&&(idx===1||state.phase==='fast_results');

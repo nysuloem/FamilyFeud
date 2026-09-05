@@ -159,6 +159,30 @@ test('Fast Money board displays an answer without leaking its score; zero uses t
   assert.equal(vm.runInContext('effects.join(",")',b.context),'strike,ding,ding');
 });
 
+test('Fast Money uses the supplied duplicate and five-answer recordings', () => {
+  const b=browser(async()=>({}));
+  assert.equal(vm.runInContext("effectAudioSource('fast_duplicate')",b.context),'/assets/fast-money-duplicate.mp3');
+  assert.equal(vm.runInContext("effectAudioSource('fast_complete')",b.context),'/assets/fast-money-complete.mp3');
+  vm.runInContext("playEffect('fast_duplicate');playEffect('fast_complete')",b.context);
+  assert.deepEqual(b.audioInstances.map(a=>a.src),['/assets/fast-money-duplicate.mp3','/assets/fast-money-complete.mp3']);
+});
+
+test('the final production card shows the exact Made by Jason logo', () => {
+  const b=browser(async()=>({}));
+  vm.runInContext("state={families:[{name:'Brown'},{name:'Smith'}],players:[]};closingStage='jason'",b.context);
+  const html=vm.runInContext('closingCard()',b.context);
+  assert.match(html,/made-by-jason-logo\.png/);
+  assert.match(html,/Made by Jason/);
+});
+
+test('a Fast Money win plays celebration, credits and Made by Jason in order', async () => {
+  const b=browser(async()=>({}));
+  vm.runInContext("var closingAudio=[];var closingStages=[];playClosingAudio=async src=>closingAudio.push(src);renderGame=()=>closingStages.push(closingStage);state={code:'WIN',mode:'remote',phase:'fast_results',fastScores:[[100,50,25,20,5],[15,null,null,null,null]]}",b.context);
+  await vm.runInContext('maybeStartClosingSequence()',b.context);
+  assert.equal(vm.runInContext("closingAudio.join(',')",b.context),'/assets/fast-money-celebration.mp3,/assets/fast-money-end-credits.mp3,/assets/made-by-jason.mp3');
+  assert.equal(vm.runInContext("closingStages.join(',')",b.context),'credits,jason,done');
+});
+
 test('family announcements and oval reveals finish one family before introducing the other', async () => {
   const b=browser(async()=>({})), scenes=[], stages=[];
   const content={set innerHTML(value){scenes.push(value);},querySelector(){return {classList:{add(){stages.push('slide');}}};}};

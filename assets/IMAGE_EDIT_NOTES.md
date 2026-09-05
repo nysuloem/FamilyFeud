@@ -32,3 +32,10 @@ Use case: precise-object-edit. Asset type: background of a live game faceoff scr
 - Generation specification: preserve Richard Dawson’s recognizable face, hairstyle, gray suit, and friendly standing pose from the reference; isolate him on the right with his leftward arm in the original shoulder-embrace position, leaving the guest space empty. No lettering, interface, or additional people. Follow-up edit replaces the checkerboard with pure black while preserving the host and pose.
 - Mode: reference image edit, followed by background correction. Final generated source: `generated_images/exec-2a5cb255-c10b-41ca-ad05-266c8640573e.png` in the task workspace; shipped asset path above.
 - `public/assets/faceoff-walkup.mp3`: user-supplied “Screen Recording 2026-09-01 224017.mp3,” trimmed from 0.48 seconds for 6.55 seconds, re-encoded as MP3. Played at 30% volume under the faceoff invitation; stopped on speech completion/cancellation.
+
+## Made by Jason production card
+
+- Final asset: `public/assets/made-by-jason-logo.png`.
+- Mode: built-in image editor; the original generated production card was simplified and its background corrected to true transparency.
+- Final style prompt: Change only the illustrated man. Convert his face into a simple, clean outline-style icon with a few bold dark-blue contours for the face, nose, eyes, eyebrows and smile; flat solid red-orange shapes for the hair and full beard; little or no skin shading; no pores, realistic highlights or individual beard hairs. Preserve the same composition, gold marquee emblem and lights, transparent outer background, and exact text, spelling, layout and colors: “MADE BY JASON”.
+- Transparency correction: Remove the gray-and-white checkerboard completely and replace it with genuine transparent pixels. Preserve the entire emblem, simplified character, lights, colors, proportions and exact lettering. Change only the area outside the logo and retain clean antialiased edges.

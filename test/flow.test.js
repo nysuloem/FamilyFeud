@@ -131,6 +131,7 @@ async function playFast(f, indices) {
     assert.equal(publicRoom(room).fastScores[idx][q], null);
     await finish(); // Survey says -> points and effect.
     assert.equal(publicRoom(room).fastScores[idx][q], room.fastScores[idx][q]);
+    if (room.phase === 'fast_results') return;
     if(q < 4) assert.equal(publicRoom(room).game.fastMoney[q+1].question, null);
     await finish(); // Points -> next question.
   }
@@ -146,7 +147,11 @@ test('both Fast Money players progress through real reveals to $10,000; question
   await until(() => room.fastIndex === 1, 4000);
   await playFast(f, [1, 1, 1, 1, 1]);
   assert.equal(room.fastPrize, 10000);
-  assert.ok(publicRoom(room).fastTopAnswers.every(Boolean));
+  assert.equal(room.fastWinningRevealCount, 1, 'The first second-player reveal crosses 200 and ends Fast Money immediately');
+  assert.deepEqual(publicRoom(room).fastScores[1].slice(1), [null, null, null, null]);
+  assert.match(room.message, /214 points/);
+  assert.ok(publicRoom(room).fastTopAnswers[0]);
+  assert.deepEqual(publicRoom(room).fastTopAnswers.slice(1), [null, null, null, null]);
   await until(() => room.phase === 'fast_results', 4000);
 });
 
@@ -173,7 +178,7 @@ test('second-player duplicates buzz and retry the same question without resettin
     assert.equal((await give(answer,attempt)).ok,true);
     await until(()=>room.pendingCue);
     const cue=room.speechCues.get(room.pendingCue.cueId);
-    assert.equal(cue.text,'Try again!');assert.equal(cue.sound,'strike');
+    assert.equal(cue.text,'Try again!');assert.equal(cue.sound,'fast_duplicate');
     assert.equal(room.fastQuestionIndex,0);assert.equal(room.fastAttempt,attempt+1);
     assert.equal(room.fastDeadline,deadline);assert.deepEqual(room.fastDraftAnswers,[]);
     assert.ok(publicRoom(room).fastAnswers[0].every(a=>a===null));
