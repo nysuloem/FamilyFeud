@@ -6,7 +6,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 const bankDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'feud-flow-bank-'));
 const previousDirectory = process.env.DATA_DIR;
 process.env.DATA_DIR = bankDirectory;
-const { server, io, rooms, makeRoom, beginRound, publicRoom, awardRound, beginFastMoney, startFastPlayer, finishFastPlayer, openAnswer, answerClockExpired, disposeRoom } = require('../server');
+const { server, io, rooms, makeRoom, beginRound, publicRoom, awardRound, beginFastMoney, startFastPlayer, finishFastPlayer, openAnswer, answerClockExpired, disposeRoom, fallbackEndCredits } = require('../server');
 
 if (previousDirectory === undefined) delete process.env.DATA_DIR; else process.env.DATA_DIR = previousDirectory;
 const previousKey = process.env.OPENAI_API_KEY;
@@ -15,6 +15,16 @@ let url;
 test.before(async () => { await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); url = `http://127.0.0.1:${server.address().port}`; });
 test.after(async () => { await new Promise(resolve => io.close(resolve)); fs.rmSync(bankDirectory, {recursive:true,force:true}); if (previousKey) process.env.OPENAI_API_KEY = previousKey; });
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+test('every room has era-specific proper end credits even without the API', () => {
+  const room = makeRoom('remote', 'harvey');
+  const credits = fallbackEndCredits('harvey');
+  assert.equal(room.endCredits.length, 8);
+  assert.match(credits.find(item => item.role.includes('WARDROBE')).role, /STEVE HARVEY/);
+  assert.ok(credits.some(item => item.role === 'CONTESTANT FLIGHTS PROVIDED BY'));
+  assert.equal(publicRoom(room).creditsPromise, undefined);
+  disposeRoom(room);
+});
 async function until(predicate, timeout = 2500) {
   const deadline = Date.now() + timeout;
   while (!predicate()) { if (Date.now() > deadline) throw new Error('State transition timed out'); await pause(5); }

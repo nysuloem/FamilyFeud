@@ -175,6 +175,24 @@ test('the final production card shows the exact Made by Jason logo', () => {
   assert.match(html,/Made by Jason/);
 });
 
+test('Fast Money win celebration flashes ten thousand dollars with balloons and confetti', () => {
+  const b=browser(async()=>({}));
+  const html=vm.runInContext('celebrationOverlay()',b.context);
+  assert.match(html,/\$10,000/);
+  assert.equal((html.match(/class="win-balloon"/g)||[]).length,30);
+  assert.equal((html.match(/class="win-confetti"/g)||[]).length,48);
+});
+
+test('end credits roll host, contestants and generated production companies safely', () => {
+  const b=browser(async()=>({}));
+  vm.runInContext("state={era:'harvey',families:[{name:'Brown'},{name:'Smith'}],players:[{name:'Pat'},{name:'Sam'}],endCredits:[{role:'CONTESTANT FLIGHTS PROVIDED BY',name:'Good Answer Airways'},{role:'SET DESIGN',name:'<Scenic & Co>'}]};closingStage='credits'",b.context);
+  const html=vm.runInContext('closingCard()',b.context);
+  assert.match(html,/STEVE HARVEY/);
+  assert.match(html,/Good Answer Airways/);
+  assert.match(html,/&lt;Scenic &amp; Co&gt;/);
+  assert.doesNotMatch(html,/<Scenic & Co>/);
+});
+
 test('a Fast Money win plays celebration, credits and Made by Jason in order', async () => {
   const b=browser(async()=>({}));
   vm.runInContext("var closingAudio=[];var closingStages=[];playClosingAudio=async src=>closingAudio.push(src);renderGame=()=>closingStages.push(closingStage);state={code:'WIN',mode:'remote',phase:'fast_results',fastScores:[[100,50,25,20,5],[15,null,null,null,null]]}",b.context);

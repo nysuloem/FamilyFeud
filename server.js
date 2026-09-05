@@ -69,6 +69,69 @@ function joinUrl(req, code) {
   return `${base.replace(/\/$/, '')}/join/${code}`;
 }
 
+function fallbackEndCredits(era = 'dawson') {
+  const host = ERAS[era]?.name || ERAS.dawson.name;
+  return [
+    { role: 'EXECUTIVE PRODUCER', name: 'Patty O’Furniture' },
+    { role: 'PRODUCED BY', name: 'Drew Peacock' },
+    { role: 'CO-PRODUCER', name: 'Anita Goodanswer' },
+    { role: `${host.toUpperCase()}'S WARDROBE PROVIDED BY`, name: 'Lapels & Leisure Ltd.' },
+    { role: 'CONTESTANT FLIGHTS PROVIDED BY', name: 'Good Answer Airways' },
+    { role: 'SET DESIGN', name: 'Survey Says Scenic Co.' },
+    { role: 'BUZZER MAINTENANCE', name: 'Two Short Buzzes Inc.' },
+    { role: 'CATERING', name: 'Name a Sandwich Studios' }
+  ];
+}
+
+async function generateEndCredits(room) {
+  if (!process.env.OPENAI_API_KEY) return null;
+  const host = ERAS[room.era || 'dawson'].name;
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST', signal: AbortSignal.timeout(12000),
+    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: process.env.OPENAI_MODEL || 'gpt-5-mini',
+      instructions: 'Create short, family-friendly joke credits for a private Family Feud-style game. Invent fictional names and fictional businesses only. Use gentle wordplay, never real people, real brands, insults, adult jokes, or copyrighted character names. Each value must be 32 characters or fewer.',
+      input: JSON.stringify({ host, families: room.families.map(f => f.name), contestants: room.players.map(p => p.name) }),
+      text: { format: { type: 'json_schema', name: 'end_credits', strict: true, schema: {
+        type: 'object', additionalProperties: false,
+        properties: {
+          executiveProducer: { type: 'string' }, producer: { type: 'string' }, coProducer: { type: 'string' },
+          wardrobeCompany: { type: 'string' }, airline: { type: 'string' }, setDesigner: { type: 'string' },
+          buzzerCompany: { type: 'string' }, caterer: { type: 'string' }
+        },
+        required: ['executiveProducer', 'producer', 'coProducer', 'wardrobeCompany', 'airline', 'setDesigner', 'buzzerCompany', 'caterer']
+      } } }
+    })
+  });
+  if (!response.ok) throw new Error(`OpenAI credits ${response.status}: ${await response.text()}`);
+  const payload = await response.json();
+  const output = payload.output_text || payload.output?.flatMap(item => item.content || []).find(item => item.type === 'output_text')?.text;
+  const names = JSON.parse(output);
+  if (Object.values(names).some(name => typeof name !== 'string' || !name.trim() || name.length > 40)) throw new Error('Invalid generated credits');
+  return [
+    { role: 'EXECUTIVE PRODUCER', name: names.executiveProducer },
+    { role: 'PRODUCED BY', name: names.producer },
+    { role: 'CO-PRODUCER', name: names.coProducer },
+    { role: `${host.toUpperCase()}'S WARDROBE PROVIDED BY`, name: names.wardrobeCompany },
+    { role: 'CONTESTANT FLIGHTS PROVIDED BY', name: names.airline },
+    { role: 'SET DESIGN', name: names.setDesigner },
+    { role: 'BUZZER MAINTENANCE', name: names.buzzerCompany },
+    { role: 'CATERING', name: names.caterer }
+  ];
+}
+
+function prepareEndCredits(room) {
+  room.creditsPromise ||= generateEndCredits(room).then(credits => {
+    if (credits) room.endCredits = credits;
+    return room.endCredits;
+  }).catch(error => {
+    console.error('AI end credits unavailable:', error.message);
+    return room.endCredits;
+  });
+  return room.creditsPromise;
+}
+
 function makeRoom(mode, era = chooseEra()) {
   let code; do code = newCode(); while (rooms.has(code));
   const room = {
@@ -79,13 +142,14 @@ function makeRoom(mode, era = chooseEra()) {
     fastQuestionIndex: null, fastDraftAnswers: [], fastDeadline: null, inputLocked: false,
     answerDeadline: null, answerTimer: null, answerToken: 0, fastTimer: null,
     kissPlayerId: null, kissStatus: 'off', kissImage: null,
+    endCredits: fallbackEndCredits(era), creditsPromise: null,
     speechCues: new Map(), cueCounter: 0, pendingCue: null, displayId: null, createdAt: Date.now()
   };
   rooms.set(code, room); return room;
 }
 
 function publicRoom(room) {
-  const { announcementAudio, speechCues, fastSpeech, fastMatches, pendingCue, fastDraftAnswers, fastDraftMatches, fastPendingAnswer, fastQuestionQueue, fastQuestionAttempts, displayId, answerTimer, fastTimer, transitionTimer, kissImage, ...safeRoom } = room;
+  const { announcementAudio, speechCues, fastSpeech, fastMatches, pendingCue, fastDraftAnswers, fastDraftMatches, fastPendingAnswer, fastQuestionQueue, fastQuestionAttempts, displayId, answerTimer, fastTimer, transitionTimer, kissImage, creditsPromise, ...safeRoom } = room;
   return {
     ...safeRoom,
     serverNow: Date.now(),
@@ -336,6 +400,7 @@ io.on('connection', socket => {
       const suggestions = playerIds.map(id => player(room, id).familyName).filter(Boolean);
       return { name: suggestions[Math.floor(Math.random() * suggestions.length)] || `Family ${fi + 1}`, playerIds };
     });
+    void prepareEndCredits(room).then(() => emit(room));
     room.phase = 'intro'; room.introStartedAt = Date.now(); setMessage(room, 'It’s time for the Family Feud!', null, false); emit(room);
   });
 
@@ -826,4 +891,4 @@ if (require.main === module) {
   refillSurveys();setInterval(refillSurveys,5*60*1000).unref();
   server.listen(port, () => console.log(`Family Feud running on http://localhost:${port}`));
 }
-module.exports = { server, io, rooms, makeRoom, beginRound, publicRoom, finishHostedCue, openAnswer, answerClockExpired, resolveAnswer, awardRound, beginFastMoney, startFastPlayer, finishFastPlayer, disposeRoom };
+module.exports = { server, io, rooms, makeRoom, beginRound, publicRoom, finishHostedCue, openAnswer, answerClockExpired, resolveAnswer, awardRound, beginFastMoney, startFastPlayer, finishFastPlayer, disposeRoom, fallbackEndCredits, prepareEndCredits };

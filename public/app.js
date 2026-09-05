@@ -227,7 +227,8 @@ function renderGame() {
   clearInterval(fastTimer); introRun = false;
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
   const faceoffScene = showFaceoffScene();
-  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${isHarvey() ? (faceoffScene ? harveyFaceoff() : round ? harveyStage(round) : harveyFastStage()) : (faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage())}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${goodAnswerControl()}</section></main>`;
+  const gameStage = isHarvey() ? (faceoffScene ? harveyFaceoff() : round ? harveyStage(round) : harveyFastStage()) : (faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage());
+  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${gameStage}${closingStage === 'celebration' ? celebrationOverlay() : ''}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${goodAnswerControl()}</section></main>`;
   wireControls();
   refreshContestantBadges();
   fitBoardLabels();
@@ -242,10 +243,22 @@ function renderGame() {
 
 function closingCard() {
   if (!['credits','jason','done'].includes(closingStage)) return null;
-  const families = (state.families || []).map(f => `${escapeHtml(f.name)} FAMILY`).join('<span>•</span>');
-  if (closingStage === 'credits') return `<section class="feud-credits"><h1>THANKS FOR PLAYING!</h1><div>${families}</div><p>${state.players.map(p => escapeHtml(p.name)).join(' · ')}</p></section>`;
+  if (closingStage === 'credits') {
+    const host = isHarvey() ? 'STEVE HARVEY' : 'RICHARD DAWSON';
+    const families = (state.families || []).map(f => `${escapeHtml(f.name)} FAMILY`).join(' <span>•</span> ');
+    const contestants = (state.players || []).map(p => escapeHtml(p.name)).join(' · ');
+    const credits = (state.endCredits || []).map(credit => `<article><small>${escapeHtml(credit.role)}</small><strong>${escapeHtml(credit.name)}</strong></article>`).join('');
+    return `<section class="feud-credits"><div class="credits-roll"><h1>FAMILY FEUD</h1><p class="credits-families">${families}</p><article><small>HOST</small><strong>${host}</strong></article><article><small>TONIGHT'S CONTESTANTS</small><strong>${contestants}</strong></article>${credits}<h2>THANKS FOR PLAYING!</h2><p class="credits-copyright">No surveys were harmed in the making of this feud.</p></div></section>`;
+  }
   if (closingStage === 'jason' || closingStage === 'done') return `<section class="made-by-jason"><img src="/assets/made-by-jason-logo.png" alt="Made by Jason — red-haired, red-bearded man"></section>`;
   return null;
+}
+
+function celebrationOverlay() {
+  const colors = ['#ef2b2d','#ffca28','#2388d9','#42b96b','#ad55d8','#ff7a21'];
+  const balloons = Array.from({ length: 30 }, (_, i) => `<i class="win-balloon" style="--x:${(i * 37) % 101}%;--delay:${(i % 15) * .31}s;--dur:${6 + (i % 6) * .65}s;--drift:${(i % 2 ? 1 : -1) * (35 + (i % 5) * 12)}px;--color:${colors[i % colors.length]}"></i>`).join('');
+  const confetti = Array.from({ length: 48 }, (_, i) => `<b class="win-confetti" style="--x:${(i * 53) % 101}%;--delay:${(i % 16) * .23}s;--dur:${3.8 + (i % 7) * .35}s;--spin:${360 + (i % 5) * 180}deg;--color:${colors[(i + 2) % colors.length]}"></b>`).join('');
+  return `<section class="fast-win-celebration" aria-label="Ten thousand dollar celebration"><div class="win-burst"></div><div class="win-prize"><span>YOU WON</span><strong>$10,000</strong></div><div class="balloon-rain">${balloons}${confetti}</div></section>`;
 }
 
 async function maybeStartClosingSequence() {
