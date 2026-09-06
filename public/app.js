@@ -156,7 +156,7 @@ function renderFaceoffBuzzer(){
 
 function renderIntro() {
   if (introRun && document.querySelector('#introContent')) return;
-  const opening = isHarvey() ? `<h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p>` : dawsonOpeningTitle();
+  const opening = isHarvey() ? harveyOpeningLogo() : dawsonOpeningTitle();
   app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled && !blockedAudio.size ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent">${opening}</div></section>`;
   document.querySelector('#sound').onclick = () => { unlockAudio(); runIntro(); };
   runIntro();
@@ -231,9 +231,9 @@ async function playFamilyAnnouncement(index, part, preloaded){
 
 function playAudioFile(src){return playAudioElement(new Audio(src))}
 function playAudioBlob(blob){return playAudioElement(new Audio(URL.createObjectURL(blob)))}
-function startIntroBackgroundMusic(){
+function startIntroBackgroundMusic(src='/assets/dawson-family-intro-bed.mp3'){
   stopIntroBackgroundMusic(0);
-  const audio=new Audio('/assets/dawson-family-intro-bed.mp3');
+  const audio=new Audio(src);
   audio.loop=true;audio.volume=.3;
   const retry=()=>{
     blockedAudio.delete(retry);

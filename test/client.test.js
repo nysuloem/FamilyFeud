@@ -186,6 +186,16 @@ test('Dawson opening crossfades into the family music bed before it ends', async
   b.audioInstances[0].onended();await playing;
 });
 
+test('Harvey opening crossfades into its dialogue-free family music bed', async () => {
+  const b=browser(async()=>({}));
+  b.context.setTimeout=fn=>{fn();return 1;};
+  const playing=vm.runInContext('playHarveyOpeningIntoMusic()',b.context);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(b.audioInstances.map(audio=>audio.src),['/assets/harvey-opening.mp3','/assets/harvey-family-intro-bed.mp3']);
+  assert.equal(b.audioInstances[1].loop,true);
+  b.audioInstances[0].onended();await playing;
+});
+
 test('Dawson family announcements preload together before their turns', async () => {
   const pending=[];
   const b=browser(url=>new Promise(resolve=>pending.push({url,resolve})));
@@ -391,17 +401,18 @@ test('a duplicate retry clears the old transcript and starts a fresh microphone 
   assert.equal(vm.runInContext('fastDraft.value',b.context),'tea');
 });
 
-test('Harvey recording introduces Steve once, followed directly by families',async()=>{
+test('Harvey opening shows the logo, introduces our families over a dialogue-free bed, then reveals Steve',async()=>{
   const requests=[];
   const b=browser(async url=>{requests.push(url);return {status:204}}),events=[],scenes=[];
   b.context.events=events;
   b.context.document.querySelector=selector=>selector==='#introContent'?{set innerHTML(value){scenes.push(value)}}:null;
   b.context.setTimeout=fn=>{fn();return 1};
-  vm.runInContext("state={era:'harvey',code:'TEST',phase:'intro',mode:'remote',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}]};playAudioFile=async src=>events.push(src);speakAsync=async text=>events.push(text);playFamilyAnnouncement=async(i,part)=>events.push(i+':'+part)",b.context);
+  vm.runInContext("state={era:'harvey',code:'TEST',phase:'intro',mode:'remote',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}]};preloadFamilyAnnouncements=async()=>({});playHarveyOpeningIntoMusic=async()=>events.push('/assets/harvey-opening.mp3');playAudioFile=async src=>events.push(src);stopIntroBackgroundMusic=async()=>{};playFamilyAnnouncement=async(i,part)=>events.push(i+':'+part)",b.context);
   await vm.runInContext('runIntro()',b.context);
-  assert.deepEqual(events,['/assets/harvey-intro.mp3','0:name','0:members','1:name','1:members']);
+  assert.deepEqual(events,['/assets/harvey-opening.mp3','0:name','0:members','1:name','1:members','/assets/harvey-host-intro.mp3']);
   assert.deepEqual(requests,[], 'No redundant host TTS download');
-  assert.match(scenes[0],/STEVE/);assert.match(scenes[1],/Brown/);assert.match(scenes[2],/Smith/);
+  assert.match(scenes[0],/harvey-opening-logo/);assert.doesNotMatch(scenes[0],/Steve/);
+  assert.match(scenes[1],/Brown/);assert.match(scenes[2],/Smith/);assert.match(scenes[3],/Steve Harvey/);
   assert.doesNotMatch(scenes.join(''),/Richard|Dawson|kiss|family-name-door/);
   assert.equal(b.events.at(-1).name,'introComplete');
 });

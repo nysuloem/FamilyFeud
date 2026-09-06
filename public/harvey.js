@@ -1,19 +1,37 @@
 function isHarvey(){return state?.era === 'harvey';}
-function harveyHostCard(){return `<div class="harvey-host-card"><img class="harvey-host-portrait" src="/assets/harvey-intro-portrait.png" alt="Steve Harvey"><div><p>YOUR HOST</p><h1>STEVE<br> HARVEY</h1><span>FAMILY FEUD</span></div></div>`;}
+function harveyOpeningLogo(){return `<section class="harvey-opening-logo" aria-label="Family Feud"><span>FAMILY<br>FEUD</span></section>`;}
+function harveyHostCard(){return `<div class="harvey-host-card harvey-host-reveal"><img class="harvey-host-portrait" src="/assets/harvey-intro-portrait.png" alt="Steve Harvey holding the Family Feud logo"></div>`;}
 async function runHarveyIntroduction(){
   const content=document.querySelector('#introContent');
-  if(content)content.innerHTML=harveyHostCard();
-  // The recording already introduces Steve; proceed directly to the families.
-  await playAudioFile('/assets/harvey-intro.mp3').catch(()=>{});
-  for(let index=0;index<state.families.length;index++){
+  if(content)content.innerHTML=harveyOpeningLogo();
+  const announcementsPromise=preloadFamilyAnnouncements();
+  await playHarveyOpeningIntoMusic();
+  const announcements=await announcementsPromise;
+  try{
+    for(let index=0;index<state.families.length;index++){
+      if(state.phase!=='intro')return;
+      if(content)content.innerHTML=harveyFamilyIntroduction(state.families[index]);
+      refreshContestantBadges();
+      await playFamilyAnnouncement(index,'name',announcements);
+      if(state.phase!=='intro')return;
+      await playFamilyAnnouncement(index,'members',announcements);
+      await new Promise(resolve=>setTimeout(resolve,350));
+    }
     if(state.phase!=='intro')return;
-    if(content)content.innerHTML=harveyFamilyIntroduction(state.families[index]);
-    refreshContestantBadges();
-    await playFamilyAnnouncement(index,'name');
-    if(state.phase!=='intro')return;
-    await playFamilyAnnouncement(index,'members');
-    await new Promise(resolve=>setTimeout(resolve,1000));
+    if(content)content.innerHTML=harveyHostCard();
+    await Promise.all([playAudioFile('/assets/harvey-host-intro.mp3'),stopIntroBackgroundMusic(650)]);
+    await new Promise(resolve=>setTimeout(resolve,500));
+  }finally{
+    await stopIntroBackgroundMusic(0);
   }
+}
+async function playHarveyOpeningIntoMusic(){
+  let bedStarted=false,bedTimer=null;
+  await playAudioElement(new Audio('/assets/harvey-opening.mp3'),undefined,()=>{
+    bedTimer=setTimeout(()=>{bedStarted=true;startIntroBackgroundMusic('/assets/harvey-family-intro-bed.mp3');},16600);
+  });
+  clearTimeout(bedTimer);
+  if(!bedStarted)startIntroBackgroundMusic('/assets/harvey-family-intro-bed.mp3');
 }
 function harveyFamilyIntroduction(family){
   return `<section class="harvey-family-intro"><header><span>MEET THE FAMILY</span><h1>${escapeHtml(family.name)}</h1></header><div class="harvey-intro-lineup">${family.playerIds.map(id=>{const p=state.players.find(p=>p.id===id);return `<article>${contestantPortrait(p, 'harvey')}</article>`}).join('')}</div><div class="harvey-intro-rail">FAMILY FEUD</div></section>`;
