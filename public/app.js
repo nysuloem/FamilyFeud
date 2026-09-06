@@ -123,6 +123,7 @@ function showJoin(code) {
 function render() {
   if (!state) return; clearInterval(clockInterval);
   document.body?.classList?.toggle('harvey-era', isHarvey());
+  document.body?.classList?.toggle('dawson-era', !isHarvey());
   updateTVDisplay();
   syncFastMicrophone();
   if (state.testPart && state.phase === 'generating') {

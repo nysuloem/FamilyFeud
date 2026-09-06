@@ -216,6 +216,14 @@ test('Dawson opening uses the illuminated oval title and the stage is a full ima
   assert.match(vm.runInContext("dawsonStage({answers:[]})",b.context),/<img class="dawson-stage-backdrop" src="\/assets\/dawson-stage-wide\.webp"/);
 });
 
+test('Dawson rendering marks every screen for the continuous light-blue background', () => {
+  const app=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
+  assert.match(app,/toggle\('dawson-era', !isHarvey\(\)\)/);
+  const css=fs.readFileSync(path.join(__dirname,'../public/dawson.css'),'utf8');
+  assert.match(css,/\.dawson-era \.intro-overlay/);
+  assert.match(css,/\.dawson-era \.game-shell/);
+});
+
 test('the final production card shows the exact Made by Jason logo', () => {
   const b=browser(async()=>({}));
   vm.runInContext("state={families:[{name:'Brown'},{name:'Smith'}],players:[]};closingStage='jason'",b.context);
