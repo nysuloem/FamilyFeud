@@ -177,6 +177,27 @@ test('Dawson family announcements use the supplied looping music bed', async () 
   assert.equal(audio.paused,true);
 });
 
+test('Dawson opening crossfades into the family music bed before it ends', async () => {
+  const b=browser(async()=>({}));
+  b.context.setTimeout=fn=>{fn();return 1;};
+  const playing=vm.runInContext('playDawsonOpeningIntoMusic()',b.context);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(b.audioInstances.map(audio=>audio.src),['/assets/richard-dawson-intro.mp3','/assets/dawson-family-intro-bed.mp3']);
+  b.audioInstances[0].onended();await playing;
+});
+
+test('Dawson family announcements preload together before their turns', async () => {
+  const pending=[];
+  const b=browser(url=>new Promise(resolve=>pending.push({url,resolve})));
+  vm.runInContext("state={code:'TEST',families:[{},{},]}",b.context);
+  const loading=vm.runInContext('preloadFamilyAnnouncements()',b.context);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(pending.length,4);
+  pending.forEach((item,index)=>item.resolve({ok:true,status:200,blob:async()=>`voice-${index}`}));
+  const loaded=await loading;
+  assert.deepEqual(Object.keys(loaded),['0:name','0:members','1:name','1:members']);
+});
+
 test('Dawson host introduction returns to the isolated Richard portrait', () => {
   const b=browser(async()=>({}));
   const html=vm.runInContext('dawsonHostIntroduction()',b.context);
@@ -188,11 +209,11 @@ test('Dawson host introduction returns to the isolated Richard portrait', () => 
 test('Dawson opening uses the illuminated oval title and the stage is a full image layer', () => {
   const b=browser(async()=>({}));
   const opening=vm.runInContext('dawsonOpeningTitle()',b.context);
-  assert.match(opening,/dawson-opening-oval/);
+  assert.match(opening,/family-name-door dawson-logo-door/);
   assert.match(opening,/>FAMILY</);
   assert.match(opening,/>FEUD</);
   vm.runInContext("state={round:0,bank:0,scores:[0,0],turnPlayerId:null,families:[{name:'One',playerIds:[]},{name:'Two',playerIds:[]}],players:[]}",b.context);
-  assert.match(vm.runInContext("dawsonStage({answers:[]})",b.context),/<img class="dawson-stage-backdrop" src="\/assets\/dawson-stage-wide\.png"/);
+  assert.match(vm.runInContext("dawsonStage({answers:[]})",b.context),/<img class="dawson-stage-backdrop" src="\/assets\/dawson-stage-wide\.webp"/);
 });
 
 test('the final production card shows the exact Made by Jason logo', () => {
@@ -235,7 +256,7 @@ test('family announcements and oval reveals finish one family before introducing
   b.context.document.querySelector=selector=>selector==='#introContent'?content:null;
   b.context.setTimeout=fn=>{fn();return 1;};
   b.context.stages=stages;
-  vm.runInContext("state={code:'TEST',mode:'remote',phase:'intro',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}],kissStatus:'off'};playAudioFile=async()=>{};playFamilyAnnouncement=async(i,part)=>stages.push(i+':'+part)",b.context);
+  vm.runInContext("state={code:'TEST',mode:'remote',phase:'intro',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}],kissStatus:'off'};playDawsonOpeningIntoMusic=async()=>startIntroBackgroundMusic();playAudioFile=async()=>{};playFamilyAnnouncement=async(i,part)=>stages.push(i+':'+part)",b.context);
   await vm.runInContext('runIntro()',b.context);
   assert.deepEqual(stages,['0:name','slide','0:members','1:name','slide','1:members']);
   assert.match(scenes[0],/Brown/);assert.doesNotMatch(scenes[0],/Smith/);

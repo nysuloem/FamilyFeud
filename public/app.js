@@ -169,9 +169,10 @@ async function runIntro() {
     if (isHarvey()) { await runHarveyIntroduction(); return; }
     // The sequence is deliberate: opening clip, family introductions over the
     // supplied music bed, then the host clip.
-    await playAudioFile('/assets/richard-dawson-intro.mp3');
+    const announcementsPromise=preloadFamilyAnnouncements();
+    await playDawsonOpeningIntoMusic();
+    const announcements=await announcementsPromise;
     const introContent = document.querySelector('#introContent');
-    startIntroBackgroundMusic();
     try {
       for (let index = 0; index < state.families.length; index++) {
         if (state.phase !== 'intro') return;
@@ -179,30 +180,50 @@ async function runIntro() {
         refreshContestantBadges();
         fitFamilyName();
         document.fonts?.ready.then(fitFamilyName);
-        await playFamilyAnnouncement(index, 'name');
+        await playFamilyAnnouncement(index, 'name', announcements);
         if (state.phase !== 'intro') return;
         introContent?.querySelector('.family-reveal-window')?.classList.add('open');
-        await new Promise(resolve => setTimeout(resolve, 1450));
-        await playFamilyAnnouncement(index, 'members');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1050));
+        await playFamilyAnnouncement(index, 'members', announcements);
+        await new Promise(resolve => setTimeout(resolve, 250));
       }
+      const kissed = state.players.find(p => p.id === state.kissPlayerId) || randomPlayer();
+      if (introContent) introContent.innerHTML = dawsonHostIntroduction();
+      await Promise.all([playAudioFile('/assets/intro-theme.mp3'),stopIntroBackgroundMusic(700)]);
+      if (introContent) introContent.innerHTML = state.kissStatus === 'ready' ? `<img class="kiss-souvenir" src="/api/room/${state.code}/kiss" alt="AI-edited Richard Dawson greeting ${escapeHtml(kissed.name)}"><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p><p class="kiss-disclosure">AI-edited fictional souvenir</p>` : `<div class="host-card"><img class="host-isolated" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p></div></div>`;
+      await new Promise(resolve => setTimeout(resolve, state.kissStatus === 'ready' ? 3800 : 1200));
+      await new Promise(resolve => setTimeout(resolve, 900));
     } finally {
-      await stopIntroBackgroundMusic();
+      await stopIntroBackgroundMusic(0);
     }
-    const kissed = state.players.find(p => p.id === state.kissPlayerId) || randomPlayer();
-    if (introContent) introContent.innerHTML = dawsonHostIntroduction();
-    await playAudioFile('/assets/intro-theme.mp3');
-    if (introContent) introContent.innerHTML = state.kissStatus === 'ready' ? `<img class="kiss-souvenir" src="/api/room/${state.code}/kiss" alt="AI-edited Richard Dawson greeting ${escapeHtml(kissed.name)}"><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p><p class="kiss-disclosure">AI-edited fictional souvenir</p>` : `<div class="host-card"><img class="host-isolated" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p></div></div>`;
-    await new Promise(resolve => setTimeout(resolve, state.kissStatus === 'ready' ? 3800 : 1200));
-    await new Promise(resolve => setTimeout(resolve, 900));
   } finally {
     if (state?.phase === 'intro' && (state.adminId === myPlayerId || isDisplay)) socket.emit('introComplete', { code: state.code });
   }
 }
 
-async function playFamilyAnnouncement(index, part){
+async function preloadFamilyAnnouncements(){
+  const entries=state.families.flatMap((_,index)=>['name','members'].map(part=>({index,part,key:`${index}:${part}`})));
+  const results=await Promise.all(entries.map(async entry=>{
+    try{const response=await fetch(`/api/room/${state.code}/announcement?family=${entry.index}&part=${entry.part}`);if(!response.ok||response.status===204)throw new Error('No API voice');return [entry.key,await response.blob()]}
+    catch{return [entry.key,null]}
+  }));
+  return Object.fromEntries(results);
+}
+
+async function playDawsonOpeningIntoMusic(){
+  let bedStarted=false,bedTimer=null;
+  await playAudioElement(new Audio('/assets/richard-dawson-intro.mp3'),undefined,()=>{
+    bedTimer=setTimeout(()=>{bedStarted=true;startIntroBackgroundMusic();},5600);
+  });
+  clearTimeout(bedTimer);
+  if(!bedStarted)startIntroBackgroundMusic();
+}
+
+async function playFamilyAnnouncement(index, part, preloaded){
   const family = state.families[index];
   const fallback = part === 'name' ? `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!` : `${names(family)}!`;
+  const key=`${index}:${part}`;
+  if(preloaded&&Object.hasOwn(preloaded,key))return preloaded[key]?playAudioBlob(preloaded[key]):speakAsync(fallback);
   try{const response=await fetch(`/api/room/${state.code}/announcement?family=${index}&part=${part}`);if(!response.ok||response.status===204)throw new Error('No API voice');await playAudioBlob(await response.blob())}
   catch{return speakAsync(fallback)}
 }

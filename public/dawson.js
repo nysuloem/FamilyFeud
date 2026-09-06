@@ -25,7 +25,7 @@ function dawsonTeam(index) {
 }
 
 function dawsonStage(round) {
-  return `<section class="dawson-stage" aria-label="Richard Dawson era Family Feud stage"><img class="dawson-stage-backdrop" src="/assets/dawson-stage-wide.png" alt=""><div class="stage-round">${state.round === 4 ? 'SUDDEN DEATH' : `ROUND ${state.round + 1}`}</div><div class="dawson-oval"><div class="bank-display" aria-label="Round bank">${dotNumber(state.bank)}</div>${dawsonBoard(round)}<div class="score-wing wing-left" aria-label="${escapeHtml(state.families[0].name)} score">${dotNumber(state.scores[0])}</div><div class="score-wing wing-right" aria-label="${escapeHtml(state.families[1].name)} score">${dotNumber(state.scores[1])}</div></div>${dawsonTeam(0)}${dawsonTeam(1)}</section>`;
+  return `<section class="dawson-stage" aria-label="Richard Dawson era Family Feud stage"><img class="dawson-stage-backdrop" src="/assets/dawson-stage-wide.webp" alt=""><div class="stage-round">${state.round === 4 ? 'SUDDEN DEATH' : `ROUND ${state.round + 1}`}</div><div class="dawson-oval"><div class="bank-display" aria-label="Round bank">${dotNumber(state.bank)}</div>${dawsonBoard(round)}<div class="score-wing wing-left" aria-label="${escapeHtml(state.families[0].name)} score">${dotNumber(state.scores[0])}</div><div class="score-wing wing-right" aria-label="${escapeHtml(state.families[1].name)} score">${dotNumber(state.scores[1])}</div></div>${dawsonTeam(0)}${dawsonTeam(1)}</section>`;
 }
 
 function dawsonHostIntroduction() {
@@ -33,11 +33,11 @@ function dawsonHostIntroduction() {
 }
 
 function dawsonOpeningTitle() {
-  const bulbs=Array.from({length:44},(_,i)=>{
-    const angle=i/44*Math.PI*2;
-    return `<circle cx="${500+430*Math.cos(angle)}" cy="${300+238*Math.sin(angle)}" r="9"/>`;
+  const bulbs=Array.from({length:48},(_,i)=>{
+    const angle=i/48*Math.PI*2;
+    return `<circle cx="${500+473*Math.cos(angle)}" cy="${300+272*Math.sin(angle)}" r="7"/>`;
   }).join('');
-  return `<section class="dawson-opening-title" aria-label="Family Feud"><div class="dawson-opening-frame"><div class="dawson-opening-oval"><span>FAMILY</span><span>FEUD</span></div><svg viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">${bulbs}</svg></div></section>`;
+  return `<section class="family-introduction dawson-opening-title" aria-label="Family Feud"><div class="family-reveal-window"><div class="family-name-door dawson-logo-door"><span class="oval-flourish flourish-top" aria-hidden="true">✦ ❧ ✦</span><h1><span>FAMILY</span><span>FEUD</span></h1><span class="oval-flourish flourish-bottom" aria-hidden="true">✦ ❧ ✦</span></div></div><svg class="intro-oval-bulbs" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">${bulbs}</svg></section>`;
 }
 
 function dawsonFaceoff() {
