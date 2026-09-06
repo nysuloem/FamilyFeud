@@ -248,6 +248,16 @@ test('Fast Money win celebration flashes ten thousand dollars with balloons and 
   assert.match(html,/\$10,000/);
   assert.equal((html.match(/class="win-balloon"/g)||[]).length,30);
   assert.equal((html.match(/class="win-confetti"/g)||[]).length,48);
+  vm.runInContext("state.era='harvey'",b.context);
+  assert.match(vm.runInContext('celebrationOverlay()',b.context),/\$20,000/);
+});
+
+test('Harvey Fast Money board awards $20,000 while Dawson remains $10,000',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={era:'harvey',phase:'fast_results',fastIndex:1,fastRevealIndex:1,fastRevealCount:1,fastPlayers:[],players:[],fastAnswers:[Array(5),Array(5)],fastScores:[[200,0,0,0,0],[0,0,0,0,0]],fastTopAnswers:[],fastPrize:20000}",b.context);
+  assert.match(vm.runInContext('harveyFastStage()',b.context),/\$20,000/);
+  vm.runInContext("state.era='dawson';state.fastPrize=10000",b.context);
+  assert.match(vm.runInContext('dawsonFastStage()',b.context),/\$10,000/);
 });
 
 test('end credits roll host, contestants and generated production companies safely', () => {
@@ -401,18 +411,20 @@ test('a duplicate retry clears the old transcript and starts a fresh microphone 
   assert.equal(vm.runInContext('fastDraft.value',b.context),'tea');
 });
 
-test('Harvey opening shows the logo, introduces our families over a dialogue-free bed, then reveals Steve',async()=>{
+test('Harvey opening reveals Steve early, names only the families, then returns to Steve',async()=>{
   const requests=[];
   const b=browser(async url=>{requests.push(url);return {status:204}}),events=[],scenes=[];
   b.context.events=events;
   b.context.document.querySelector=selector=>selector==='#introContent'?{set innerHTML(value){scenes.push(value)}}:null;
   b.context.setTimeout=fn=>{fn();return 1};
-  vm.runInContext("state={era:'harvey',code:'TEST',phase:'intro',mode:'remote',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}]};preloadFamilyAnnouncements=async()=>({});playHarveyOpeningIntoMusic=async()=>events.push('/assets/harvey-opening.mp3');playAudioFile=async src=>events.push(src);stopIntroBackgroundMusic=async()=>{};playFamilyAnnouncement=async(i,part)=>events.push(i+':'+part)",b.context);
+  vm.runInContext("var preloadParts=[];state={era:'harvey',code:'TEST',phase:'intro',mode:'remote',adminId:'P',players:[{id:'P',name:'Pat',photo:'a'},{id:'Q',name:'Sam',photo:'b'}],families:[{name:'Brown',playerIds:['P']},{name:'Smith',playerIds:['Q']}]};preloadFamilyAnnouncements=async parts=>{preloadParts=parts;return {}};playHarveyOpeningIntoMusic=async content=>{events.push('/assets/harvey-opening.mp3');content.innerHTML=harveyHostCard()};playAudioFile=async src=>events.push(src);stopIntroBackgroundMusic=async()=>{};playFamilyAnnouncement=async(i,part)=>events.push(i+':'+part)",b.context);
   await vm.runInContext('runIntro()',b.context);
-  assert.deepEqual(events,['/assets/harvey-opening.mp3','0:name','0:members','1:name','1:members','/assets/harvey-host-intro.mp3']);
+  assert.deepEqual(events,['/assets/harvey-opening.mp3','0:name','1:name','/assets/harvey-return.mp3']);
+  assert.equal(vm.runInContext("preloadParts.join(',')",b.context),'name');
   assert.deepEqual(requests,[], 'No redundant host TTS download');
   assert.match(scenes[0],/harvey-opening-logo/);assert.doesNotMatch(scenes[0],/Steve/);
-  assert.match(scenes[1],/Brown/);assert.match(scenes[2],/Smith/);assert.match(scenes[3],/Steve Harvey/);
+  assert.match(scenes[1],/Steve Harvey/);assert.match(scenes[2],/Brown/);assert.match(scenes[3],/Smith/);assert.match(scenes[4],/Steve Harvey/);
+  assert.doesNotMatch(events.join(','),/members/);
   assert.doesNotMatch(scenes.join(''),/Richard|Dawson|kiss|family-name-door/);
   assert.equal(b.events.at(-1).name,'introComplete');
 });

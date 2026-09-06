@@ -202,8 +202,8 @@ async function runIntro() {
   }
 }
 
-async function preloadFamilyAnnouncements(){
-  const entries=state.families.flatMap((_,index)=>['name','members'].map(part=>({index,part,key:`${index}:${part}`})));
+async function preloadFamilyAnnouncements(parts=['name','members']){
+  const entries=state.families.flatMap((_,index)=>parts.map(part=>({index,part,key:`${index}:${part}`})));
   const results=await Promise.all(entries.map(async entry=>{
     try{const response=await fetch(`/api/room/${state.code}/announcement?family=${entry.index}&part=${entry.part}`);if(!response.ok||response.status===204)throw new Error('No API voice');return [entry.key,await response.blob()]}
     catch{return [entry.key,null]}
@@ -222,7 +222,7 @@ async function playDawsonOpeningIntoMusic(){
 
 async function playFamilyAnnouncement(index, part, preloaded){
   const family = state.families[index];
-  const fallback = part === 'name' ? `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!` : `${names(family)}!`;
+  const fallback = part === 'name' ? (isHarvey() ? `${index ? 'And the' : 'And here are your families! The'} ${family.name} family!` : `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!`) : `${names(family)}!`;
   const key=`${index}:${part}`;
   if(preloaded&&Object.hasOwn(preloaded,key))return preloaded[key]?playAudioBlob(preloaded[key]):speakAsync(fallback);
   try{const response=await fetch(`/api/room/${state.code}/announcement?family=${index}&part=${part}`);if(!response.ok||response.status===204)throw new Error('No API voice');await playAudioBlob(await response.blob())}
@@ -313,7 +313,8 @@ function celebrationOverlay() {
   const colors = ['#ef2b2d','#ffca28','#2388d9','#42b96b','#ad55d8','#ff7a21'];
   const balloons = Array.from({ length: 30 }, (_, i) => `<i class="win-balloon" style="--x:${(i * 37) % 101}%;--delay:${(i % 15) * .31}s;--dur:${6 + (i % 6) * .65}s;--drift:${(i % 2 ? 1 : -1) * (35 + (i % 5) * 12)}px;--color:${colors[i % colors.length]}"></i>`).join('');
   const confetti = Array.from({ length: 48 }, (_, i) => `<b class="win-confetti" style="--x:${(i * 53) % 101}%;--delay:${(i % 16) * .23}s;--dur:${3.8 + (i % 7) * .35}s;--spin:${360 + (i % 5) * 180}deg;--color:${colors[(i + 2) % colors.length]}"></b>`).join('');
-  return `<section class="fast-win-celebration" aria-label="Ten thousand dollar celebration"><div class="win-burst"></div><div class="win-prize"><span>YOU WON</span><strong>$10,000</strong></div><div class="balloon-rain">${balloons}${confetti}</div></section>`;
+  const jackpot=isHarvey()?20000:10000;
+  return `<section class="fast-win-celebration" aria-label="${jackpot.toLocaleString()} dollar celebration"><div class="win-burst"></div><div class="win-prize"><span>YOU WON</span><strong>$${jackpot.toLocaleString()}</strong></div><div class="balloon-rain">${balloons}${confetti}</div></section>`;
 }
 
 async function maybeStartClosingSequence() {
@@ -380,7 +381,7 @@ function fastStage() {
   if (state.phase === 'fast_results') {
     const rows = state.game.fastMoney.map((q,i)=>`<div class="fast-row"><div class="fast-cell">${escapeHtml(state.fastAnswers[0]?.[i] || '—')}</div><div class="fast-cell fast-point">${state.fastScores[0]?.[i] || 0}</div><div class="fast-cell">${escapeHtml(state.fastAnswers[1]?.[i] || '—')}</div><div class="fast-cell fast-point">${state.fastScores[1]?.[i] || 0}</div></div>`).join('');
     const total = (state.fastScores.flat().filter(Number).reduce((a,b)=>a+b,0));
-    return `<div class="panel fast-results"><div class="winner">${total >= 200 ? '$10,000 WIN!' : `$${Number(state.fastPrize || 0).toLocaleString()} WON`}</div><h2>${total} FAST MONEY POINTS</h2>${rows}</div>`;
+    return `<div class="panel fast-results"><div class="winner">${total >= 200 ? `$${(isHarvey()?20000:10000).toLocaleString()} WIN!` : `$${Number(state.fastPrize || 0).toLocaleString()} WON`}</div><h2>${total} FAST MONEY POINTS</h2>${rows}</div>`;
   }
   return `<div class="era-board"><div class="board-inner"><div class="question">FAST MONEY</div><div class="answers">${state.game.fastMoney.map((q,i)=>`<div class="answer-slot hidden"><span>${i+1}</span></div>`).join('')}</div></div></div>`;
 }

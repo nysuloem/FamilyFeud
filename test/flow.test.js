@@ -148,18 +148,18 @@ async function playFast(f, indices) {
   assert.equal(room.phase, 'fast_reveal_done');
 }
 
-test('both Fast Money players progress through real reveals to $10,000; questions stay off play screens', async t => {
+test('both Fast Money players progress through real reveals to the Harvey $20,000 jackpot; questions stay off play screens', async t => {
   const f = await fixture(t), { room, clients } = f;
-  room.round = 3; room.scores = [350, 100]; beginFastMoney(room);
+  room.era='harvey';room.round = 3; room.scores = [350, 100]; beginFastMoney(room);
   assert.equal(room.round, -1, 'Fast Money must not render the old main board');
   assert.ok(publicRoom(room).game.fastMoney.every(q => q.question === null));
   await playFast(f, [0, 0, 0, 0, 0]);
   await until(() => room.fastIndex === 1, 4000);
   await playFast(f, [1, 1, 1, 1, 1]);
-  assert.equal(room.fastPrize, 10000);
+  assert.equal(room.fastPrize, 20000);
   assert.equal(room.fastWinningRevealCount, 1, 'The first second-player reveal crosses 200 and ends Fast Money immediately');
   assert.deepEqual(publicRoom(room).fastScores[1].slice(1), [null, null, null, null]);
-  assert.match(room.message, /214 points/);
+  assert.match(room.message, /214 points.*\$20,000/);
   assert.ok(publicRoom(room).fastTopAnswers[0]);
   assert.deepEqual(publicRoom(room).fastTopAnswers.slice(1), [null, null, null, null]);
   await until(() => room.phase === 'fast_results', 4000);
@@ -497,15 +497,20 @@ test('test mode accepts either era and Harvey never creates the Dawson souvenir'
   }
 });
 
-test('Harvey host announcement uses Steve and modern voice direction through the real audio endpoint',async t=>{
+test('Harvey announcements use Steve once and only the two family surnames',async t=>{
   const {room}=await fixture(t);room.era='harvey';
-  const originalFetch=global.fetch,originalKey=process.env.OPENAI_API_KEY;let payload;
-  global.fetch=async(url,options)=>{payload=JSON.parse(options.body);return {ok:true,arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer}};
+  room.families[0].name='Brown';room.families[1].name='Smith';
+  const originalFetch=global.fetch,originalKey=process.env.OPENAI_API_KEY,payloads=[];
+  global.fetch=async(url,options)=>{payloads.push(JSON.parse(options.body));return {ok:true,arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer}};
   process.env.OPENAI_API_KEY='test';
   t.after(()=>{global.fetch=originalFetch;if(originalKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=originalKey});
-  const response=await originalFetch(`${url}/api/room/${room.code}/announcement?part=host`);
-  assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/audio\/mpeg/);
-  assert.equal(payload.voice,"echo");assert.equal(payload.input,"And here's your host, Steve Harvey!");assert.match(payload.instructions,/modern/);assert.doesNotMatch(payload.input,/Dawson/);
+  for(const query of ['part=host','family=0&part=name','family=1&part=name']){
+    const response=await originalFetch(`${url}/api/room/${room.code}/announcement?${query}`);
+    assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/audio\/mpeg/);
+  }
+  assert.deepEqual(payloads.map(p=>p.input),["And here's your host, Steve Harvey!",'And here are your families! The Brown family!','And the Smith family!']);
+  assert.ok(payloads.every(p=>p.voice==='echo'&&/modern/.test(p.instructions)));
+  assert.doesNotMatch(payloads.map(p=>p.input).join(' '),/Dawson|Alice|Bob/);
 });
 
 test('host speech requests use a distinct AI voice for each era',async t=>{

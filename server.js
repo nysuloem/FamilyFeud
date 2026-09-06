@@ -661,14 +661,16 @@ function advanceFastReveal(room){
   completeFastMoney(room);
 }
 
+function fastMoneyJackpot(room){return ERAS[room.era||'dawson'].fastMoneyJackpot;}
+
 function completeFastMoney(room, winningRevealCount = null) {
   const firstTotal=(room.fastScores[0] || []).reduce((a,b)=>a+(Number(b)||0),0);
   const secondScores=winningRevealCount == null ? (room.fastScores[1] || []) : (room.fastScores[1] || []).slice(0,winningRevealCount);
   const total=firstTotal+secondScores.reduce((a,b)=>a+(Number(b)||0),0);
   room.fastWinningRevealCount = winningRevealCount;
   room.phase='fast_results'; room.turnPlayerId=null; room.inputLocked=true;
-  room.fastPrize = total>=200 ? 10000 : total*5;
-  room.message=total>=200?`You scored ${total} points and won $10,000!`:`You scored ${total} points and won $${room.fastPrize.toLocaleString()}!`;
+  room.fastPrize = total>=200 ? fastMoneyJackpot(room) : total*5;
+  room.message=`You scored ${total} points and won $${room.fastPrize.toLocaleString()}!`;
   emit(room);
 }
 
@@ -780,7 +782,7 @@ async function finishFastPlayer(room, reason = 'timeout') {
     return !repeated && judgment.index >= 0 ? room.game.fastMoney[qi].answers[judgment.index].points : 0;
   });
   room.judging = false; room.turnPlayerId = null;
-  if (idx === 1) { const total = room.fastScores.flat().reduce((a, b) => a + b, 0); room.fastPrize = total >= 200 ? 10000 : total * 5; }
+  if (idx === 1) { const total = room.fastScores.flat().reduce((a, b) => a + b, 0); room.fastPrize = total >= 200 ? fastMoneyJackpot(room) : total * 5; }
   startFastReveal(room, idx);
 }
 
@@ -853,7 +855,8 @@ function disposeRoom(room) {
 
 async function createAnnouncement(room, index, part) {
   const family = room.families[index];
-  const lines = part === 'host' ? `And here's your host, ${ERAS[room.era || 'dawson'].name}!` : part === 'name' ? `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!` : `${family.playerIds.map(id => player(room, id).name).join(', ')}!`;
+  const harveyFamily=room.era==='harvey'&&part==='name';
+  const lines = part === 'host' ? `And here's your host, ${ERAS[room.era || 'dawson'].name}!` : harveyFamily ? `${index ? 'And the' : 'And here are your families! The'} ${family.name} family!` : part === 'name' ? `${index ? 'And now, introducing' : 'Introducing'} the ${family.name} family!` : `${family.playerIds.map(id => player(room, id).name).join(', ')}!`;
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST', signal: AbortSignal.timeout(15000),
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },

@@ -5,4 +5,5 @@ test('era selection maps an unbiased two-way random draw to the two presentation
   assert.equal(chooseEra(max=>{assert.equal(max,2);return 0}),'dawson');
   assert.equal(chooseEra(()=>1),'harvey');
   assert.equal(ERAS.dawson.name,'Richard Dawson');assert.equal(ERAS.harvey.name,'Steve Harvey');
+  assert.equal(ERAS.dawson.fastMoneyJackpot,10000);assert.equal(ERAS.harvey.fastMoneyJackpot,20000);
 });

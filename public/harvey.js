@@ -4,8 +4,8 @@ function harveyHostCard(){return `<div class="harvey-host-card harvey-host-revea
 async function runHarveyIntroduction(){
   const content=document.querySelector('#introContent');
   if(content)content.innerHTML=harveyOpeningLogo();
-  const announcementsPromise=preloadFamilyAnnouncements();
-  await playHarveyOpeningIntoMusic();
+  const announcementsPromise=preloadFamilyAnnouncements(['name']);
+  await playHarveyOpeningIntoMusic(content);
   const announcements=await announcementsPromise;
   try{
     for(let index=0;index<state.families.length;index++){
@@ -14,23 +14,24 @@ async function runHarveyIntroduction(){
       refreshContestantBadges();
       await playFamilyAnnouncement(index,'name',announcements);
       if(state.phase!=='intro')return;
-      await playFamilyAnnouncement(index,'members',announcements);
-      await new Promise(resolve=>setTimeout(resolve,350));
+      await new Promise(resolve=>setTimeout(resolve,450));
     }
     if(state.phase!=='intro')return;
     if(content)content.innerHTML=harveyHostCard();
-    await Promise.all([playAudioFile('/assets/harvey-host-intro.mp3'),stopIntroBackgroundMusic(650)]);
-    await new Promise(resolve=>setTimeout(resolve,500));
+    await Promise.all([playAudioFile('/assets/harvey-return.mp3'),stopIntroBackgroundMusic(450)]);
+    await new Promise(resolve=>setTimeout(resolve,900));
   }finally{
     await stopIntroBackgroundMusic(0);
   }
 }
-async function playHarveyOpeningIntoMusic(){
-  let bedStarted=false,bedTimer=null;
+async function playHarveyOpeningIntoMusic(content){
+  let bedStarted=false,steveShown=false,bedTimer=null,steveTimer=null;
   await playAudioElement(new Audio('/assets/harvey-opening.mp3'),undefined,()=>{
-    bedTimer=setTimeout(()=>{bedStarted=true;startIntroBackgroundMusic('/assets/harvey-family-intro-bed.mp3');},16600);
+    steveTimer=setTimeout(()=>{steveShown=true;if(content)content.innerHTML=harveyHostCard();},14000);
+    bedTimer=setTimeout(()=>{bedStarted=true;startIntroBackgroundMusic('/assets/harvey-family-intro-bed.mp3');},26400);
   });
-  clearTimeout(bedTimer);
+  clearTimeout(steveTimer);clearTimeout(bedTimer);
+  if(!steveShown&&content)content.innerHTML=harveyHostCard();
   if(!bedStarted)startIntroBackgroundMusic('/assets/harvey-family-intro-bed.mp3');
 }
 function harveyFamilyIntroduction(family){
@@ -70,5 +71,5 @@ function harveyFastStage(){
   const remaining=state.fastDeadline?Math.max(0,Math.ceil((state.fastDeadline-serverTime())/1000)):state.fastIndex===1?60:45;
   const clock=!!p&&['fast_play','host_wait'].includes(state.phase);
   const top=reveal&&idx===1&&state.fastRevealCount?state.fastTopAnswers?.[state.fastRevealCount-1]:null;
-  return `<section class="harvey-fast-shell" aria-label="Steve Harvey era Fast Money"><h1>FAST MONEY</h1><div class="harvey-fast-columns"><div>${rows(0)}</div><div>${both?rows(1):p?`<div class="harvey-fast-portrait">${contestantPortrait(p, 'harvey')}</div>`:'<div class="harvey-fast-welcome">Who will play<br>FAST MONEY?</div>'}</div></div><div class="harvey-fast-total">TOTAL <b>${total}</b></div>${clock?`<div class="harvey-fast-clock" data-harvey-fast-clock>${remaining}</div>`:''}${top?`<div class="harvey-fast-top">NUMBER ONE: ${escapeHtml(top)}</div>`:''}${state.phase==='fast_results'?`<div class="harvey-payout">${total>=200?'$10,000':'$'+Number(state.fastPrize||0).toLocaleString()} WON!</div>`:''}</section>`;
+  return `<section class="harvey-fast-shell" aria-label="Steve Harvey era Fast Money"><h1>FAST MONEY</h1><div class="harvey-fast-columns"><div>${rows(0)}</div><div>${both?rows(1):p?`<div class="harvey-fast-portrait">${contestantPortrait(p, 'harvey')}</div>`:'<div class="harvey-fast-welcome">Who will play<br>FAST MONEY?</div>'}</div></div><div class="harvey-fast-total">TOTAL <b>${total}</b></div>${clock?`<div class="harvey-fast-clock" data-harvey-fast-clock>${remaining}</div>`:''}${top?`<div class="harvey-fast-top">NUMBER ONE: ${escapeHtml(top)}</div>`:''}${state.phase==='fast_results'?`<div class="harvey-payout">${total>=200?'$20,000':'$'+Number(state.fastPrize||0).toLocaleString()} WON!</div>`:''}</section>`;
 }
