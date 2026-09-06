@@ -177,11 +177,22 @@ test('Dawson family announcements use the supplied looping music bed', async () 
   assert.equal(audio.paused,true);
 });
 
-test('Dawson host introduction uses Richard on the supplied wide stage', () => {
+test('Dawson host introduction returns to the isolated Richard portrait', () => {
   const b=browser(async()=>({}));
   const html=vm.runInContext('dawsonHostIntroduction()',b.context);
-  assert.match(html,/dawson-stage-richard\.png/);
-  assert.match(html,/RICHARD DAWSON/);
+  assert.match(html,/richard-dawson-isolated\.png/);
+  assert.doesNotMatch(html,/dawson-stage-richard\.png/);
+  assert.match(html,/RICHARD<br>DAWSON/);
+});
+
+test('Dawson opening uses the illuminated oval title and the stage is a full image layer', () => {
+  const b=browser(async()=>({}));
+  const opening=vm.runInContext('dawsonOpeningTitle()',b.context);
+  assert.match(opening,/dawson-opening-oval/);
+  assert.match(opening,/>FAMILY</);
+  assert.match(opening,/>FEUD</);
+  vm.runInContext("state={round:0,bank:0,scores:[0,0],turnPlayerId:null,families:[{name:'One',playerIds:[]},{name:'Two',playerIds:[]}],players:[]}",b.context);
+  assert.match(vm.runInContext("dawsonStage({answers:[]})",b.context),/<img class="dawson-stage-backdrop" src="\/assets\/dawson-stage-wide\.png"/);
 });
 
 test('the final production card shows the exact Made by Jason logo', () => {

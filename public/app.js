@@ -155,7 +155,8 @@ function renderFaceoffBuzzer(){
 
 function renderIntro() {
   if (introRun && document.querySelector('#introContent')) return;
-  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled && !blockedAudio.size ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent"><h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p></div></section>`;
+  const opening = isHarvey() ? `<h1 class="intro-title">FAMILY<br>FEUD</h1><p class="tagline">${escapeHtml(state.message)}</p>` : dawsonOpeningTitle();
+  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled && !blockedAudio.size ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent">${opening}</div></section>`;
   document.querySelector('#sound').onclick = () => { unlockAudio(); runIntro(); };
   runIntro();
 }
