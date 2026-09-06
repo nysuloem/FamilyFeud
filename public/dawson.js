@@ -28,6 +28,10 @@ function dawsonStage(round) {
   return `<section class="dawson-stage" aria-label="Richard Dawson era Family Feud stage"><div class="stage-round">${state.round === 4 ? 'SUDDEN DEATH' : `ROUND ${state.round + 1}`}</div><div class="dawson-oval"><div class="bank-display" aria-label="Round bank">${dotNumber(state.bank)}</div>${dawsonBoard(round)}<div class="score-wing wing-left" aria-label="${escapeHtml(state.families[0].name)} score">${dotNumber(state.scores[0])}</div><div class="score-wing wing-right" aria-label="${escapeHtml(state.families[1].name)} score">${dotNumber(state.scores[1])}</div></div>${dawsonTeam(0)}${dawsonTeam(1)}</section>`;
 }
 
+function dawsonHostIntroduction() {
+  return `<figure class="dawson-host-introduction"><img src="/assets/dawson-stage-richard.png" alt="Richard Dawson standing on the Family Feud stage"><figcaption>RICHARD DAWSON</figcaption></figure>`;
+}
+
 function dawsonFaceoff() {
   const contestants = state.faceoff.players.map((id, side) => {
     const p = state.players.find(p => p.id === id);

@@ -5,7 +5,7 @@ body.tv-display{height:100dvh;min-height:0;overflow:hidden;background:#08090d}
 .tv-display .game-shell>.controls{display:none}
 .tv-display .stage{container-type:size;min-width:0;min-height:0;padding:12px;display:grid;place-items:center}
 .tv-display .stage>:is(.dawson-stage,.dawson-faceoff,.dawson-fast-shell,.harvey-stage,.harvey-faceoff,.harvey-fast-shell){width:min(100cqw,calc(100cqh * var(--scene-ratio)));height:auto;min-height:0;max-width:none;max-height:none;aspect-ratio:var(--scene-ratio);margin:0}
-.tv-display .dawson-stage{--scene-ratio:805 / 591}
+.tv-display .dawson-stage{--scene-ratio:2019 / 1140}
 .tv-display .dawson-faceoff{--scene-ratio:585 / 445}
 .tv-display .dawson-fast-shell{--scene-ratio:4 / 3}
 .tv-display .harvey-stage{--scene-ratio:1840 / 855}

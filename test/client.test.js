@@ -167,6 +167,23 @@ test('Fast Money uses the supplied duplicate and five-answer recordings', () => 
   assert.deepEqual(b.audioInstances.map(a=>a.src),['/assets/fast-money-duplicate.mp3','/assets/fast-money-complete.mp3']);
 });
 
+test('Dawson family announcements use the supplied looping music bed', async () => {
+  const b=browser(async()=>({}));
+  const audio=vm.runInContext('startIntroBackgroundMusic()',b.context);
+  assert.equal(audio.src,'/assets/dawson-family-intro-bed.mp3');
+  assert.equal(audio.loop,true);
+  assert.equal(audio.volume,.3);
+  await vm.runInContext('stopIntroBackgroundMusic(0)',b.context);
+  assert.equal(audio.paused,true);
+});
+
+test('Dawson host introduction uses Richard on the supplied wide stage', () => {
+  const b=browser(async()=>({}));
+  const html=vm.runInContext('dawsonHostIntroduction()',b.context);
+  assert.match(html,/dawson-stage-richard\.png/);
+  assert.match(html,/RICHARD DAWSON/);
+});
+
 test('the final production card shows the exact Made by Jason logo', () => {
   const b=browser(async()=>({}));
   vm.runInContext("state={families:[{name:'Brown'},{name:'Smith'}],players:[]};closingStage='jason'",b.context);

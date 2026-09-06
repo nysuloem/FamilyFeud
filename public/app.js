@@ -7,6 +7,7 @@ let roundDraft = { key: null, value: '' };
 let fastMicListening = false, fastMicWindow = null;
 let fastMic = null, fastMicSession = null, fastMicMuted = false, fastMicError = '', fastMicRestart = null, fastDraft = { key: null, value: '' };
 let closingSequenceKey = null, closingStage = null, closingPlayback = null;
+let introBackgroundAudio = null;
 let session = JSON.parse(localStorage.getItem('feudSession') || 'null');
 
 const pathBits = location.pathname.split('/').filter(Boolean);
@@ -165,24 +166,30 @@ async function runIntro() {
   introRun = true;
   try {
     if (isHarvey()) { await runHarveyIntroduction(); return; }
-    // The sequence is deliberate: opening clip, family introductions, then host clip.
+    // The sequence is deliberate: opening clip, family introductions over the
+    // supplied music bed, then the host clip.
     await playAudioFile('/assets/richard-dawson-intro.mp3');
     const introContent = document.querySelector('#introContent');
-    for (let index = 0; index < state.families.length; index++) {
-      if (state.phase !== 'intro') return;
-      if (introContent) introContent.innerHTML = dawsonFamilyIntroduction(state.families[index]);
-      refreshContestantBadges();
-      fitFamilyName();
-      document.fonts?.ready.then(fitFamilyName);
-      await playFamilyAnnouncement(index, 'name');
-      if (state.phase !== 'intro') return;
-      introContent?.querySelector('.family-reveal-window')?.classList.add('open');
-      await new Promise(resolve => setTimeout(resolve, 1450));
-      await playFamilyAnnouncement(index, 'members');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    startIntroBackgroundMusic();
+    try {
+      for (let index = 0; index < state.families.length; index++) {
+        if (state.phase !== 'intro') return;
+        if (introContent) introContent.innerHTML = dawsonFamilyIntroduction(state.families[index]);
+        refreshContestantBadges();
+        fitFamilyName();
+        document.fonts?.ready.then(fitFamilyName);
+        await playFamilyAnnouncement(index, 'name');
+        if (state.phase !== 'intro') return;
+        introContent?.querySelector('.family-reveal-window')?.classList.add('open');
+        await new Promise(resolve => setTimeout(resolve, 1450));
+        await playFamilyAnnouncement(index, 'members');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } finally {
+      await stopIntroBackgroundMusic();
     }
     const kissed = state.players.find(p => p.id === state.kissPlayerId) || randomPlayer();
-    if (introContent) introContent.innerHTML = `<div class="host-card"><img class="host-isolated" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1></div></div>`;
+    if (introContent) introContent.innerHTML = dawsonHostIntroduction();
     await playAudioFile('/assets/intro-theme.mp3');
     if (introContent) introContent.innerHTML = state.kissStatus === 'ready' ? `<img class="kiss-souvenir" src="/api/room/${state.code}/kiss" alt="AI-edited Richard Dawson greeting ${escapeHtml(kissed.name)}"><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p><p class="kiss-disclosure">AI-edited fictional souvenir</p>` : `<div class="host-card"><img class="host-isolated" src="/assets/richard-dawson-isolated.png" alt="Richard Dawson"><div><h1 class="intro-title">RICHARD<br>DAWSON</h1><p class="kiss">Richard greeted ${escapeHtml(kissed.name)}! 💋</p></div></div>`;
     await new Promise(resolve => setTimeout(resolve, state.kissStatus === 'ready' ? 3800 : 1200));
@@ -201,6 +208,31 @@ async function playFamilyAnnouncement(index, part){
 
 function playAudioFile(src){return playAudioElement(new Audio(src))}
 function playAudioBlob(blob){return playAudioElement(new Audio(URL.createObjectURL(blob)))}
+function startIntroBackgroundMusic(){
+  stopIntroBackgroundMusic(0);
+  const audio=new Audio('/assets/dawson-family-intro-bed.mp3');
+  audio.loop=true;audio.volume=.3;
+  const retry=()=>{
+    blockedAudio.delete(retry);
+    if(introBackgroundAudio?.audio!==audio)return;
+    audio.play().catch(error=>{if(error.name==='NotAllowedError'){blockedAudio.add(retry);offerSoundUnlock();}});
+  };
+  introBackgroundAudio={audio,retry};retry();return audio;
+}
+function stopIntroBackgroundMusic(duration=550){
+  const current=introBackgroundAudio;introBackgroundAudio=null;
+  if(!current)return Promise.resolve();
+  blockedAudio.delete(current.retry);
+  if(duration<=0){current.audio.pause();return Promise.resolve();}
+  const startVolume=current.audio.volume,start=Date.now();
+  return new Promise(resolve=>{
+    const fade=setInterval(()=>{
+      const progress=Math.min(1,(Date.now()-start)/duration);
+      current.audio.volume=startVolume*(1-progress);
+      if(progress===1){clearInterval(fade);current.audio.pause();resolve();}
+    },40);
+  });
+}
 function playAudioElement(audio, signal, onStart) {
   return new Promise((resolve, reject) => {
     const cleanup = () => { blockedAudio.delete(retry); signal?.removeEventListener('abort', aborted); };

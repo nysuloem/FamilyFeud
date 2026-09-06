@@ -1,5 +1,9 @@
 # Dawson sound-effect cleanup
 
+## Family-introduction music (2026-09-06)
+
+`public/assets/dawson-family-intro-bed.mp3` is the supplied 19.344-second Dawson-era introduction clip. It begins after the opening recording and loops at 30% volume beneath both family-name and contestant-name announcements, then fades for 550 ms before Richard's host-introduction recording begins.
+
 The three `public/assets/dawson-*-clean.mp3` files are filtered extractions from
 the existing user-supplied broadcast recordings. Both eras now use these cleaned clips,
 including correct answers, strikes/zero-point reveals, duplicate-answer retries,

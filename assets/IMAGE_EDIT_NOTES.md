@@ -1,5 +1,12 @@
 # Dawson image edits
 
+## Wide stage and host introduction (2026-09-06)
+
+- Supplied clean stage: `public/assets/dawson-stage-wide.png` (2019 × 1140), used for normal Dawson-era gameplay.
+- Final host-introduction composite: `public/assets/dawson-stage-richard.png` (1669 × 942).
+- Supporting reference: the supplied period image of Richard standing on the set in his brown three-piece suit.
+- Final prompt: Preserve the supplied wide stage and all existing set elements and lettering. Add only Richard Dawson, full-body and believable in scale, standing on the front blue floor slightly left of centre. Match the vintage studio lighting, perspective, and photographic texture; preserve his recognizable face, hair, brown three-piece suit, white shirt, boutonniere, watch chain, glasses, and relaxed host pose from the supporting image. Do not cover either family podium or the central scoreboard. Add no other people, furniture, text, logos, or watermark.
+
 ## Fast Money question-reading portrait
 
 - Final asset: `public/assets/dawson-fast-reading.png`.
