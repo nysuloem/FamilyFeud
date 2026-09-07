@@ -46,9 +46,8 @@ body.tv-display{height:100dvh;min-height:0;overflow:hidden;background:#08090d}
 .tv-display .harvey-family-intro{width:1600px;aspect-ratio:16 / 9}
 .tv-display .host-card{width:1500px;grid-template-columns:600px 1fr;gap:60px}
 .tv-display .host-card img.host-isolated{height:780px;max-height:780px;width:auto;max-width:100%}
-.tv-display .harvey-opening-logo{width:1050px}
-.tv-display .harvey-host-card{width:1500px;height:800px;max-height:none}
-.tv-display .harvey-host-portrait{max-height:800px}
+.tv-display .harvey-intro-hero{width:1200px;height:800px;max-height:none}
+.tv-display .harvey-opening-logo{width:920px}
 .tv-display .kiss-souvenir{max-width:1400px;max-height:700px;object-fit:contain}
 .tv-display .kiss{font-size:44px}
 .tv-display .kiss-disclosure{font-size:24px}

@@ -1,6 +1,7 @@
 function isHarvey(){return state?.era === 'harvey';}
-function harveyOpeningLogo(){return `<section class="harvey-opening-logo" aria-label="Family Feud"><span>FAMILY<br>FEUD</span></section>`;}
-function harveyHostCard(){return `<div class="harvey-host-card harvey-host-reveal"><img class="harvey-host-portrait" src="/assets/harvey-intro-portrait.png" alt="Steve Harvey holding the Family Feud logo"></div>`;}
+function harveyLogo(){return `<section class="harvey-opening-logo" aria-label="Family Feud"><span>FAMILY<br>FEUD</span></section>`;}
+function harveyOpeningLogo(){return `<div class="harvey-intro-hero">${harveyLogo()}</div>`;}
+function harveyHostCard(){return `<div class="harvey-intro-hero harvey-host-card"><img class="harvey-intro-steve harvey-host-reveal" src="/assets/steve-harvey-cutout.png" alt="Steve Harvey">${harveyLogo()}</div>`;}
 async function runHarveyIntroduction(){
   const content=document.querySelector('#introContent');
   if(content)content.innerHTML=harveyOpeningLogo();
@@ -27,7 +28,7 @@ async function runHarveyIntroduction(){
 async function playHarveyOpeningIntoMusic(content){
   let bedStarted=false,steveShown=false,bedTimer=null,steveTimer=null;
   await playAudioElement(new Audio('/assets/harvey-opening.mp3'),undefined,()=>{
-    steveTimer=setTimeout(()=>{steveShown=true;if(content)content.innerHTML=harveyHostCard();},14000);
+    steveTimer=setTimeout(()=>{steveShown=true;if(content)content.innerHTML=harveyHostCard();},7000);
     bedTimer=setTimeout(()=>{bedStarted=true;startIntroBackgroundMusic('/assets/harvey-family-intro-bed.mp3');},26400);
   });
   clearTimeout(steveTimer);clearTimeout(bedTimer);

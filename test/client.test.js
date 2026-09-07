@@ -188,11 +188,15 @@ test('Dawson opening crossfades into the family music bed before it ends', async
 
 test('Harvey opening crossfades into its dialogue-free family music bed', async () => {
   const b=browser(async()=>({}));
-  b.context.setTimeout=fn=>{fn();return 1;};
-  const playing=vm.runInContext('playHarveyOpeningIntoMusic()',b.context);
+  b.context.revealDelays=[];
+  b.context.setTimeout=(fn,delay)=>{b.context.revealDelays.push(delay);fn();return 1;};
+  const playing=vm.runInContext("playHarveyOpeningIntoMusic({set innerHTML(value){globalThis.revealedHero=value}})",b.context);
   await new Promise(resolve=>setImmediate(resolve));
   assert.deepEqual(b.audioInstances.map(audio=>audio.src),['/assets/harvey-opening.mp3','/assets/harvey-family-intro-bed.mp3']);
   assert.equal(b.audioInstances[1].loop,true);
+  assert.equal(vm.runInContext("revealDelays.includes(7000)",b.context),true);
+  assert.match(vm.runInContext('revealedHero',b.context),/steve-harvey-cutout\.png/);
+  assert.match(vm.runInContext('revealedHero',b.context),/harvey-opening-logo/);
   b.audioInstances[0].onended();await playing;
 });
 
