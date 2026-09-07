@@ -4,7 +4,7 @@ const fs = require('node:fs/promises');
 const express = require('express');
 const { Server } = require('socket.io');
 const QRCode = require('qrcode');
-const { BUILTIN_GAME, judgeAnswer, matchAnswer, newCode } = require('./src/game');
+const { BUILTIN_GAME, judgeAnswer, matchAnswer, normalize, newCode } = require('./src/game');
 const { SurveyBank } = require('./src/survey-bank');
 const surveyBank = new SurveyBank();
 const { ERAS, chooseEra } = require('./src/eras');
@@ -148,9 +148,14 @@ function makeRoom(mode, era = chooseEra()) {
   rooms.set(code, room); return room;
 }
 
-function publicRoom(room) {
+function waitingForSecondFastPlayer(room, viewerId) {
+  return !!viewerId && room.fastPlayers?.[0] !== room.fastPlayers?.[1] && viewerId === room.fastPlayers?.[1] && room.fastIndex === 0
+    && ['host_wait', 'fast_play', 'fast_judging', 'fast_reveal', 'fast_reveal_done'].includes(room.phase);
+}
+
+function publicRoom(room, viewerId = null) {
   const { announcementAudio, speechCues, fastSpeech, fastMatches, pendingCue, fastDraftAnswers, fastDraftMatches, fastPendingAnswer, fastQuestionQueue, fastQuestionAttempts, displayId, answerTimer, fastTimer, transitionTimer, kissImage, creditsPromise, ...safeRoom } = room;
-  return {
+  const visible = {
     ...safeRoom,
     serverNow: Date.now(),
     pendingSpeech: pendingCue ? { cueId: pendingCue.cueId, text: speechCues.get(pendingCue.cueId)?.text, sound: speechCues.get(pendingCue.cueId)?.sound, speechUrl: `/api/room/${room.code}/speech/${pendingCue.cueId}`, requiresAck: true } : null,
@@ -164,9 +169,21 @@ function publicRoom(room) {
     fastFirstTotal: room.fastIndex === 1 ? (room.fastScores[0] || []).reduce((sum, points) => sum + (Number(points) || 0), 0) : null,
     fastTopAnswers: room.game ? room.game.fastMoney.map((q, qi) => canRevealFastTop(room, qi) ? q.answers[0].text : null) : null
   };
+  if (!waitingForSecondFastPlayer(room, viewerId)) return visible;
+  visible.message = 'Fast Money is in progress. Stay away from the TV—we will alert you when it is your turn.';
+  visible.pendingSpeech = null;
+  if (visible.game) visible.game.fastMoney = visible.game.fastMoney.map(() => ({ question: null }));
+  visible.fastAnswers = [null, null]; visible.fastScores = [null, null]; visible.fastTopAnswers = null; visible.fastFirstTotal = null;
+  return visible;
 }
 
-function emit(room) { io.to(room.code).emit('state', publicRoom(room)); }
+function emit(room) {
+  const waitingId = room.fastPlayers?.[1];
+  if (waitingForSecondFastPlayer(room, waitingId)) {
+    io.to(room.code).except(waitingId).emit('state', publicRoom(room));
+    io.to(waitingId).emit('state', publicRoom(room, waitingId));
+  } else io.to(room.code).emit('state', publicRoom(room));
+}
 function player(room, id) { return room.players.find(p => p.id === id); }
 // Only the owner of an explicitly created rehearsal can play the sample contestants.
 function testController(room, socketId) { return !!room?.testPart && room.adminId === socketId; }
@@ -202,8 +219,14 @@ function emitCue(room, text, sound, speak = true, requiresAck = false) {
     room.speechCues.set(cueId, { text, sound, audioPromise: room.fastSpeech?.get(text) || null });
     while (room.speechCues.size > 80) room.speechCues.delete(room.speechCues.keys().next().value);
   }
-  io.to(room.code).emit('cue', { cueId, text, sound, requiresAck, speechUrl: speak ? `/api/room/${room.code}/speech/${cueId}` : null });
+  const audience = waitingForSecondFastPlayer(room, room.fastPlayers?.[1]) ? io.to(room.code).except(room.fastPlayers[1]) : io.to(room.code);
+  audience.emit('cue', { cueId, text, sound, requiresAck, speechUrl: speak ? `/api/room/${room.code}/speech/${cueId}` : null });
   return cueId;
+}
+function emitBoardReveal(room, payload) {
+  const waitingId = room.fastPlayers?.[1];
+  const audience = waitingForSecondFastPlayer(room, waitingId) ? io.to(room.code).except(waitingId) : io.to(room.code);
+  audience.emit('boardReveal', payload);
 }
 function setMessage(room, text, sound, speak = true) { room.message = text; emitCue(room, text, sound, speak); }
 
@@ -275,7 +298,7 @@ function answerClockExpired(room, token) {
 function revealSlot(room, index) {
   if (!room.revealed.includes(index)) room.revealed.push(index);
   emit(room);
-  io.to(room.code).emit('boardReveal', { round: room.round, index });
+  emitBoardReveal(room, { round: room.round, index });
 }
 
 async function resolveAnswer(room, contestant, given, timedOut = false) {
@@ -711,7 +734,7 @@ function revealFastAfterEarlyWin(room) {
     room.phase = 'fast_post_win'; room.fastRevealCount = 5;
     room.fastTopRevealCount = room.fastWinningRevealCount;
     room.message = `${name}'s remaining answers are on the board.`;
-    for (let i = room.fastWinningRevealCount; i < 5; i++) io.to(room.code).emit('boardReveal', { fastIndex: 1, index: i, points: room.fastScores[1][i] || 0 });
+    for (let i = room.fastWinningRevealCount; i < 5; i++) emitBoardReveal(room, { fastIndex: 1, index: i, points: room.fastScores[1][i] || 0 });
     revealNextFastTopAnswer(room);
   });
 }
@@ -733,6 +756,7 @@ function startFastPlayer(room, index) {
   clearTimeout(room.fastTimer); room.fastTimer = null; room.fastRevealStep = null;
   room.phase = 'host_wait'; room.fastIndex = index; room.fastRevealIndex = null; room.fastRevealCount = 0; room.fastQuestionIndex = 0; room.fastDraftAnswers = []; room.fastDeadline = null; room.turnPlayerId = room.fastPlayers[index];
   if (index === 0) { room.fastWinningRevealCount = null; room.fastTopRevealCount = 0; room.fastCelebrationPlayed = false; }
+  if (index === 1 && room.fastPlayers[0] !== room.fastPlayers[1]) io.to(room.fastPlayers[1]).emit('fastReturn');
   const seconds = index === 0 ? 45 : 60; const name = player(room, room.turnPlayerId).name;
   room.message = `${name} is getting ready for Fast Money.`;
   const firstTotal = (room.fastScores[0] || []).reduce((sum, points) => sum + (Number(points) || 0), 0);
@@ -745,7 +769,7 @@ function startFastPlayer(room, index) {
 
 async function checkFastDuplicate(room, qi, given) {
   const answers = room.game.fastMoney[qi].answers;
-  const sameWords = normalizeLoose(given) === normalizeLoose(room.fastAnswers[0]?.[qi]);
+  const sameWords = normalize(given) === normalize(room.fastAnswers[0]?.[qi]);
   let judgment = matchAnswer(given, answers);
   if (!sameWords && judgment.confidence !== 1) judgment = await judgeAnswer(given, answers, [], { timeoutMs: 1500 });
   return { judgment, duplicate: sameWords || (judgment.index >= 0 && judgment.index === room.fastMatches[0]?.[qi]) };
@@ -832,7 +856,7 @@ async function finishFastPlayer(room, reason = 'timeout') {
   }));
   room.fastMatches[idx] = judgments.map(j => j.index);
   room.fastScores[idx] = judgments.map((judgment, qi) => {
-    const repeated = idx === 1 && ((judgment.index >= 0 && judgment.index === room.fastMatches[0]?.[qi]) || normalizeLoose(clean[qi]) === normalizeLoose(room.fastAnswers[0]?.[qi]));
+    const repeated = idx === 1 && ((judgment.index >= 0 && judgment.index === room.fastMatches[0]?.[qi]) || normalize(clean[qi]) === normalize(room.fastAnswers[0]?.[qi]));
     return !repeated && judgment.index >= 0 ? room.game.fastMoney[qi].answers[judgment.index].points : 0;
   });
   room.judging = false; room.turnPlayerId = null;
@@ -857,7 +881,7 @@ function revealNextFastAnswer(room) {
       runHostedCue(room, 'Survey says…', null, () => {
         room.fastRevealCount++; room.fastRevealStep = 'points';
         room.message = `${guess} — ${points} points`;
-        io.to(room.code).emit('boardReveal', { fastIndex: idx, index: i, points });
+        emitBoardReveal(room, { fastIndex: idx, index: i, points });
         if (idx === 1) {
           const revealedTotal = room.fastScores[0].reduce((sum, value) => sum + (Number(value) || 0), 0)
             + room.fastScores[1].slice(0, room.fastRevealCount).reduce((sum, value) => sum + (Number(value) || 0), 0);
@@ -872,8 +896,6 @@ function revealNextFastAnswer(room) {
 }
 
 function multiplier(round) { return round < 2 ? 1 : round === 2 ? 2 : 3; }
-function normalizeLoose(v) { return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
-
 async function prepareKissImage(room) {
   if (room.era === 'harvey') { room.kissStatus = 'off'; room.kissPlayerId = null; return; }
   const volunteers = room.players.filter(p => p.kissConsent);

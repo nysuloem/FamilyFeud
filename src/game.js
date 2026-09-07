@@ -64,8 +64,17 @@ compactBoardLabels(BUILTIN_GAME);
 function normalize(value = '') {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/&/g, ' and ').replace(/[^a-z0-9 ]/g, ' ').replace(/\b(my|a|an|the|some|their|his|her)\b/g, ' ')
-    .replace(/\b(phones|keys|glasses|eggs|fries|tools|boxes|children)\b/g, m => ({ phones: 'phone', keys: 'key', glasses: 'glass', eggs: 'egg', fries: 'fry', tools: 'tool', boxes: 'box', children: 'child' }[m]))
-    .replace(/\s+/g, ' ').trim();
+    .replace(/\s+/g, ' ').trim().split(' ').map(singularize).join(' ');
+}
+
+function singularize(word) {
+  const irregular = { children: 'child', people: 'person', men: 'man', women: 'woman', teeth: 'tooth', feet: 'foot', mice: 'mouse', geese: 'goose', buses: 'bus', gases: 'gas' };
+  if (['news', 'tennis', 'christmas', 'species', 'series'].includes(word)) return word;
+  if (irregular[word]) return irregular[word];
+  if (word.length > 4 && word.endsWith('ies')) return `${word.slice(0, -3)}y`;
+  if (word.length > 4 && /(ches|shes|xes|zes|sses)$/.test(word)) return word.slice(0, -2);
+  if (word.length > 3 && word.endsWith('s') && !/(ss|us|is)$/.test(word)) return word.slice(0, -1);
+  return word;
 }
 
 function levenshtein(a, b) {
@@ -119,6 +128,9 @@ function descending(answers) { return answers.every((answer, i) => i === 0 || an
 
 async function judgeAnswer(guess, answers, revealed = [], { timeoutMs = 15000 } = {}) {
   const local = matchAnswer(guess, answers, revealed);
+  // Exact normalized matches are deterministic. Do not let a model overrule
+  // harmless articles or singular/plural differences such as button/buttons.
+  if (local.index >= 0 && local.confidence === 1) return local;
   if (!String(guess || '').trim() || !process.env.OPENAI_API_KEY) return local;
   try {
     const candidates = answers.map((a, index) => ({ index, answer: a.text, aliases: a.aliases })).filter(x => !revealed.includes(x.index));

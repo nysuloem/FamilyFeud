@@ -410,6 +410,17 @@ test('Fast Money cameras show the host, hide the reveal clock, and make room for
   assert.doesNotMatch(vm.runInContext('dawsonFastStage()',b.context),/data-fast-clock|fast-host-pair/);
 });
 
+test('the second Fast Money player sees only a holding logo until their phone is recalled',()=>{
+  const b=browser(async()=>({}));
+  vm.runInContext("state={phase:'fast_reveal',fastIndex:0,fastPlayers:['P','Q'],adminId:'P',message:'Coffee — 42 points'};myPlayerId='Q';isDisplay=false",b.context);
+  assert.equal(vm.runInContext('isWaitingFastMoneyPlayer()',b.context),true);
+  vm.runInContext('renderFastMoneyHoldingScreen()',b.context);
+  const html=vm.runInContext('app.innerHTML',b.context);
+  assert.match(html,/FAMILY<br>FEUD/);assert.doesNotMatch(html,/Coffee|42/);
+  vm.runInContext("state.fastIndex=1",b.context);
+  assert.equal(vm.runInContext('isWaitingFastMoneyPlayer()',b.context),false);
+});
+
 test('only the playing family sees its strike count on phones',()=>{
   const b=browser(async()=>({}));
   vm.runInContext("state={round:0,phase:'answer',controlFamily:0,strikes:2,isSteal:false,families:[{playerIds:['P','Q']},{playerIds:['R']}]}",b.context);

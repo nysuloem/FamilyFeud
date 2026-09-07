@@ -17,6 +17,8 @@ test('answer matcher accepts aliases and close plurals', () => {
   const answers = BUILTIN_GAME.rounds[0].answers;
   assert.equal(matchAnswer('my keys', answers).index, 0);
   assert.equal(matchAnswer('cellphone', answers).index, 1);
+  assert.equal(matchAnswer('buttons', [{ text: 'BUTTON', points: 20, aliases: [] }]).index, 0);
+  assert.equal(matchAnswer('a button', [{ text: 'BUTTONS', points: 20, aliases: [] }]).index, 0);
 });
 
 test('answer matcher rejects unrelated guesses', () => {

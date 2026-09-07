@@ -30,6 +30,10 @@ socket.on('state', next => {
   serverOffset = next.serverNow - Date.now(); state = next; roomCode = next.code; render();
 });
 socket.on('cue', queueHostCue);
+socket.on('fastReturn', () => {
+  navigator.vibrate?.([500, 180, 500, 180, 700]);
+  toast('Your Fast Money turn is next—return to the TV!');
+});
 function queueHostCue(cue) {
   if (queuedHostCues.has(cue.cueId)) return;
   if (cue.sound && cue.sound !== 'faceoff_walkup') playEffect(cue.sound);
@@ -133,7 +137,18 @@ function render() {
   if (state.phase === 'lobby' || state.phase === 'generating') return renderLobby();
   if (state.phase === 'intro') return renderIntro();
   if (state.phase === 'faceoff' && state.mode === 'host' && state.faceoff?.players.includes(myPlayerId) && !isDisplay) return renderFaceoffBuzzer();
+  if (isWaitingFastMoneyPlayer()) return renderFastMoneyHoldingScreen();
   renderGame();
+}
+
+function isWaitingFastMoneyPlayer() {
+  return !isDisplay && !isTestController() && state.fastPlayers?.[0] !== state.fastPlayers?.[1] && myPlayerId === state.fastPlayers?.[1] && state.fastIndex === 0
+    && ['host_wait', 'fast_play', 'fast_judging', 'fast_reveal', 'fast_reveal_done'].includes(state.phase);
+}
+
+function renderFastMoneyHoldingScreen() {
+  stopFastMicrophone();
+  app.innerHTML = `<main class="page fast-holding"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">Fast Money is in progress.</p><p>Stay away from the TV—we’ll vibrate this phone when it’s your turn.</p></section></main>`;
 }
 
 function renderLobby() {

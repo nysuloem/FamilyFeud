@@ -186,6 +186,18 @@ test('server can end Fast Money during an unfinished spoken question and score u
   assert.deepEqual(room.fastScores[0], [0, 0, 0, 0, 0]);
 });
 
+test('the waiting second Fast Money player receives no answers, scores, questions, or host cue text', async t => {
+  const { room, clients } = await fixture(t);
+  room.fastPlayers = clients.map(client => client.id); startFastPlayer(room, 0);
+  room.fastAnswers[0] = ['buttons', 'coffee', '', '', '']; room.fastScores[0] = [30, 20, 0, 0, 0];
+  room.phase = 'fast_reveal'; room.fastRevealIndex = 0; room.fastRevealCount = 2; room.fastRevealStep = 'points'; room.message = 'Coffee — 20 points';
+  const hidden = publicRoom(room, clients[1].id);
+  assert.equal(hidden.pendingSpeech, null);
+  assert.deepEqual(hidden.fastAnswers, [null, null]); assert.deepEqual(hidden.fastScores, [null, null]);
+  assert.ok(hidden.game.fastMoney.every(question => question.question === null));
+  assert.doesNotMatch(hidden.message, /buttons|coffee|points/i);
+});
+
 test('second-player duplicates buzz and retry the same question without resetting the clock', async t => {
   const f = await fixture(t), { room, clients, finish } = f;
   room.round = 3; room.scores = [350, 100]; beginFastMoney(room);
