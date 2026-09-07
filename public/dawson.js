@@ -66,7 +66,7 @@ function faceoffPodiumLights() {
 
 function dawsonFastStage() {
   const card = closingCard(); if (card) return card;
-  const reveal = ['fast_reveal', 'fast_reveal_done', 'fast_results'].includes(state.phase);
+  const reveal = ['fast_reveal', 'fast_reveal_done', 'fast_early_win', 'fast_post_win', 'fast_results'].includes(state.phase);
   const idx = (reveal ? state.fastRevealIndex : state.fastIndex) ?? 0;
   const both = reveal && (idx === 1 || state.phase === 'fast_results');
   const contestant = state.players.find(p => p.id === state.fastPlayers[idx]);
@@ -79,8 +79,9 @@ function dawsonFastStage() {
   const portraits = contestant ? fastHostAndContestant(contestant, reveal) : '';
   const clockVisible = !!contestant && ['fast_play','host_wait'].includes(state.phase);
   const remaining = state.fastDeadline ? Math.max(0, Math.ceil((state.fastDeadline - serverTime()) / 1000)) : state.fastIndex === 1 ? 60 : 45;
-  const currentTop = reveal && idx === 1 && state.fastRevealCount ? state.fastTopAnswers?.[state.fastRevealCount - 1] : null;
-  return `<section class="dawson-fast-shell ${both ? 'fast-both' : reveal ? 'fast-first-reveal' : 'fast-timed'}" aria-label="Fast Money"><div class="fast-split"><div class="fast-answer-panel">${rows(0)}</div><div class="fast-answer-panel">${both ? rows(1) : reveal ? portraits : rows(1)}</div><div class="fast-total">${dotNumber(total)}<span>TOTAL</span></div></div>${!reveal ? portraits : ''}${clockVisible ? `<div class="fast-clock" data-fast-clock>${dotNumber(remaining, 2)}</div>` : ''}${currentTop ? `<div class="fast-top-answer">NUMBER ONE: ${escapeHtml(currentTop)}</div>` : ''}${state.phase === 'fast_results' ? `<div class="fast-payout">${total >= 200 ? '$10,000' : '$' + Number(state.fastPrize || 0).toLocaleString()}<small>${total} POINTS</small></div>` : ''}</section>`;
+  const topIndex = state.phase === 'fast_post_win' ? state.fastTopRevealCount - 1 : state.fastRevealCount - 1;
+  const currentTop = reveal && idx === 1 && topIndex >= 0 ? state.fastTopAnswers?.[topIndex] : null;
+  return `<section class="dawson-fast-shell ${both ? 'fast-both' : reveal ? 'fast-first-reveal' : 'fast-timed'}" aria-label="Fast Money"><div class="fast-split"><div class="fast-answer-panel">${rows(0)}</div><div class="fast-answer-panel">${both ? rows(1) : reveal ? portraits : rows(1)}</div><div class="fast-total">${dotNumber(total)}<span>TOTAL</span></div></div>${!reveal ? portraits : ''}${clockVisible ? `<div class="fast-clock" data-fast-clock>${dotNumber(remaining, 2)}</div>` : ''}${currentTop ? `<div class="fast-top-answer">NUMBER ONE: ${escapeHtml(currentTop)}</div>` : ''}${['fast_early_win','fast_results'].includes(state.phase) ? `<div class="fast-payout">${total >= 200 ? '$10,000' : '$' + Number(state.fastPrize || 0).toLocaleString()}<small>${total} POINTS</small></div>` : ''}</section>`;
 }
 
 function fastHostAndContestant(contestant, reveal){

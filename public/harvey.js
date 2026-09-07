@@ -60,7 +60,7 @@ function harveyFaceoff(){
 }
 function harveyFastStage(){
   const card=closingCard();if(card)return card;
-  const reveal=['fast_reveal','fast_reveal_done','fast_results'].includes(state.phase);
+  const reveal=['fast_reveal','fast_reveal_done','fast_early_win','fast_post_win','fast_results'].includes(state.phase);
   const idx=(reveal?state.fastRevealIndex:state.fastIndex)??0;
   const both=reveal&&(idx===1||state.phase==='fast_results');
   const p=state.players.find(p=>p.id===state.fastPlayers[idx]);
@@ -71,6 +71,7 @@ function harveyFastStage(){
   }).join('');
   const remaining=state.fastDeadline?Math.max(0,Math.ceil((state.fastDeadline-serverTime())/1000)):state.fastIndex===1?60:45;
   const clock=!!p&&['fast_play','host_wait'].includes(state.phase);
-  const top=reveal&&idx===1&&state.fastRevealCount?state.fastTopAnswers?.[state.fastRevealCount-1]:null;
-  return `<section class="harvey-fast-shell" aria-label="Steve Harvey era Fast Money"><h1>FAST MONEY</h1><div class="harvey-fast-columns"><div>${rows(0)}</div><div>${both?rows(1):p?`<div class="harvey-fast-portrait">${contestantPortrait(p, 'harvey')}</div>`:'<div class="harvey-fast-welcome">Who will play<br>FAST MONEY?</div>'}</div></div><div class="harvey-fast-total">TOTAL <b>${total}</b></div>${clock?`<div class="harvey-fast-clock" data-harvey-fast-clock>${remaining}</div>`:''}${top?`<div class="harvey-fast-top">NUMBER ONE: ${escapeHtml(top)}</div>`:''}${state.phase==='fast_results'?`<div class="harvey-payout">${total>=200?'$20,000':'$'+Number(state.fastPrize||0).toLocaleString()} WON!</div>`:''}</section>`;
+  const topIndex=state.phase==='fast_post_win'?state.fastTopRevealCount-1:state.fastRevealCount-1;
+  const top=reveal&&idx===1&&topIndex>=0?state.fastTopAnswers?.[topIndex]:null;
+  return `<section class="harvey-fast-shell" aria-label="Steve Harvey era Fast Money"><h1>FAST MONEY</h1><div class="harvey-fast-columns"><div>${rows(0)}</div><div>${both?rows(1):p?`<div class="harvey-fast-portrait">${contestantPortrait(p, 'harvey')}</div>`:'<div class="harvey-fast-welcome">Who will play<br>FAST MONEY?</div>'}</div></div><div class="harvey-fast-total">TOTAL <b>${total}</b></div>${clock?`<div class="harvey-fast-clock" data-harvey-fast-clock>${remaining}</div>`:''}${top?`<div class="harvey-fast-top">NUMBER ONE: ${escapeHtml(top)}</div>`:''}${['fast_early_win','fast_results'].includes(state.phase)?`<div class="harvey-payout">${total>=200?'$20,000':'$'+Number(state.fastPrize||0).toLocaleString()} WON!</div>`:''}</section>`;
 }

@@ -94,11 +94,11 @@ test('15-second answer deadline produces exactly one strike without a client sub
   await pause(30); assert.equal(strikes.length, 1);
 });
 
-test('remaining answers reveal one at a time, and next round is unavailable until finished', async t => {
+test('remaining answers reveal from the bottom up, and next round is unavailable until finished', async t => {
   const { room, finish } = await fixture(t);
   room.round = 0; room.revealed = [0]; room.bank = 31;
   awardRound(room, 0); assert.equal(room.phase, 'round_reveal'); assert.deepEqual(room.revealed, [0]);
-  for (let i = 1; i < 7; i++) { await finish(); assert.equal(room.revealed.length, i + 1); assert.equal(room.phase, 'round_reveal'); }
+  for (const expected of [6,5,4,3,2,1]) { await finish(); assert.equal(room.revealed.at(-1), expected); assert.equal(room.phase, 'round_reveal'); }
   await finish(); assert.equal(room.phase, 'round_end'); assert.equal(room.scores[0], 31);
   await until(()=>room.round===1,4000);assert.equal(room.phase,'faceoff');
 });
@@ -141,7 +141,7 @@ async function playFast(f, indices) {
     assert.equal(publicRoom(room).fastScores[idx][q], null);
     await finish(); // Survey says -> points and effect.
     assert.equal(publicRoom(room).fastScores[idx][q], room.fastScores[idx][q]);
-    if (room.phase === 'fast_results') return;
+    if (['fast_early_win', 'fast_results'].includes(room.phase)) return;
     if(q < 4) assert.equal(publicRoom(room).game.fastMoney[q+1].question, null);
     await finish(); // Points -> next question.
   }
@@ -158,11 +158,22 @@ test('both Fast Money players progress through real reveals to the Harvey $20,00
   await playFast(f, [1, 1, 1, 1, 1]);
   assert.equal(room.fastPrize, 20000);
   assert.equal(room.fastWinningRevealCount, 1, 'The first second-player reveal crosses 200 and ends Fast Money immediately');
+  assert.equal(room.phase, 'fast_early_win');
   assert.deepEqual(publicRoom(room).fastScores[1].slice(1), [null, null, null, null]);
   assert.match(room.message, /214 points.*\$20,000/);
   assert.ok(publicRoom(room).fastTopAnswers[0]);
   assert.deepEqual(publicRoom(room).fastTopAnswers.slice(1), [null, null, null, null]);
-  await until(() => room.phase === 'fast_results', 4000);
+  clients[0].emit('fastCelebrationComplete', { code: room.code }); await until(() => room.pendingCue);
+  assert.match(room.speechCues.get(room.pendingCue.cueId).text, /remaining answers scored/);
+  await f.finish();
+  assert.equal(room.phase, 'fast_post_win');
+  assert.ok(publicRoom(room).fastScores[1].every(score => score != null), 'all remaining scores appear together');
+  for (let i = 1; i < 5; i++) {
+    assert.match(room.speechCues.get(room.pendingCue.cueId).text, /number one answer was/);
+    await f.finish();
+  }
+  assert.equal(room.phase, 'fast_results');
+  assert.ok(publicRoom(room).fastTopAnswers.every(Boolean));
 });
 
 test('server can end Fast Money during an unfinished spoken question and score unanswered entries', async t => {
@@ -293,7 +304,13 @@ test('solo Fast Money test runs both selected contestants and both reveals witho
   await playFast(f, [0, 0, 0, 0, 0]);
   client.emit('continueFastMoney', { code: room.code }); await until(() => room.fastIndex === 1);
   await playFast(f, [1, 1, 1, 1, 1]);
-  client.emit('continueFastMoney', { code: room.code }); await until(() => room.phase === 'fast_results');
+  if (room.phase === 'fast_early_win') {
+    client.emit('fastCelebrationComplete', { code: room.code }); await until(() => room.pendingCue);
+    await f.finish();
+    while (room.phase === 'fast_post_win') await f.finish();
+  } else {
+    client.emit('continueFastMoney', { code: room.code }); await until(() => room.phase === 'fast_results');
+  }
   assert.equal(room.fastPrize, 10000);
 });
 

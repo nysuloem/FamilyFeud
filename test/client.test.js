@@ -283,6 +283,31 @@ test('a Fast Money win plays celebration, credits and Made by Jason in order', a
   assert.equal(vm.runInContext("closingStages.join(',')",b.context),'celebration,credits,jason,done');
 });
 
+test('an early Fast Money win celebrates, returns control to the server, and does not replay the celebration before credits', async () => {
+  const b=browser(async()=>({}));
+  vm.runInContext("var closingAudio=[];playClosingAudio=async src=>closingAudio.push(src);renderGame=()=>{};shouldHearHost=()=>true;state={code:'EARLY',mode:'remote',phase:'fast_early_win',fastWinningRevealCount:2,fastScores:[[150,40,0,0,0],[15,null,null,null,null]]}",b.context);
+  await vm.runInContext('maybeStartClosingSequence()',b.context);
+  assert.equal(b.events.at(-1).name,'fastCelebrationComplete');
+  vm.runInContext("state.phase='fast_results';state.fastCelebrationPlayed=true;state.fastScores=[[150,40,0,0,0],[15,12,8,4,0]]",b.context);
+  await vm.runInContext('maybeStartClosingSequence()',b.context);
+  assert.equal(vm.runInContext("closingAudio.filter(src=>src.includes('celebration')).length",b.context),1);
+});
+
+test('Fast Money selection explicitly preserves first and second player order', () => {
+  const b=browser(async()=>({}));
+  vm.runInContext("state={code:'ORDER',phase:'fast_select',fastSelectorId:'P',winnerFamily:0,scores:[350,0],families:[{playerIds:['P','Q']},{playerIds:[]}],players:[{id:'P',name:'Pat'},{id:'Q',name:'Sam'}]};myPlayerId='P'",b.context);
+  const html=vm.runInContext('controls()',b.context);
+  assert.match(html,/Plays first/);assert.match(html,/Plays second/);
+  assert.match(html,/name="fastFirst"/);assert.match(html,/name="fastSecond"/);
+});
+
+test('Harvey Sudden Death uses the supplied recorded introduction before calling players', () => {
+  const source=fs.readFileSync(path.join(__dirname,'..','server.js'),'utf8');
+  assert.equal(fs.existsSync(path.join(__dirname,'..','public','assets','harvey-sudden-death.mp3')),true);
+  assert.match(source,/harvey-sudden-death\.mp3/);
+  assert.match(source,/runRecordedCue\(room, 'Steve Harvey introduces Sudden Death\.'/);
+});
+
 test('family announcements and oval reveals finish one family before introducing the other', async () => {
   const b=browser(async()=>({})), scenes=[], stages=[];
   const content={set innerHTML(value){scenes.push(value);},querySelector(){return {classList:{add(){stages.push('slide');}}};}};

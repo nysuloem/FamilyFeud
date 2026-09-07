@@ -26,6 +26,7 @@ socket.on('connect', () => {
 socket.on('state', next => {
   const answer=document.querySelector('#answer');
   if(answer&&state)roundDraft={key:`${state.code}:${state.answerToken}`,value:answer.value};
+  if (state?.phase === 'fast_early_win' && next.phase !== 'fast_early_win' && closingStage === 'celebration') closingStage = null;
   serverOffset = next.serverNow - Date.now(); state = next; roomCode = next.code; render();
 });
 socket.on('cue', queueHostCue);
@@ -318,16 +319,26 @@ function celebrationOverlay() {
 }
 
 async function maybeStartClosingSequence() {
+  if (state?.phase === 'fast_early_win') {
+    const key = `early:${state.code}:${state.fastWinningRevealCount}`;
+    if (closingSequenceKey === key) return;
+    closingSequenceKey = key; closingStage = 'celebration'; renderGame();
+    if (!shouldHearHost()) return;
+    try { await playClosingAudio('/assets/fast-money-celebration.mp3'); }
+    catch {}
+    finally { if (state?.phase === 'fast_early_win') socket.emit('fastCelebrationComplete', { code: state.code }); }
+    return;
+  }
   if (state?.phase !== 'fast_results') return;
   const total = state.fastScores.flat().reduce((sum, value) => sum + (Number(value) || 0), 0);
-  const key = `${state.code}:${total}`;
+  const key = `final:${state.code}:${total}`;
   if (closingSequenceKey === key) return;
-  closingSequenceKey = key; closingStage = total >= 200 ? 'celebration' : 'credits';
+  closingSequenceKey = key; closingStage = total >= 200 && !state.fastCelebrationPlayed ? 'celebration' : 'credits';
   // Paint the celebration/credits before waiting for their audio to finish.
   renderGame();
   if (!shouldHearHost()) return;
   try {
-    if (total >= 200) await playClosingAudio('/assets/fast-money-celebration.mp3');
+    if (total >= 200 && !state.fastCelebrationPlayed) await playClosingAudio('/assets/fast-money-celebration.mp3');
     closingStage = 'credits'; renderGame();
     await playClosingAudio('/assets/fast-money-end-credits.mp3');
     closingStage = 'jason'; renderGame();
@@ -401,7 +412,8 @@ function controls() {
   if (state.testPart && (state.phase === 'round_end' || state.phase === 'fast_results')) return '<p>Test complete.</p><a class="primary" href="/?test=1">Replay or choose another test</a>';
   if (state.phase === 'fast_select' && state.fastSelectorId === myPlayerId) {
     const winner = state.winnerFamily ?? (state.scores[0] >= state.scores[1] ? 0 : 1);
-    return `<form id="fastSelect"><p>Select two players:</p>${state.families[winner].playerIds.map(id=>{const p=state.players.find(x=>x.id===id);return `<label><input type="checkbox" name="fast" value="${id}"> ${escapeHtml(p.name)}</label>`}).join(' ')}<br><br><button class="primary">Start Fast Money</button></form>`;
+    const options = state.families[winner].playerIds.map(id=>{const p=state.players.find(x=>x.id===id);return `<option value="${id}">${escapeHtml(p.name)}</option>`}).join('');
+    return `<form id="fastSelect"><p>Choose the two players and their order:</p><label>Plays first<select name="fastFirst"><option value="">Choose a player</option>${options}</select></label><label>Plays second<select name="fastSecond"><option value="">Choose a player</option>${options}</select></label><br><br><button class="primary">Start Fast Money</button></form>`;
   }
   if (fastMicEligible()) return fastForm();
   return '<span class="muted">Follow the game on screen…</span>';
@@ -440,7 +452,7 @@ function wireControls() {
   });
   document.querySelectorAll('[data-mic]').forEach(button => button.addEventListener('click', () => startMicrophone(button.dataset.mic, button)));
   document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>socket.emit('playOrPass',{code:state.code,choice:b.dataset.choice}));
-  document.querySelector('#fastSelect')?.addEventListener('submit',e=>{e.preventDefault();const ids=[...e.target.querySelectorAll(':checked')].map(x=>x.value);if(ids.length!==2)return toast('Choose exactly two players.');socket.emit('selectFastPlayers',{code:state.code,playerIds:ids});});
+  document.querySelector('#fastSelect')?.addEventListener('submit',e=>{e.preventDefault();const ids=[e.target.elements.fastFirst.value,e.target.elements.fastSecond.value];if(ids.some(id=>!id)||ids[0]===ids[1])return toast('Choose two different players and set who plays first.');socket.emit('selectFastPlayers',{code:state.code,playerIds:ids});});
   document.querySelector('#fastForm')?.addEventListener('submit',e=>{e.preventDefault();submitFast(e.target);});
   document.querySelector('#fastPass')?.addEventListener('click', passFastQuestion);
   document.querySelector('#fastAnswer')?.addEventListener('input',e=>{fastDraft={key:fastAnswerKey(),value:e.target.value};});

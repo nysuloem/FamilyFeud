@@ -45,7 +45,7 @@ app.get('/api/room/:code/announcement', async (req, res) => {
 app.get('/api/room/:code/speech/:cueId', async (req, res) => {
   const room = rooms.get(req.params.code.toUpperCase());
   const cue = room?.speechCues?.get(Number(req.params.cueId));
-  if (!room || !cue || !process.env.OPENAI_API_KEY) return res.status(204).end();
+  if (!room || !cue || (!process.env.OPENAI_API_KEY && !cue.recorded)) return res.status(204).end();
   try {
     if (!cue.audioPromise) cue.audioPromise = createHostSpeech(cue.text, room.era);
     const audio = await cue.audioPromise;
@@ -138,7 +138,7 @@ function makeRoom(mode, era = chooseEra()) {
     code, mode, era, phase: 'lobby', adminId: null, players: [], families: [], scores: [0, 0],
     game: null, round: -1, revealed: [], strikes: 0, bank: 0, faceoff: null,
     controlFamily: null, turnPlayerId: null, message: 'Waiting for players', winnerFamily: null,
-    fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null], fastSelectorId: null, fastRevealIndex: null, fastRevealCount: 0, fastWinningRevealCount: null, fastPrize: null,
+    fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null], fastSelectorId: null, fastRevealIndex: null, fastRevealCount: 0, fastWinningRevealCount: null, fastTopRevealCount: 0, fastCelebrationPlayed: false, fastPrize: null,
     fastQuestionIndex: null, fastDraftAnswers: [], fastDeadline: null, inputLocked: false,
     answerDeadline: null, answerTimer: null, answerToken: 0, fastTimer: null,
     kissPlayerId: null, kissStatus: 'off', kissImage: null,
@@ -162,7 +162,7 @@ function publicRoom(room) {
     fastAnswers: room.fastAnswers.map((answers, i) => answers?.map((answer, qi) => canRevealFast(room, i, qi, 'answer') ? answer : null) ?? null),
     fastScores: room.fastScores.map((scores, i) => scores?.map((score, qi) => canRevealFast(room, i, qi) ? score : null) ?? null),
     fastFirstTotal: room.fastIndex === 1 ? (room.fastScores[0] || []).reduce((sum, points) => sum + (Number(points) || 0), 0) : null,
-    fastTopAnswers: room.game ? room.game.fastMoney.map((q, qi) => canRevealFast(room, 1, qi) ? q.answers[0].text : null) : null
+    fastTopAnswers: room.game ? room.game.fastMoney.map((q, qi) => canRevealFastTop(room, qi) ? q.answers[0].text : null) : null
   };
 }
 
@@ -180,13 +180,21 @@ function familyOf(room, id) { return room.families.findIndex(f => f.playerIds.in
 function familyPlayers(room, fi) { return room.families[fi]?.playerIds.map(id => player(room, id)).filter(Boolean) || []; }
 function boardFor(room, index = room.round) { return index === 4 ? room.game.suddenDeath : room.game.rounds[index]; }
 function canRevealFast(room, index, questionIndex = 0, part = 'points') {
-  if (room.phase === 'fast_results') return index === 0 || room.fastWinningRevealCount == null || questionIndex < room.fastWinningRevealCount;
+  if (['fast_post_win', 'fast_results'].includes(room.phase)) return true;
+  if (room.phase === 'fast_early_win') return index === 0 || questionIndex < room.fastWinningRevealCount;
   if (!['fast_reveal', 'fast_reveal_done'].includes(room.phase)) return false;
   if (index < room.fastRevealIndex) return true;
   if (index !== room.fastRevealIndex) return false;
   if (questionIndex < room.fastRevealCount) return true;
   if (questionIndex !== room.fastRevealCount) return false;
   return (part === 'question' && ['question', 'answer_pending', 'answer', 'survey'].includes(room.fastRevealStep)) || (part === 'answer' && ['answer', 'survey'].includes(room.fastRevealStep));
+}
+function canRevealFastTop(room, questionIndex) {
+  if (room.fastRevealIndex !== 1) return false;
+  if (room.phase === 'fast_results') return true;
+  if (room.phase === 'fast_post_win') return questionIndex < room.fastTopRevealCount;
+  if (room.phase === 'fast_early_win') return questionIndex < room.fastWinningRevealCount;
+  return canRevealFast(room, 1, questionIndex);
 }
 function emitCue(room, text, sound, speak = true, requiresAck = false) {
   const cueId = ++room.cueCounter;
@@ -205,6 +213,17 @@ function runHostedCue(room, text, sound, onComplete, onStart = null) {
   const cueId = emitCue(room, text, sound, true, true);
   // A slow API or suspended phone must never silently advance the game.
   room.pendingCue = { cueId, onComplete, onStart, started: false };
+  emit(room);
+}
+
+function runRecordedCue(room, text, asset, onComplete) {
+  cancelHostedCue(room);
+  room.inputLocked = true;
+  const cueId = emitCue(room, text, null, true, true);
+  const cue = room.speechCues.get(cueId);
+  cue.recorded = true;
+  cue.audioPromise = fs.readFile(path.join(__dirname, 'public', 'assets', asset));
+  room.pendingCue = { cueId, onComplete, onStart: null, started: false };
   emit(room);
 }
 
@@ -464,6 +483,14 @@ io.on('connection', socket => {
     room.fastPlayers = valid; startFastPlayer(room, 0);
   });
 
+  socket.on('fastCelebrationComplete', ({ code }) => {
+    const room = rooms.get(String(code).toUpperCase());
+    const controller = room?.mode === 'host' ? room.displayId : room?.adminId;
+    if (!room || room.phase !== 'fast_early_win' || socket.id !== controller) return;
+    room.fastCelebrationPlayed = true;
+    revealFastAfterEarlyWin(room);
+  });
+
   socket.on('submitFastAnswer', ({ code, answer, questionIndex, fastIndex, attempt = 0 }, reply) => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || room.phase !== 'fast_play' || room.turnPlayerId !== answeringPlayer(room, socket.id) || room.judging || room.inputLocked || questionIndex !== room.fastQuestionIndex || fastIndex !== room.fastIndex || attempt !== room.fastAttempt) return reply?.({ ok: false });
@@ -515,7 +542,9 @@ function beginRound(room, index) {
   room.phase = 'faceoff'; room.turnPlayerId = null;
   const opening = index === 4 ? 'Sudden Death.' : `Round ${index + 1}.`;
   room.message = `${opening} The host is calling the faceoff players.`;
-  runHostedCue(room, `${opening} Let's have ${p0.name}. Let's have ${p1.name}.`, 'faceoff_walkup', () => readFaceoffQuestion(room));
+  const callPlayers = () => runHostedCue(room, `Let's have ${p0.name}. Let's have ${p1.name}.`, 'faceoff_walkup', () => readFaceoffQuestion(room));
+  if (index === 4 && room.era === 'harvey') runRecordedCue(room, 'Steve Harvey introduces Sudden Death.', 'harvey-sudden-death.mp3', callPlayers);
+  else runHostedCue(room, `${opening} Let's have ${p0.name}. Let's have ${p1.name}.`, 'faceoff_walkup', () => readFaceoffQuestion(room));
 }
 
 function readFaceoffQuestion(room) {
@@ -601,7 +630,7 @@ function promptForAnswer(room, playerId, text, sound) {
 
 function awardRound(room, familyIndex) {
   room.scores[familyIndex] += room.bank; room.phase = 'round_reveal'; room.turnPlayerId = null; room.isSteal = false;
-  const remaining = boardFor(room).answers.map((_, i) => i).filter(i => !room.revealed.includes(i));
+  const remaining = boardFor(room).answers.map((_, i) => i).filter(i => !room.revealed.includes(i)).reverse();
   room.message = `${room.families[familyIndex].name} family wins ${room.bank} points!`;
   runHostedCue(room, room.message + (remaining.length ? ` Let's reveal the answers left on the board.` : ''), 'win', () => revealRemainingAnswer(room, remaining));
 }
@@ -667,18 +696,43 @@ function completeFastMoney(room, winningRevealCount = null) {
   const firstTotal=(room.fastScores[0] || []).reduce((a,b)=>a+(Number(b)||0),0);
   const secondScores=winningRevealCount == null ? (room.fastScores[1] || []) : (room.fastScores[1] || []).slice(0,winningRevealCount);
   const total=firstTotal+secondScores.reduce((a,b)=>a+(Number(b)||0),0);
-  room.fastWinningRevealCount = winningRevealCount;
+  const earlyWin = winningRevealCount != null && winningRevealCount < 5;
+  room.fastWinningRevealCount = earlyWin ? winningRevealCount : null;
   room.phase='fast_results'; room.turnPlayerId=null; room.inputLocked=true;
   room.fastPrize = total>=200 ? fastMoneyJackpot(room) : total*5;
   room.message=`You scored ${total} points and won $${room.fastPrize.toLocaleString()}!`;
+  if (earlyWin) room.phase = 'fast_early_win';
   emit(room);
+}
+
+function revealFastAfterEarlyWin(room) {
+  const name = player(room, room.fastPlayers[1]).name;
+  runHostedCue(room, `Let's see how ${name}'s remaining answers scored.`, null, () => {
+    room.phase = 'fast_post_win'; room.fastRevealCount = 5;
+    room.fastTopRevealCount = room.fastWinningRevealCount;
+    room.message = `${name}'s remaining answers are on the board.`;
+    for (let i = room.fastWinningRevealCount; i < 5; i++) io.to(room.code).emit('boardReveal', { fastIndex: 1, index: i, points: room.fastScores[1][i] || 0 });
+    revealNextFastTopAnswer(room);
+  });
+}
+
+function revealNextFastTopAnswer(room) {
+  if (room.fastTopRevealCount >= 5) {
+    const total = room.fastScores.flat().reduce((sum, value) => sum + (Number(value) || 0), 0);
+    room.phase = 'fast_results'; room.message = `You finished with ${total} points and won $${room.fastPrize.toLocaleString()}!`;
+    emit(room); return;
+  }
+  const index = room.fastTopRevealCount, question = room.game.fastMoney[index];
+  runHostedCue(room, `For ${question.question}, the number one answer was ${question.answers[0].text}.`, null, () => {
+    room.fastTopRevealCount++; emit(room); revealNextFastTopAnswer(room);
+  });
 }
 
 function startFastPlayer(room, index) {
   clearTransition(room);room.fastAttempt=0;room.fastQuestionQueue=[1,2,3,4];room.fastQuestionAttempts=Array(5).fill(0);room.fastDraftMatches=[];room.fastPendingAnswer=null;room.fastChecking=false;
   clearTimeout(room.fastTimer); room.fastTimer = null; room.fastRevealStep = null;
   room.phase = 'host_wait'; room.fastIndex = index; room.fastRevealIndex = null; room.fastRevealCount = 0; room.fastQuestionIndex = 0; room.fastDraftAnswers = []; room.fastDeadline = null; room.turnPlayerId = room.fastPlayers[index];
-  if (index === 0) room.fastWinningRevealCount = null;
+  if (index === 0) { room.fastWinningRevealCount = null; room.fastTopRevealCount = 0; room.fastCelebrationPlayed = false; }
   const seconds = index === 0 ? 45 : 60; const name = player(room, room.turnPlayerId).name;
   room.message = `${name} is getting ready for Fast Money.`;
   const firstTotal = (room.fastScores[0] || []).reduce((sum, points) => sum + (Number(points) || 0), 0);
