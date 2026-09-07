@@ -29,7 +29,7 @@ async function playHarveyOpeningIntoMusic(content){
   let bedStarted=false,steveShown=false,bedTimer=null,steveTimer=null;
   await playAudioElement(new Audio('/assets/harvey-opening.mp3'),undefined,()=>{
     steveTimer=setTimeout(()=>{steveShown=true;if(content)content.innerHTML=harveyHostCard();},7000);
-    bedTimer=setTimeout(()=>{bedStarted=true;startIntroBackgroundMusic('/assets/harvey-family-intro-bed.mp3');},26400);
+    bedTimer=setTimeout(()=>{bedStarted=true;startIntroBackgroundMusic('/assets/harvey-family-intro-bed.mp3');},16600);
   });
   clearTimeout(steveTimer);clearTimeout(bedTimer);
   if(!steveShown&&content)content.innerHTML=harveyHostCard();

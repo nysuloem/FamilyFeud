@@ -195,6 +195,7 @@ test('Harvey opening crossfades into its dialogue-free family music bed', async 
   assert.deepEqual(b.audioInstances.map(audio=>audio.src),['/assets/harvey-opening.mp3','/assets/harvey-family-intro-bed.mp3']);
   assert.equal(b.audioInstances[1].loop,true);
   assert.equal(vm.runInContext("revealDelays.includes(7000)",b.context),true);
+  assert.equal(vm.runInContext("revealDelays.includes(16600)",b.context),true);
   assert.match(vm.runInContext('revealedHero',b.context),/steve-harvey-cutout\.png/);
   assert.match(vm.runInContext('revealedHero',b.context),/harvey-opening-logo/);
   b.audioInstances[0].onended();await playing;
