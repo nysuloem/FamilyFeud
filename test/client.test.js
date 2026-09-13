@@ -28,7 +28,7 @@ function browser(fetchImpl) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/harvey.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/tv-display.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8'), context);
-  vm.runInContext("state={mode:'remote',adminId:'P'};myPlayerId='P';roomCode='TEST';audioEnabled=true", context);
+  vm.runInContext("state={mode:'remote',adminId:'P',audioControllerId:'P'};myPlayerId='P';roomCode='TEST';audioEnabled=true", context);
   return { context, events, handlers, audioInstances };
 }
 
@@ -590,6 +590,16 @@ test('Fast Money offers an empty-answer pass and locks it while the host speaks'
   assert.equal(b.events.length,count);
 });
 
+test('question re-read control is available during every live answer type', () => {
+  const b = browser(async()=>({}));
+  vm.runInContext("state={phase:'answer',inputLocked:false,answerDeadline:Date.now()+10000}",b.context);
+  assert.match(vm.runInContext('rereadControl()',b.context),/Read Question Again/);
+  vm.runInContext("state={phase:'faceoff',faceoff:{canBuzz:true,buzzedBy:null}}",b.context);
+  assert.match(vm.runInContext('rereadControl()',b.context),/Read Question Again/);
+  vm.runInContext("state={phase:'fast_play',inputLocked:false,fastDeadline:Date.now()+10000}",b.context);
+  assert.match(vm.runInContext('rereadControl()',b.context),/Read Question Again/);
+});
+
 for (const renderer of ['dawsonFastStage','harveyFastStage']) test(`${renderer} retains the first total through second-player preparation and play`, () => {
   const b=browser(async()=>({}));
   vm.runInContext("state={phase:'host_wait',players:[],fastPlayers:[],fastIndex:1,fastFirstTotal:117,fastScores:[[null,null,null,null,null],null],fastAnswers:[null,null]}",b.context);
@@ -615,7 +625,7 @@ test('blocked autoplay waits for a gesture, then resumes the same audio once', a
   b.context.Audio.prototype.play=function(){attempts++;if(!allowed)return Promise.reject(Object.assign(new Error('gesture required'),{name:'NotAllowedError'}));this.onplaying?.();return Promise.resolve()};
   const playing=vm.runInContext("playHostSpeech('/question','Question',71)",b.context);
   await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(b.events.length,0);assert.equal(button.textContent,'Enable sound');
+  assert.equal(b.events.length,0);assert.equal(button.textContent,'Tap to continue with sound');
   assert.equal(vm.runInContext('blockedAudio.size',b.context),1);
   allowed=true;button.onclick();
   await new Promise(resolve=>setImmediate(resolve));

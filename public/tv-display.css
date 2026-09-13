@@ -3,6 +3,8 @@ body.tv-display{height:100dvh;min-height:0;overflow:hidden;background:#08090d}
 .tv-display #app{position:fixed;left:50%;top:50%;width:1920px;height:1080px;min-height:0;transform:translate(-50%,-50%) scale(var(--tv-scale,1));transform-origin:center;overflow:hidden;background:#100d09}
 .tv-display .game-shell{width:100%;height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;padding:36px 48px;gap:12px}
 .tv-display .game-shell>.controls{display:none}
+.tv-display .game-shell>.controls:has(#rereadQuestion){display:block}
+.tv-display .game-shell>.controls:has(#rereadQuestion)>:not(#rereadQuestion){display:none}
 .tv-display .stage{container-type:size;min-width:0;min-height:0;padding:12px;display:grid;place-items:center}
 .tv-display .stage>:is(.dawson-stage,.dawson-faceoff,.dawson-fast-shell,.harvey-stage,.harvey-faceoff,.harvey-fast-shell){width:min(100cqw,calc(100cqh * var(--scene-ratio)));height:auto;min-height:0;max-width:none;max-height:none;aspect-ratio:var(--scene-ratio);margin:0}
 .tv-display .dawson-stage{--scene-ratio:1659 / 921}

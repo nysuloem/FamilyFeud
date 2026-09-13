@@ -1,6 +1,6 @@
 const socket = io();
 const app = document.querySelector('#app');
-let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = false, serverOffset = 0;
+let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = true, serverOffset = 0;
 const blockedAudio = new Set(), queuedHostCues = new Set();
 let hostAudioQueue = Promise.resolve(), activeRecognition = null, activeHostPlayback = null, cancelledCues = new Set(), clockInterval = null;
 let roundDraft = { key: null, value: '' };
@@ -88,7 +88,7 @@ function testToolbar() {
 }
 
 function createRoom(mode) {
-  if (mode === 'host') unlockAudio();
+  unlockAudio();
   socket.emit('createRoom', { mode }, result => {
     if (!result?.ok) return toast('Could not create the game.');
     if (mode === 'host') { history.replaceState({}, '', `/host/${result.code}`); roomCode = result.code; isDisplay = true; }
@@ -173,8 +173,7 @@ function renderFaceoffBuzzer(){
 function renderIntro() {
   if (introRun && document.querySelector('#introContent')) return;
   const opening = isHarvey() ? harveyOpeningLogo() : dawsonOpeningTitle();
-  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><button class="secondary sound-unlock" id="sound">${audioEnabled && !blockedAudio.size ? 'Sound enabled' : 'Enable sound'}</button><div class="intro-content" id="introContent">${opening}</div></section>`;
-  document.querySelector('#sound').onclick = () => { unlockAudio(); runIntro(); };
+  app.innerHTML = `${testToolbar()}<section class="intro-overlay"><div class="intro-content" id="introContent">${opening}</div></section>`;
   runIntro();
 }
 
@@ -299,7 +298,7 @@ function renderGame() {
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
   const faceoffScene = showFaceoffScene();
   const gameStage = isHarvey() ? (faceoffScene ? harveyFaceoff() : round ? harveyStage(round) : harveyFastStage()) : (faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage());
-  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${gameStage}${closingStage === 'celebration' ? celebrationOverlay() : ''}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${goodAnswerControl()}</section></main>`;
+  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${gameStage}${closingStage === 'celebration' ? celebrationOverlay() : ''}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${rereadControl()}${goodAnswerControl()}</section></main>`;
   wireControls();
   refreshContestantBadges();
   fitBoardLabels();
@@ -445,6 +444,13 @@ function phoneStrikes(){
   return `<div class="phone-strikes" role="status" aria-label="${count} of 3 strikes"><span>Your family’s strikes</span>${[0,1,2].map(i=>`<b class="${i<count?'earned':''}" aria-hidden="true">X</b>`).join('')}</div>`;
 }
 
+function rereadControl(){
+  const faceoffReady=state.phase==='faceoff'&&state.faceoff?.canBuzz&&!state.faceoff?.buzzedBy;
+  const regularAnswer=state.phase==='answer'&&!state.inputLocked&&!!state.answerDeadline;
+  const fastAnswer=state.phase==='fast_play'&&!state.inputLocked&&!!state.fastDeadline;
+  return faceoffReady||regularAnswer||fastAnswer?'<button class="secondary reread-button" id="rereadQuestion">Read Question Again</button>':'';
+}
+
 function goodAnswerControl(){
   if(isDisplay||state.phase!=='answer'||!state.turnPlayerId||myPlayerId===state.turnPlayerId)return '';
   const family=state.families.find(f=>f.playerIds.includes(myPlayerId));
@@ -457,6 +463,7 @@ function showGoodAnswer(reaction){
   document.body.append(el);setTimeout(()=>el.remove(),2200);
 }
 function wireControls() {
+  document.querySelector('#rereadQuestion')?.addEventListener('click',e=>{e.currentTarget.disabled=true;socket.emit('rereadQuestion',{code:state.code},result=>{if(!result?.ok)e.currentTarget.disabled=false;});});
   document.querySelector('#goodAnswer')?.addEventListener('click',e=>{e.currentTarget.disabled=true;socket.emit('goodAnswer',{code:state.code});});
   document.querySelector('#buzz')?.addEventListener('click', () => { if (state.faceoff.canBuzz) { cancelCurrentHost(); socket.emit('buzz', { code: state.code }); } });
   document.querySelectorAll('[data-test-buzz]').forEach(button => button.onclick = () => { if (state.faceoff.canBuzz) { cancelCurrentHost(); socket.emit('buzz', { code: state.code, playerId: button.dataset.testBuzz }); } });
@@ -505,13 +512,12 @@ function unlockAudio(){
   audioEnabled=true;
   for (const retry of [...blockedAudio]) retry();
   document.querySelector('#audioUnlock')?.remove();
-  const introButton=document.querySelector('#sound');if(introButton)introButton.textContent='Sound enabled';
   const Ctx=window.AudioContext||window.webkitAudioContext;
   if(Ctx){window.feudAudio=window.feudAudio||new Ctx();window.feudAudio.resume()?.catch(()=>{});const oscillator=window.feudAudio.createOscillator(),gain=window.feudAudio.createGain();gain.gain.value=0;oscillator.connect(gain).connect(window.feudAudio.destination);oscillator.start();oscillator.stop(window.feudAudio.currentTime+.01)}
 }
 function speak(text){if(!('speechSynthesis'in window)||!audioEnabled)return;const u=new SpeechSynthesisUtterance(text);u.rate=.88;u.pitch=.78;u.volume=1;speechSynthesis.speak(u)}
 function shouldHearHost(){return audioEnabled&&(isDisplay||state?.mode==='remote')}
-function isAudioController(){return state?.mode==='host'?isDisplay:state?.adminId===myPlayerId}
+function isAudioController(){return state?.mode==='host'?isDisplay:state?.audioControllerId===myPlayerId}
 async function playHostSpeech(url,text,cueId,sound){
   const controller=new AbortController(),signal=controller.signal;
   const session={cueId,audio:null,music:null,controller};activeHostPlayback=session;syncFastMicrophone();
@@ -607,9 +613,8 @@ function playEffect(type){if(!audioEnabled)return;if(['ding','strike','buzz','fa
 function serverTime(){return Date.now()+serverOffset}
 function offerSoundUnlock(){
   if((audioEnabled&&!blockedAudio.size)||(!isDisplay&&state?.mode!=='remote'))return;
-  const introButton=document.querySelector('#sound');if(introButton){introButton.textContent='Enable sound';return;}
   if(document.querySelector('#audioUnlock'))return;
-  const button=document.createElement('button');button.id='audioUnlock';button.className='secondary sound-unlock';button.textContent='Enable sound';app.append(button);
+  const button=document.createElement('button');button.id='audioUnlock';button.className='secondary sound-unlock';button.textContent='Tap to continue with sound';app.append(button);
   button.onclick=()=>{const waiting=blockedAudio.size>0;unlockAudio();button.remove();if(waiting)return;if(state?.phase==='intro'){runIntro();return;}const cue=state.pendingSpeech;if(!cue)return;hostAudioQueue=hostAudioQueue.then(async()=>{await playHostSpeech(cue.speechUrl,cue.text,cue.cueId,cue.sound);if(isAudioController()&&!cancelledCues.has(cue.cueId))socket.emit('cueFinished',{code:roomCode,cueId:cue.cueId})})};
 }
 function startVisibleClocks(){

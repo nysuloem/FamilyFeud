@@ -153,11 +153,22 @@ function waitingForSecondFastPlayer(room, viewerId) {
     && ['host_wait', 'fast_play', 'fast_judging', 'fast_reveal', 'fast_reveal_done'].includes(room.phase);
 }
 
+function audioController(room) {
+  if (room.mode === 'host') return room.displayId;
+  if (room.testPart) return room.adminId;
+  const activeFastPlayer = room.fastPlayers?.[room.fastIndex];
+  if (room.round === -1 && activeFastPlayer && player(room, activeFastPlayer)?.connected) return activeFastPlayer;
+  const waitingId = waitingForSecondFastPlayer(room, room.fastPlayers?.[1]) ? room.fastPlayers[1] : null;
+  if (room.adminId !== waitingId && player(room, room.adminId)?.connected) return room.adminId;
+  return room.players.find(p => p.connected && p.id !== waitingId)?.id || room.adminId;
+}
+
 function publicRoom(room, viewerId = null) {
   const { announcementAudio, speechCues, fastSpeech, fastMatches, pendingCue, fastDraftAnswers, fastDraftMatches, fastPendingAnswer, fastQuestionQueue, fastQuestionAttempts, displayId, answerTimer, fastTimer, transitionTimer, kissImage, creditsPromise, ...safeRoom } = room;
   const visible = {
     ...safeRoom,
     serverNow: Date.now(),
+    audioControllerId: audioController(room),
     pendingSpeech: pendingCue ? { cueId: pendingCue.cueId, text: speechCues.get(pendingCue.cueId)?.text, sound: speechCues.get(pendingCue.cueId)?.sound, speechUrl: `/api/room/${room.code}/speech/${pendingCue.cueId}`, requiresAck: true } : null,
     players: room.players.map(({ familyName, kissConsent, ...p }) => p),
     game: room.game && room.phase !== 'lobby' && room.phase !== 'generating' ? {
@@ -409,14 +420,14 @@ io.on('connection', socket => {
   socket.on('cueFinished', ({ code, cueId }) => {
     const room = rooms.get(String(code).toUpperCase());
     if (!room || !room.pendingCue || Number(cueId) !== room.pendingCue.cueId) return;
-    const controller = room.mode === 'host' ? room.displayId : room.adminId;
+    const controller = audioController(room);
     if (socket.id !== controller) return;
     finishHostedCue(room, Number(cueId));
   });
 
   socket.on('cueStarted', ({ code, cueId }) => {
     const room = rooms.get(String(code).toUpperCase());
-    const controller = room?.mode === 'host' ? room.displayId : room?.adminId;
+    const controller = room && audioController(room);
     if (!room?.pendingCue || room.pendingCue.cueId !== Number(cueId) || socket.id !== controller || room.pendingCue.started) return;
     room.pendingCue.started = true; room.pendingCue.onStart?.();
   });
@@ -506,9 +517,45 @@ io.on('connection', socket => {
     room.fastPlayers = valid; startFastPlayer(room, 0);
   });
 
+  socket.on('rereadQuestion', ({ code }, reply) => {
+    const room = rooms.get(String(code).toUpperCase());
+    const requester = room && (socket.data.isDisplay || testController(room, socket.id) || player(room, socket.id));
+    if (!requester || room.inputLocked || room.pendingCue || !room.game) return reply?.({ ok: false });
+    if (room.phase === 'faceoff' && room.faceoff && !room.faceoff.buzzedBy) {
+      reply?.({ ok: true }); readFaceoffQuestion(room); return;
+    }
+    if (room.phase === 'answer' && room.turnPlayerId && !room.judging) {
+      const token = room.answerToken;
+      const remaining = Math.max(0, (room.answerDeadline || Date.now()) - Date.now());
+      clearTimeout(room.answerTimer); room.answerTimer = null; room.answerDeadline = null; room.inputLocked = true;
+      reply?.({ ok: true });
+      runHostedCue(room, `Here is the question again. ${boardFor(room).question}`, null, () => {
+        if (room.phase !== 'answer' || room.answerToken !== token || room.judging) return;
+        room.answerDeadline = Date.now() + remaining;
+        room.answerTimer = setTimeout(() => answerClockExpired(room, token), remaining);
+        room.inputLocked = false; emit(room);
+      });
+      return;
+    }
+    if (room.phase === 'fast_play' && room.turnPlayerId && !room.judging && room.fastDeadline) {
+      const fastIndex = room.fastIndex, questionIndex = room.fastQuestionIndex, attempt = room.fastAttempt;
+      const remaining = Math.max(0, room.fastDeadline - Date.now());
+      clearTimeout(room.fastTimer); room.fastTimer = null; room.fastDeadline = null; room.inputLocked = true;
+      reply?.({ ok: true });
+      runHostedCue(room, room.game.fastMoney[questionIndex].question, null, () => {
+        if (room.phase !== 'fast_play' || room.fastIndex !== fastIndex || room.fastQuestionIndex !== questionIndex || room.fastAttempt !== attempt) return;
+        room.fastDeadline = Date.now() + remaining;
+        room.fastTimer = setTimeout(() => void finishFastPlayer(room), remaining);
+        room.inputLocked = false; emit(room);
+      });
+      return;
+    }
+    reply?.({ ok: false });
+  });
+
   socket.on('fastCelebrationComplete', ({ code }) => {
     const room = rooms.get(String(code).toUpperCase());
-    const controller = room?.mode === 'host' ? room.displayId : room?.adminId;
+    const controller = room && audioController(room);
     if (!room || room.phase !== 'fast_early_win' || socket.id !== controller) return;
     room.fastCelebrationPlayed = true;
     revealFastAfterEarlyWin(room);

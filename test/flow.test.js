@@ -42,7 +42,8 @@ async function fixture(t) {
   t.after(() => { disposeRoom(room); clients.forEach(c => c.disconnect()); });
   const finish = async () => {
     const id = room.pendingCue?.cueId; assert.ok(id, 'Host must have an active cue');
-    clients[0].emit('cueFinished', { code: room.code, cueId: id });
+    const controller = clients.find(client => client.id === publicRoom(room).audioControllerId) || clients[0];
+    controller.emit('cueFinished', { code: room.code, cueId: id });
     await until(() => room.pendingCue?.cueId !== id);
   };
   return { room, clients, finish };
@@ -92,6 +93,58 @@ test('15-second answer deadline produces exactly one strike without a client sub
   const late = await clients[0].emitWithAck('submitAnswer', { code: room.code, token: room.answerToken, answer: 'keys' });
   assert.equal(late.ok, false); assert.deepEqual(room.revealed, []);
   await pause(30); assert.equal(strikes.length, 1);
+});
+
+test('re-reading a regular question pauses and restores the answer clock', async t => {
+  const { room, clients, finish } = await fixture(t);
+  room.round = 0;
+  openAnswer(room, clients[0].id);
+  const before = room.answerDeadline - Date.now();
+  const result = await clients[0].emitWithAck('rereadQuestion', { code: room.code });
+  assert.equal(result.ok, true);
+  assert.equal(room.answerDeadline, null);
+  assert.equal(room.inputLocked, true);
+  assert.match(room.speechCues.get(room.pendingCue.cueId).text, /Here is the question again/);
+  await pause(25);
+  await finish();
+  const after = room.answerDeadline - Date.now();
+  assert.ok(after <= before && after >= before - 75, `Expected about ${before}ms, got ${after}ms`);
+  assert.equal(room.inputLocked, false);
+});
+
+test('re-reading a Fast Money question pauses and restores the Fast Money clock', async t => {
+  const { room, clients, finish } = await fixture(t);
+  room.round = -1; room.fastPlayers = [clients[0].id, clients[1].id]; room.fastIndex = 0;
+  room.fastQuestionIndex = 2; room.fastAttempt = 0; room.phase = 'fast_play'; room.turnPlayerId = clients[0].id;
+  room.fastDeadline = Date.now() + 30000;
+  room.fastTimer = setTimeout(() => {}, 30000);
+  const before = room.fastDeadline - Date.now();
+  const result = await clients[0].emitWithAck('rereadQuestion', { code: room.code });
+  assert.equal(result.ok, true);
+  assert.equal(room.fastDeadline, null);
+  assert.equal(room.inputLocked, true);
+  assert.equal(room.speechCues.get(room.pendingCue.cueId).text, room.game.fastMoney[2].question);
+  await pause(25);
+  await finish();
+  const after = room.fastDeadline - Date.now();
+  assert.ok(after <= before && after >= before - 75, `Expected about ${before}ms, got ${after}ms`);
+  assert.equal(room.inputLocked, false);
+});
+
+test('active Fast Money contestant controls remote narration when the admin is waiting second', async t => {
+  const { room, clients } = await fixture(t);
+  room.round = -1;
+  room.winnerFamily = 1;
+  room.fastPlayers = [clients[1].id, clients[0].id];
+  startFastPlayer(room, 0);
+  assert.equal(publicRoom(room).audioControllerId, clients[1].id);
+  const cueId = room.pendingCue.cueId;
+  clients[0].emit('cueFinished', { code: room.code, cueId });
+  await pause(20);
+  assert.equal(room.pendingCue.cueId, cueId, 'Waiting admin cannot advance hidden Fast Money audio');
+  clients[1].emit('cueFinished', { code: room.code, cueId });
+  await until(() => room.pendingCue?.cueId !== cueId);
+  assert.equal(room.phase, 'fast_play');
 });
 
 test('remaining answers reveal from the bottom up, and next round is unavailable until finished', async t => {
