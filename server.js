@@ -320,6 +320,12 @@ async function resolveAnswer(room, contestant, given, timedOut = false) {
   let match;
   try { match = timedOut ? { index: -1 } : await judgeAnswer(given, board.answers, room.revealed); }
   catch { match = matchAnswer(given, board.answers, room.revealed); }
+  if (match.clarify) {
+    room.judging = false; room.inputLocked = true;
+    room.message = `${contestant.name}, can you be more specific?`;
+    runHostedCue(room, 'Can you be more specific?', null, () => openAnswer(room, contestant.id));
+    return;
+  }
   const finish = () => {
     room.judging = false; room.inputLocked = false;
     if (room.round === 4 && match.index >= 0) awardSuddenDeath(room, familyOf(room, contestant.id));

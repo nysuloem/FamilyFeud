@@ -145,20 +145,22 @@ JUDGING RULES
 - Board answers are compact display labels. Their aliases preserve the full accepted category; judge against both, even when an alias is not a literal synonym of the label.
 - Accept synonyms, paraphrases, singular/plural forms, ordinary regional wording, and a specific example that clearly belongs inside a broader board category.
 - Accept speech-to-text mistakes only when the intended answer is unambiguous from a very close phonetic transcription.
-- Reject answers that are merely associated with a board answer, share only one vague word, are broader than the board category in a way that could cover several answers, or require a strained explanation.
+- If the guess is a meaningful umbrella category that could reasonably refer to two or more unrevealed board answers, do not reject it. Set clarify true so the host can ask the contestant to be more specific. For example, "another animal" needs clarification when DOG and ANOTHER CAT are both unrevealed.
+- Reject answers that are merely associated with a board answer, share only one vague word, are too vague to narrow meaningfully, or require a strained explanation.
 - Never match a revealed answer or invent a category.
 - The deterministic matcher is only a suggestion. Independently make the final decision.
-- When genuinely uncertain, reject the guess. Return index -1.
+- Use exactly one outcome: accepted with a valid index; clarification with index -1; or rejected with index -1. Never set accepted and clarify true together.
 
 Give a short reason suitable for an audit log, not for the contestant.`,
         input: JSON.stringify({ contestant_guess: guess, deterministic_suggestion: local, unrevealed_board_answers: candidates }),
-        text: { format: { type: 'json_schema', name: 'answer_judgment', strict: true, schema: { type: 'object', additionalProperties: false, properties: { index: { type: 'integer', minimum: -1 }, accepted: { type: 'boolean' }, reason: { type: 'string' } }, required: ['index', 'accepted', 'reason'] } } }
+        text: { format: { type: 'json_schema', name: 'answer_judgment', strict: true, schema: { type: 'object', additionalProperties: false, properties: { index: { type: 'integer', minimum: -1 }, accepted: { type: 'boolean' }, clarify: { type: 'boolean' }, reason: { type: 'string' } }, required: ['index', 'accepted', 'clarify', 'reason'] } } }
       })
     });
     if (!response.ok) return local;
     const payload = await response.json();
     const output = payload.output_text || payload.output?.flatMap(x => x.content || []).find(x => x.type === 'output_text')?.text;
     const judged = JSON.parse(output);
+    if (judged.clarify && !judged.accepted && judged.index < 0) return { index: -1, confidence: 1, ai: true, clarify: true, reason: judged.reason };
     if (!judged.accepted || judged.index < 0) return { index: -1, confidence: 1, ai: true, reason: judged.reason };
     return candidates.some(x => x.index === judged.index)
       ? { index: judged.index, confidence: 1, ai: true, reason: judged.reason }

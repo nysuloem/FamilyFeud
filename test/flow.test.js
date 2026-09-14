@@ -112,6 +112,17 @@ test('re-reading a regular question pauses and restores the answer clock', async
   assert.equal(room.inputLocked, false);
 });
 
+test('a broad answer gets a clarification prompt and a fresh turn without a strike',async t=>{
+  const {room,clients,finish}=await fixture(t),originalKey=process.env.OPENAI_API_KEY,originalFetch=global.fetch,strikes=[];
+  t.after(()=>{if(originalKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=originalKey;global.fetch=originalFetch;});
+  room.round=0;room.controlFamily=0;room.game.rounds[0]={question:'Name another animal.',answers:[{text:'DOG',points:60,aliases:['dog']},{text:'ANOTHER CAT',points:40,aliases:['another cat']}]};
+  openAnswer(room,clients[0].id);const firstToken=room.answerToken;clients[0].on('answerResult',result=>strikes.push(result));
+  process.env.OPENAI_API_KEY='test-key';global.fetch=async()=>({ok:true,json:async()=>({output_text:JSON.stringify({index:-1,accepted:false,clarify:true,reason:'It could match two animals.'})})});
+  assert.equal((await clients[0].emitWithAck('submitAnswer',{code:room.code,token:firstToken,answer:'another animal'})).ok,true);
+  await until(()=>room.pendingCue);assert.equal(room.speechCues.get(room.pendingCue.cueId).text,'Can you be more specific?');assert.equal(room.strikes,0);assert.deepEqual(room.revealed,[]);assert.deepEqual(strikes,[]);
+  await finish();assert.equal(room.phase,'answer');assert.equal(room.turnPlayerId,clients[0].id);assert.ok(room.answerToken>firstToken);assert.ok(room.answerDeadline>Date.now());
+});
+
 test('re-reading a Fast Money question pauses and restores the Fast Money clock', async t => {
   const { room, clients, finish } = await fixture(t);
   room.round = -1; room.fastPlayers = [clients[0].id, clients[1].id]; room.fastIndex = 0;
