@@ -16,6 +16,18 @@ test.before(async () => { await new Promise(resolve => server.listen(0, '127.0.0
 test.after(async () => { await new Promise(resolve => io.close(resolve)); fs.rmSync(bankDirectory, {recursive:true,force:true}); if (previousKey) process.env.OPENAI_API_KEY = previousKey; });
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+test('title-screen status reports complete ready games from the survey bank', async () => {
+  const response = await fetch(`${url}/api/survey-bank`), status = await response.json();
+  assert.equal(response.ok, true);
+  assert.equal(typeof status.ready, 'number'); assert.ok(status.ready > 0);
+  assert.equal(typeof status.target, 'number');
+  assert.equal(typeof status.generating, 'boolean');
+  const client = fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8');
+  assert.match(client, /id="gameBankStatus">Checking complete games/);
+  assert.match(client, /fetch\('\/api\/survey-bank', \{ cache: 'no-store' \}\)/);
+  assert.match(client, /setInterval\(refreshBankStatus, 10000\)/);
+});
+
 test('every room has era-specific proper end credits even without the API', () => {
   const room = makeRoom('remote', 'harvey');
   const credits = fallbackEndCredits('harvey');

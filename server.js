@@ -21,6 +21,16 @@ const rooms = new Map();
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (_, res) => res.json({ ok: true, rooms: rooms.size }));
+app.get('/api/survey-bank', (_req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').json({
+      ready: surveyBank.count(), target: surveyBank.target,
+      generating: !!surveyBank.refilling, configured: !!process.env.OPENAI_API_KEY
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Survey-bank status is unavailable.' });
+  }
+});
 app.get('/api/room/:code/qr', async (req, res) => {
   const room = rooms.get(req.params.code.toUpperCase());
   if (!room) return res.status(404).end();

@@ -1,6 +1,6 @@
 const socket = io();
 const app = document.querySelector('#app');
-let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, audioEnabled = true, serverOffset = 0;
+let state = null, roomCode = null, myPlayerId = null, isDisplay = false, introRun = false, fastTimer = null, bankStatusTimer = null, audioEnabled = true, serverOffset = 0;
 const blockedAudio = new Set(), queuedHostCues = new Set();
 let hostAudioQueue = Promise.resolve(), activeRecognition = null, activeHostPlayback = null, cancelledCues = new Set(), clockInterval = null;
 let roundDraft = { key: null, value: '' };
@@ -52,13 +52,26 @@ socket.on('answerResult', result => { if (!result.correct) flashStrike(result.co
 socket.on('boardReveal', result => { playEffect(result.fastIndex != null && result.points === 0 ? 'strike' : 'ding'); requestAnimationFrame(() => document.querySelector(`[data-${result.fastIndex == null ? `board-slot="${result.index}"` : `fast-slot="${result.fastIndex}-${result.index}"`}]`)?.classList.add('flip-now')); });
 
 function showLanding() {
-  app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">Two eras. One Family Feud.<br>Each game randomly selects Richard Dawson or Steve Harvey.</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article><article class="mode-card test-mode-card"><h2>TEST MODE</h2><p>Try the introduction and first round, or jump straight to Fast Money. No other players needed.</p><button class="primary" id="testMode">Open Test Mode</button></article></div></section></main>`;
+  clearInterval(bankStatusTimer);
+  app.innerHTML = `<main class="page"><section class="landing"><div class="logo"><span>FAMILY<br>FEUD</span></div><p class="tagline">Two eras. One Family Feud.<br>Each game randomly selects Richard Dawson or Steve Harvey.</p><p class="game-readiness" id="gameBankStatus">Checking complete games…</p><div class="mode-grid"><article class="mode-card"><h2>HOST ON THIS SCREEN</h2><p>Put the board on the TV. Players scan a QR code and use their phones to buzz and answer.</p><button class="primary" id="hostMode">Create TV Game</button></article><article class="mode-card"><h2>REMOTE PLAY</h2><p>Everyone joins by link and sees the complete game on their own screen—perfect for playing apart.</p><button class="primary" id="remoteMode">Create Remote Game</button></article><article class="mode-card test-mode-card"><h2>TEST MODE</h2><p>Try the introduction and first round, or jump straight to Fast Money. No other players needed.</p><button class="primary" id="testMode">Open Test Mode</button></article></div></section></main>`;
   document.querySelector('#hostMode').onclick = () => createRoom('host');
   document.querySelector('#remoteMode').onclick = () => createRoom('remote');
   document.querySelector('#testMode').onclick = showTestMenu;
+  refreshBankStatus(); bankStatusTimer = setInterval(refreshBankStatus, 10000);
+}
+
+async function refreshBankStatus() {
+  const label = document.querySelector('#gameBankStatus');
+  if (!label) return clearInterval(bankStatusTimer);
+  try {
+    const response = await fetch('/api/survey-bank', { cache: 'no-store' }), bank = await response.json();
+    if (!response.ok) throw new Error();
+    label.textContent = `${bank.ready} complete ${bank.ready === 1 ? 'game' : 'games'} ready to play${bank.generating && bank.ready < bank.target ? ' · preparing more…' : ''}`;
+  } catch { label.textContent = 'Game availability is temporarily unavailable.'; }
 }
 
 function showTestMenu() {
+  clearInterval(bankStatusTimer);
   app.innerHTML = `<main class="page"><section class="panel test-setup"><h1>TEST MODE</h1><p>Rehearse on your own. Two sample families are provided; you control whichever contestant is up. The normal AI host, judging, 15-second guesses, microphone, and reveals stay active.</p><p>Test mode deliberately repeats the same sample questions. Regular games draw unused surveys from a separate bank. Rehearsals do not consume that bank. AI audio, judging, and optional image generation use your configured API.</p><label>Era to rehearse<select id="testEra"><option value="dawson">Richard Dawson</option><option value="harvey">Steve Harvey</option><option value="random">Surprise me</option></select></label><label>Your contestant name <input id="testName" maxlength="24" value="Alex"></label><details><summary>Optional: use your photo and test the introduction souvenir</summary><div class="photo-row"><img class="photo-preview" id="testPreview" alt="Your optional photo"><label class="secondary file-button">Upload your photo<input type="file" id="testPhoto" accept="image/*"></label></div><label class="consent-check"><input type="checkbox" id="testKissConsent"><span>I am 18 or older, this is my photo, and I agree that OpenAI may create an obviously fictional Richard Dawson greeting-kiss souvenir using it. This is optional and only runs in a Richard Dawson introduction test.</span></label></details><div class="test-actions"><button class="primary" data-test-part="intro">Test Introduction + Round 1</button><button class="primary" data-test-part="fast">Test Fast Money</button></div><p>Fast Money includes player selection, both timed halves, both reveals, and the final payout.</p><a href="/">Back to regular games</a></section></main>`;
   let photo = '';
   document.querySelector('#testPhoto').onchange = async event => {
@@ -88,6 +101,7 @@ function testToolbar() {
 }
 
 function createRoom(mode) {
+  clearInterval(bankStatusTimer);
   unlockAudio();
   socket.emit('createRoom', { mode }, result => {
     if (!result?.ok) return toast('Could not create the game.');
