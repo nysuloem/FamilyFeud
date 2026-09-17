@@ -313,7 +313,8 @@ function renderGame() {
   const faceoffScene = showFaceoffScene();
   const gameStage = isHarvey() ? (faceoffScene ? harveyFaceoff() : round ? harveyStage(round) : harveyFastStage()) : (faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage());
   const tvOnlyBoard = isDisplay;
-  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''} ${tvOnlyBoard ? 'board-only' : ''}"><section class="stage">${gameStage}${closingStage === 'celebration' ? celebrationOverlay() : ''}</section>${tvOnlyBoard ? '' : `<div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${rereadControl()}${goodAnswerControl()}</section>`}</main>`;
+  const hideNarration = isDisplay || !!state.testPart;
+  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''} ${tvOnlyBoard ? 'board-only' : ''}"><section class="stage">${gameStage}${closingStage === 'celebration' ? celebrationOverlay() : ''}</section>${hideNarration ? '' : `<div class="status-banner">${escapeHtml(state.message)}</div>`}${tvOnlyBoard ? '' : `<section class="controls" id="controls">${phoneStrikes()}${controls()}${rereadControl()}${goodAnswerControl()}</section>`}</main>`;
   wireControls();
   refreshContestantBadges();
   fitBoardLabels();

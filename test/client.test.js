@@ -558,7 +558,7 @@ test('shared host TV shows only the era board without status narration or contro
   const client=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
   const tv=fs.readFileSync(path.join(__dirname,'../public/tv-display.css'),'utf8');
   assert.match(client,/const tvOnlyBoard = isDisplay;/);
-  assert.match(client,/tvOnlyBoard \? '' : `<div class="status-banner">/);
+  assert.match(client,/hideNarration \? '' : `<div class="status-banner">/);
   assert.match(client,/tvOnlyBoard \? 'board-only' : ''/);
   assert.match(tv,/\.tv-display \.game-shell\.board-only\{grid-template-rows:minmax\(0,1fr\);padding:0;gap:0\}/);
   assert.match(tv,/\.tv-display \.game-shell>\.controls,\.tv-display \.status-banner\{display:none!important\}/);
@@ -626,6 +626,20 @@ test('host display board-only mode does not depend on a repeated mode flag and c
   assert.match(tv,/\.tv-display \.game-shell>\.controls,\.tv-display \.status-banner\{display:none!important\}/);
   assert.match(html,/tv-display\.css\?v=\d+[a-z]/);
   assert.match(html,/app\.js\?v=\d+[a-z]/);
+});
+
+test('test mode hides narration while retaining playable controls', () => {
+  const client=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
+  assert.match(client,/const hideNarration = isDisplay \|\| !!state\.testPart;/);
+  assert.match(client,/\$\{hideNarration \? '' : `<div class="status-banner">/);
+  assert.match(client,/\$\{tvOnlyBoard \? '' : `<section class="controls"/);
+});
+
+test('the original styled red circular buzz button remains in the base stylesheet', () => {
+  const css=fs.readFileSync(path.join(__dirname,'../public/styles.css'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'../public/index.html'),'utf8');
+  assert.match(css,/\.buzz\{[^}]*aspect-ratio:1[^}]*border-radius:50%[^}]*background:radial-gradient\([^}]*#c1110a/);
+  assert.match(html,/styles\.css\?v=\d+[a-z]/);
 });
 
 for (const renderer of ['dawsonFastStage','harveyFastStage']) test(`${renderer} retains the first total through second-player preparation and play`, () => {
