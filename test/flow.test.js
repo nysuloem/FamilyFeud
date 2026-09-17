@@ -109,7 +109,7 @@ test('15-second answer deadline produces exactly one strike without a client sub
 
 test('re-reading a regular question pauses and restores the answer clock', async t => {
   const { room, clients, finish } = await fixture(t);
-  room.round = 0;
+  room.round = 0; room.controlFamily = 0; room.faceoff = { winnerFamily: 0 };
   openAnswer(room, clients[0].id);
   const before = room.answerDeadline - Date.now();
   const result = await clients[0].emitWithAck('rereadQuestion', { code: room.code });
@@ -125,6 +125,15 @@ test('re-reading a regular question pauses and restores the answer clock', async
   assert.equal(room.inputLocked, false);
   assert.equal((await clients[0].emitWithAck('rereadQuestion', { code: room.code })).ok, false);
   assert.equal((await clients[1].emitWithAck('rereadQuestion', { code: room.code })).ok, false);
+});
+
+test('a player cannot request a reread after buzzing in during a faceoff', async t => {
+  const { room, clients } = await fixture(t);
+  room.round=0; room.phase='answer'; room.controlFamily=null; room.turnPlayerId=clients[0].id;
+  room.faceoff={winnerFamily:null,buzzedBy:clients[0].id}; room.answerToken=1;
+  room.answerDeadline=Date.now()+15000; room.answerTimer=setTimeout(()=>{},15000);
+  assert.equal((await clients[0].emitWithAck('rereadQuestion',{code:room.code})).ok,false);
+  assert.equal(publicRoom(room).rereadUsed,false);
 });
 
 test('a broad answer gets a clarification prompt and a fresh turn without a strike',async t=>{

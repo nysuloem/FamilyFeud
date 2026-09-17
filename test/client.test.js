@@ -557,10 +557,11 @@ test('TV sizing and fullscreen controls belong only to the shared host display',
 test('shared host TV shows only the era board without status narration or controls',()=>{
   const client=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
   const tv=fs.readFileSync(path.join(__dirname,'../public/tv-display.css'),'utf8');
-  assert.match(client,/const tvOnlyBoard = isDisplay && state\.mode === 'host'/);
+  assert.match(client,/const tvOnlyBoard = isDisplay;/);
   assert.match(client,/tvOnlyBoard \? '' : `<div class="status-banner">/);
   assert.match(client,/tvOnlyBoard \? 'board-only' : ''/);
   assert.match(tv,/\.tv-display \.game-shell\.board-only\{grid-template-rows:minmax\(0,1fr\);padding:0;gap:0\}/);
+  assert.match(tv,/\.tv-display \.game-shell>\.controls,\.tv-display \.status-banner\{display:none!important\}/);
   assert.doesNotMatch(tv,/:has\(#rereadQuestion\)/);
 });
 
@@ -602,7 +603,7 @@ test('Fast Money offers an empty-answer pass and locks it while the host speaks'
 
 test('question re-read control is available once and only to the active player', () => {
   const b = browser(async()=>({}));
-  vm.runInContext("state={phase:'answer',turnPlayerId:'P',inputLocked:false,answerDeadline:Date.now()+10000,rereadUsed:false}",b.context);
+  vm.runInContext("state={phase:'answer',turnPlayerId:'P',controlFamily:0,faceoff:{winnerFamily:0},inputLocked:false,answerDeadline:Date.now()+10000,rereadUsed:false}",b.context);
   assert.match(vm.runInContext('rereadControl()',b.context),/Read Question Again/);
   vm.runInContext("state.rereadUsed=true",b.context);
   assert.equal(vm.runInContext('rereadControl()',b.context),'');
@@ -610,8 +611,21 @@ test('question re-read control is available once and only to the active player',
   assert.equal(vm.runInContext('rereadControl()',b.context),'');
   vm.runInContext("state={phase:'faceoff',faceoff:{canBuzz:true,buzzedBy:null},rereadUsed:false}",b.context);
   assert.equal(vm.runInContext('rereadControl()',b.context),'');
+  vm.runInContext("state={phase:'answer',turnPlayerId:'P',controlFamily:null,faceoff:{winnerFamily:null,buzzedBy:'P'},inputLocked:false,answerDeadline:Date.now()+10000,rereadUsed:false}",b.context);
+  assert.equal(vm.runInContext('rereadControl()',b.context),'');
   vm.runInContext("state={phase:'fast_play',turnPlayerId:'P',inputLocked:false,fastDeadline:Date.now()+10000,rereadUsed:false}",b.context);
   assert.match(vm.runInContext('rereadControl()',b.context),/Read Question Again/);
+});
+
+test('host display board-only mode does not depend on a repeated mode flag and cache-busts its assets', () => {
+  const appSource=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'../public/index.html'),'utf8');
+  const tv=fs.readFileSync(path.join(__dirname,'../public/tv-display.css'),'utf8');
+  assert.match(appSource,/const tvOnlyBoard = isDisplay;/);
+  assert.doesNotMatch(appSource,/const tvOnlyBoard = isDisplay &&/);
+  assert.match(tv,/\.tv-display \.game-shell>\.controls,\.tv-display \.status-banner\{display:none!important\}/);
+  assert.match(html,/tv-display\.css\?v=\d+[a-z]/);
+  assert.match(html,/app\.js\?v=\d+[a-z]/);
 });
 
 for (const renderer of ['dawsonFastStage','harveyFastStage']) test(`${renderer} retains the first total through second-player preparation and play`, () => {

@@ -210,7 +210,8 @@ function player(room, id) { return room.players.find(p => p.id === id); }
 // Only the owner of an explicitly created rehearsal can play the sample contestants.
 function testController(room, socketId) { return !!room?.testPart && room.adminId === socketId; }
 function currentRereadKey(room) {
-  if (room.phase === 'answer' && room.turnPlayerId) return `answer:${room.answerToken}:${room.turnPlayerId}`;
+  const faceoffAnswer = room.controlFamily == null && room.faceoff && room.faceoff.winnerFamily == null;
+  if (room.phase === 'answer' && room.turnPlayerId && !faceoffAnswer) return `answer:${room.answerToken}:${room.turnPlayerId}`;
   if (room.phase === 'fast_play' && room.turnPlayerId) return `fast:${room.fastIndex}:${room.fastQuestionIndex}:${room.fastAttempt || 0}:${room.turnPlayerId}`;
   return null;
 }
