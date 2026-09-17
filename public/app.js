@@ -312,7 +312,8 @@ function renderGame() {
   const round = state.round >= 0 ? state.game.rounds[state.round] : null;
   const faceoffScene = showFaceoffScene();
   const gameStage = isHarvey() ? (faceoffScene ? harveyFaceoff() : round ? harveyStage(round) : harveyFastStage()) : (faceoffScene ? dawsonFaceoff() : round ? dawsonStage(round) : dawsonFastStage());
-  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''}"><section class="stage">${gameStage}${closingStage === 'celebration' ? celebrationOverlay() : ''}</section><div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${rereadControl()}${goodAnswerControl()}</section></main>`;
+  const tvOnlyBoard = isDisplay && state.mode === 'host';
+  app.innerHTML = `${testToolbar()}<main class="game-shell ${faceoffScene ? 'faceoff-layout' : ''} ${tvOnlyBoard ? 'board-only' : ''}"><section class="stage">${gameStage}${closingStage === 'celebration' ? celebrationOverlay() : ''}</section>${tvOnlyBoard ? '' : `<div class="status-banner">${escapeHtml(state.message)}</div><section class="controls" id="controls">${phoneStrikes()}${controls()}${rereadControl()}${goodAnswerControl()}</section>`}</main>`;
   wireControls();
   refreshContestantBadges();
   fitBoardLabels();
@@ -459,10 +460,10 @@ function phoneStrikes(){
 }
 
 function rereadControl(){
-  const faceoffReady=state.phase==='faceoff'&&state.faceoff?.canBuzz&&!state.faceoff?.buzzedBy;
+  const mine=state.turnPlayerId===myPlayerId||(isTestController()&&!!state.turnPlayerId);
   const regularAnswer=state.phase==='answer'&&!state.inputLocked&&!!state.answerDeadline;
   const fastAnswer=state.phase==='fast_play'&&!state.inputLocked&&!!state.fastDeadline;
-  return faceoffReady||regularAnswer||fastAnswer?'<button class="secondary reread-button" id="rereadQuestion">Read Question Again</button>':'';
+  return mine&&!state.rereadUsed&&(regularAnswer||fastAnswer)?'<button class="secondary reread-button" id="rereadQuestion">Read Question Again</button>':'';
 }
 
 function goodAnswerControl(){

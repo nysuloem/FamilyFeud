@@ -554,6 +554,16 @@ test('TV sizing and fullscreen controls belong only to the shared host display',
   assert.equal(classes['tv-display'],false,'Remote screens retain their own responsive layout');
 });
 
+test('shared host TV shows only the era board without status narration or controls',()=>{
+  const client=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
+  const tv=fs.readFileSync(path.join(__dirname,'../public/tv-display.css'),'utf8');
+  assert.match(client,/const tvOnlyBoard = isDisplay && state\.mode === 'host'/);
+  assert.match(client,/tvOnlyBoard \? '' : `<div class="status-banner">/);
+  assert.match(client,/tvOnlyBoard \? 'board-only' : ''/);
+  assert.match(tv,/\.tv-display \.game-shell\.board-only\{grid-template-rows:minmax\(0,1fr\);padding:0;gap:0\}/);
+  assert.doesNotMatch(tv,/:has\(#rereadQuestion\)/);
+});
+
 test('Harvey boards preserve answer secrecy and use both columns only for the second reveal',()=>{
   const b=browser(async()=>({}));
   vm.runInContext("state={era:'harvey',phase:'fast_play',fastIndex:0,fastRevealIndex:null,fastRevealCount:0,fastPlayers:['P','Q'],players:[{id:'P',name:'Pat',photo:'pat.png'},{id:'Q',name:'Sam',photo:'sam.png'}],fastAnswers:[null,null],fastScores:[null,null]}",b.context);
@@ -590,13 +600,17 @@ test('Fast Money offers an empty-answer pass and locks it while the host speaks'
   assert.equal(b.events.length,count);
 });
 
-test('question re-read control is available during every live answer type', () => {
+test('question re-read control is available once and only to the active player', () => {
   const b = browser(async()=>({}));
-  vm.runInContext("state={phase:'answer',inputLocked:false,answerDeadline:Date.now()+10000}",b.context);
+  vm.runInContext("state={phase:'answer',turnPlayerId:'P',inputLocked:false,answerDeadline:Date.now()+10000,rereadUsed:false}",b.context);
   assert.match(vm.runInContext('rereadControl()',b.context),/Read Question Again/);
-  vm.runInContext("state={phase:'faceoff',faceoff:{canBuzz:true,buzzedBy:null}}",b.context);
-  assert.match(vm.runInContext('rereadControl()',b.context),/Read Question Again/);
-  vm.runInContext("state={phase:'fast_play',inputLocked:false,fastDeadline:Date.now()+10000}",b.context);
+  vm.runInContext("state.rereadUsed=true",b.context);
+  assert.equal(vm.runInContext('rereadControl()',b.context),'');
+  vm.runInContext("state={phase:'answer',turnPlayerId:'Q',inputLocked:false,answerDeadline:Date.now()+10000,rereadUsed:false}",b.context);
+  assert.equal(vm.runInContext('rereadControl()',b.context),'');
+  vm.runInContext("state={phase:'faceoff',faceoff:{canBuzz:true,buzzedBy:null},rereadUsed:false}",b.context);
+  assert.equal(vm.runInContext('rereadControl()',b.context),'');
+  vm.runInContext("state={phase:'fast_play',turnPlayerId:'P',inputLocked:false,fastDeadline:Date.now()+10000,rereadUsed:false}",b.context);
   assert.match(vm.runInContext('rereadControl()',b.context),/Read Question Again/);
 });
 

@@ -150,7 +150,7 @@ function makeRoom(mode, era = chooseEra()) {
     controlFamily: null, turnPlayerId: null, message: 'Waiting for players', winnerFamily: null,
     fastPlayers: [], fastAnswers: [null, null], fastScores: [null, null], fastMatches: [null, null], fastSelectorId: null, fastRevealIndex: null, fastRevealCount: 0, fastWinningRevealCount: null, fastTopRevealCount: 0, fastCelebrationPlayed: false, fastPrize: null,
     fastQuestionIndex: null, fastDraftAnswers: [], fastDeadline: null, inputLocked: false,
-    answerDeadline: null, answerTimer: null, answerToken: 0, fastTimer: null,
+    answerDeadline: null, answerTimer: null, answerToken: 0, fastTimer: null, rereadUsedKey: null,
     kissPlayerId: null, kissStatus: 'off', kissImage: null,
     endCredits: fallbackEndCredits(era), creditsPromise: null,
     speechCues: new Map(), cueCounter: 0, pendingCue: null, displayId: null, createdAt: Date.now()
@@ -174,11 +174,12 @@ function audioController(room) {
 }
 
 function publicRoom(room, viewerId = null) {
-  const { announcementAudio, speechCues, fastSpeech, fastMatches, pendingCue, fastDraftAnswers, fastDraftMatches, fastPendingAnswer, fastQuestionQueue, fastQuestionAttempts, displayId, answerTimer, fastTimer, transitionTimer, kissImage, creditsPromise, ...safeRoom } = room;
+  const { announcementAudio, speechCues, fastSpeech, fastMatches, pendingCue, fastDraftAnswers, fastDraftMatches, fastPendingAnswer, fastQuestionQueue, fastQuestionAttempts, displayId, answerTimer, fastTimer, transitionTimer, kissImage, creditsPromise, rereadUsedKey, ...safeRoom } = room;
   const visible = {
     ...safeRoom,
     serverNow: Date.now(),
     audioControllerId: audioController(room),
+    rereadUsed: !!currentRereadKey(room) && rereadUsedKey === currentRereadKey(room),
     pendingSpeech: pendingCue ? { cueId: pendingCue.cueId, text: speechCues.get(pendingCue.cueId)?.text, sound: speechCues.get(pendingCue.cueId)?.sound, speechUrl: `/api/room/${room.code}/speech/${pendingCue.cueId}`, requiresAck: true } : null,
     players: room.players.map(({ familyName, kissConsent, ...p }) => p),
     game: room.game && room.phase !== 'lobby' && room.phase !== 'generating' ? {
@@ -208,6 +209,11 @@ function emit(room) {
 function player(room, id) { return room.players.find(p => p.id === id); }
 // Only the owner of an explicitly created rehearsal can play the sample contestants.
 function testController(room, socketId) { return !!room?.testPart && room.adminId === socketId; }
+function currentRereadKey(room) {
+  if (room.phase === 'answer' && room.turnPlayerId) return `answer:${room.answerToken}:${room.turnPlayerId}`;
+  if (room.phase === 'fast_play' && room.turnPlayerId) return `fast:${room.fastIndex}:${room.fastQuestionIndex}:${room.fastAttempt || 0}:${room.turnPlayerId}`;
+  return null;
+}
 function answeringPlayer(room, socketId) { return testController(room, socketId) ? room.turnPlayerId : socketId; }
 function samplePhoto(index) {
   const colors = ['#456c91', '#875333', '#4a7867', '#895768'];
@@ -535,12 +541,11 @@ io.on('connection', socket => {
 
   socket.on('rereadQuestion', ({ code }, reply) => {
     const room = rooms.get(String(code).toUpperCase());
-    const requester = room && (socket.data.isDisplay || testController(room, socket.id) || player(room, socket.id));
-    if (!requester || room.inputLocked || room.pendingCue || !room.game) return reply?.({ ok: false });
-    if (room.phase === 'faceoff' && room.faceoff && !room.faceoff.buzzedBy) {
-      reply?.({ ok: true }); readFaceoffQuestion(room); return;
-    }
+    const activePlayer = room && (socket.id === room.turnPlayerId || testController(room, socket.id));
+    const rereadKey = room && currentRereadKey(room);
+    if (!activePlayer || !rereadKey || room.rereadUsedKey === rereadKey || room.inputLocked || room.pendingCue || !room.game) return reply?.({ ok: false });
     if (room.phase === 'answer' && room.turnPlayerId && !room.judging) {
+      room.rereadUsedKey = rereadKey;
       const token = room.answerToken;
       const remaining = Math.max(0, (room.answerDeadline || Date.now()) - Date.now());
       clearTimeout(room.answerTimer); room.answerTimer = null; room.answerDeadline = null; room.inputLocked = true;
@@ -554,6 +559,7 @@ io.on('connection', socket => {
       return;
     }
     if (room.phase === 'fast_play' && room.turnPlayerId && !room.judging && room.fastDeadline) {
+      room.rereadUsedKey = rereadKey;
       const fastIndex = room.fastIndex, questionIndex = room.fastQuestionIndex, attempt = room.fastAttempt;
       const remaining = Math.max(0, room.fastDeadline - Date.now());
       clearTimeout(room.fastTimer); room.fastTimer = null; room.fastDeadline = null; room.inputLocked = true;

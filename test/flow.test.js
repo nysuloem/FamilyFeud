@@ -114,6 +114,7 @@ test('re-reading a regular question pauses and restores the answer clock', async
   const before = room.answerDeadline - Date.now();
   const result = await clients[0].emitWithAck('rereadQuestion', { code: room.code });
   assert.equal(result.ok, true);
+  assert.equal(publicRoom(room).rereadUsed, true);
   assert.equal(room.answerDeadline, null);
   assert.equal(room.inputLocked, true);
   assert.match(room.speechCues.get(room.pendingCue.cueId).text, /Here is the question again/);
@@ -122,6 +123,8 @@ test('re-reading a regular question pauses and restores the answer clock', async
   const after = room.answerDeadline - Date.now();
   assert.ok(after <= before && after >= before - 75, `Expected about ${before}ms, got ${after}ms`);
   assert.equal(room.inputLocked, false);
+  assert.equal((await clients[0].emitWithAck('rereadQuestion', { code: room.code })).ok, false);
+  assert.equal((await clients[1].emitWithAck('rereadQuestion', { code: room.code })).ok, false);
 });
 
 test('a broad answer gets a clarification prompt and a fresh turn without a strike',async t=>{
@@ -144,6 +147,7 @@ test('re-reading a Fast Money question pauses and restores the Fast Money clock'
   const before = room.fastDeadline - Date.now();
   const result = await clients[0].emitWithAck('rereadQuestion', { code: room.code });
   assert.equal(result.ok, true);
+  assert.equal(publicRoom(room).rereadUsed, true);
   assert.equal(room.fastDeadline, null);
   assert.equal(room.inputLocked, true);
   assert.equal(room.speechCues.get(room.pendingCue.cueId).text, room.game.fastMoney[2].question);
@@ -152,6 +156,8 @@ test('re-reading a Fast Money question pauses and restores the Fast Money clock'
   const after = room.fastDeadline - Date.now();
   assert.ok(after <= before && after >= before - 75, `Expected about ${before}ms, got ${after}ms`);
   assert.equal(room.inputLocked, false);
+  assert.equal((await clients[0].emitWithAck('rereadQuestion', { code: room.code })).ok, false);
+  assert.equal((await clients[1].emitWithAck('rereadQuestion', { code: room.code })).ok, false);
 });
 
 test('active Fast Money contestant controls remote narration when the admin is waiting second', async t => {
