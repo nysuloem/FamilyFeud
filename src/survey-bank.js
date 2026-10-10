@@ -16,7 +16,7 @@ function similar(a,b){
 // One server process owns this volume. Persist reservations before returning a game;
 // a crash may consume an unused pack, but cannot return an already reserved one.
 class SurveyBank {
-  constructor({directory, generate=generateGamePackage, target=12, seedGames=seeds}={}){
+  constructor({directory, generate=generateGamePackage, target=20, seedGames=seeds}={}){
     this.directory=directory || process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || (process.env.RAILWAY_ENVIRONMENT_ID?'/data':path.join(__dirname,'../.data'));
     this.file=path.join(this.directory,'survey-bank.json');this.generate=generate;this.target=target;this.seedGames=seedGames;this.refilling=null;this.data=null;
   }
