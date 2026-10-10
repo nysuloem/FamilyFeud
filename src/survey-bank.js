@@ -59,9 +59,13 @@ class SurveyBank {
     this.refilling=this.fill().finally(()=>{this.refilling=null;});return this.refilling;
   }
   async fill(){
+    // Keep unattended spending bounded. Each refill pass may add only a small
+    // number of complete game packages, then a later trigger can add more.
+    const maxPerRun=Math.max(1,Math.min(4,Number.parseInt(process.env.SURVEY_REFILL_MAX_PER_RUN||'2',10)||2));
+    let generated=0;
     // A failed/duplicate batch stops this run. A later scheduled refill retries;
     // never recycle the sample package or spin on repeated generation failures.
-    while(this.data.available.length<this.target){
+    while(this.data.available.length<this.target&&generated<maxPerRun){
       let game;
       try{game=await this.generate({avoidQuestions:[...this.data.knownQuestions]});}
       catch(error){console.warn('Survey refill postponed:',error.message);break;}
@@ -71,7 +75,10 @@ class SurveyBank {
       }
       const data=structuredClone(this.data);
       data.available.push({...compactBoardLabels(game),id:crypto.randomUUID(),source:'AI-generated synthetic home-game surveys'});
-      data.knownQuestions.push(...list);this.save(data);
+      data.knownQuestions.push(...list);this.save(data);generated++;
+    }
+    if(this.data.available.length<this.target&&generated>=maxPerRun){
+      console.log(`Survey refill paused after ${generated} generated package(s); ${this.data.available.length}/${this.target} ready.`);
     }
   }
 }
