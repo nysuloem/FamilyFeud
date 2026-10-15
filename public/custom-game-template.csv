@@ -1,0 +1,49 @@
+type,round,question,answer,points,aliases
+MAIN,1,Replace with Round 1 question,Replace with answer 1,28,optional alias 1|optional alias 2
+MAIN,1,Replace with Round 1 question,Replace with answer 2,22,optional alias 1|optional alias 2
+MAIN,1,Replace with Round 1 question,Replace with answer 3,17,optional alias 1|optional alias 2
+MAIN,1,Replace with Round 1 question,Replace with answer 4,13,optional alias 1|optional alias 2
+MAIN,1,Replace with Round 1 question,Replace with answer 5,9,optional alias 1|optional alias 2
+MAIN,1,Replace with Round 1 question,Replace with answer 6,6,optional alias 1|optional alias 2
+MAIN,1,Replace with Round 1 question,Replace with answer 7,5,optional alias 1|optional alias 2
+MAIN,2,Replace with Round 2 question,Replace with answer 1,30,optional alias 1|optional alias 2
+MAIN,2,Replace with Round 2 question,Replace with answer 2,24,optional alias 1|optional alias 2
+MAIN,2,Replace with Round 2 question,Replace with answer 3,18,optional alias 1|optional alias 2
+MAIN,2,Replace with Round 2 question,Replace with answer 4,12,optional alias 1|optional alias 2
+MAIN,2,Replace with Round 2 question,Replace with answer 5,9,optional alias 1|optional alias 2
+MAIN,2,Replace with Round 2 question,Replace with answer 6,7,optional alias 1|optional alias 2
+MAIN,3,Replace with Round 3 question,Replace with answer 1,34,optional alias 1|optional alias 2
+MAIN,3,Replace with Round 3 question,Replace with answer 2,25,optional alias 1|optional alias 2
+MAIN,3,Replace with Round 3 question,Replace with answer 3,18,optional alias 1|optional alias 2
+MAIN,3,Replace with Round 3 question,Replace with answer 4,13,optional alias 1|optional alias 2
+MAIN,3,Replace with Round 3 question,Replace with answer 5,10,optional alias 1|optional alias 2
+MAIN,4,Replace with Round 4 question,Replace with answer 1,38,optional alias 1|optional alias 2
+MAIN,4,Replace with Round 4 question,Replace with answer 2,27,optional alias 1|optional alias 2
+MAIN,4,Replace with Round 4 question,Replace with answer 3,20,optional alias 1|optional alias 2
+MAIN,4,Replace with Round 4 question,Replace with answer 4,15,optional alias 1|optional alias 2
+SUDDEN,1,Replace with Sudden Death question,Replace with top answer,45,optional alias 1|optional alias 2
+FAST,1,Replace with Fast Money question 1,Replace with answer 1,40,optional alias 1|optional alias 2
+FAST,1,Replace with Fast Money question 1,Replace with answer 2,25,optional alias 1|optional alias 2
+FAST,1,Replace with Fast Money question 1,Replace with answer 3,15,optional alias 1|optional alias 2
+FAST,1,Replace with Fast Money question 1,Replace with answer 4,12,optional alias 1|optional alias 2
+FAST,1,Replace with Fast Money question 1,Replace with answer 5,8,optional alias 1|optional alias 2
+FAST,2,Replace with Fast Money question 2,Replace with answer 1,40,optional alias 1|optional alias 2
+FAST,2,Replace with Fast Money question 2,Replace with answer 2,25,optional alias 1|optional alias 2
+FAST,2,Replace with Fast Money question 2,Replace with answer 3,15,optional alias 1|optional alias 2
+FAST,2,Replace with Fast Money question 2,Replace with answer 4,12,optional alias 1|optional alias 2
+FAST,2,Replace with Fast Money question 2,Replace with answer 5,8,optional alias 1|optional alias 2
+FAST,3,Replace with Fast Money question 3,Replace with answer 1,40,optional alias 1|optional alias 2
+FAST,3,Replace with Fast Money question 3,Replace with answer 2,25,optional alias 1|optional alias 2
+FAST,3,Replace with Fast Money question 3,Replace with answer 3,15,optional alias 1|optional alias 2
+FAST,3,Replace with Fast Money question 3,Replace with answer 4,12,optional alias 1|optional alias 2
+FAST,3,Replace with Fast Money question 3,Replace with answer 5,8,optional alias 1|optional alias 2
+FAST,4,Replace with Fast Money question 4,Replace with answer 1,40,optional alias 1|optional alias 2
+FAST,4,Replace with Fast Money question 4,Replace with answer 2,25,optional alias 1|optional alias 2
+FAST,4,Replace with Fast Money question 4,Replace with answer 3,15,optional alias 1|optional alias 2
+FAST,4,Replace with Fast Money question 4,Replace with answer 4,12,optional alias 1|optional alias 2
+FAST,4,Replace with Fast Money question 4,Replace with answer 5,8,optional alias 1|optional alias 2
+FAST,5,Replace with Fast Money question 5,Replace with answer 1,40,optional alias 1|optional alias 2
+FAST,5,Replace with Fast Money question 5,Replace with answer 2,25,optional alias 1|optional alias 2
+FAST,5,Replace with Fast Money question 5,Replace with answer 3,15,optional alias 1|optional alias 2
+FAST,5,Replace with Fast Money question 5,Replace with answer 4,12,optional alias 1|optional alias 2
+FAST,5,Replace with Fast Money question 5,Replace with answer 5,8,optional alias 1|optional alias 2
